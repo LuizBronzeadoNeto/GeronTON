@@ -13,9 +13,11 @@ declare global {
  * MVP-only identity middleware for protected routes.
  *
  * Reads the id returned by /login from the `X-User-Id` header and attaches the
- * matching user to `req.user`. This is intentionally INSECURE — with no token
- * or session, any client can claim any id — and exists only so routes know
- * which profile is calling. Replace with real auth before production.
+ * matching user to `req.user`. 
+ * 
+ * IMPORTANT: This is intentionally INSECURE, with no token or session, any client 
+ * can claim any id, and exists only so routes know which profile is calling. 
+ * Replace with real auth before production.
  */
 export async function identifyUser(
   req: Request,

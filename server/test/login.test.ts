@@ -1,4 +1,4 @@
-import { describe, it, expect, afterAll } from "vitest";
+import { describe, it, expect, afterAll } from "@jest/globals";
 import request from "supertest";
 import app from "../src/app.js";
 import { pool } from "../src/db.js";
