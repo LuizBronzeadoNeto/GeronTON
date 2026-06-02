@@ -1,0 +1,15 @@
+appId: com.geronton.client
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "login-email"
+- inputText: "cuidador@demo.com"
+- tapOn:
+    id: "login-password"
+- inputText: "senha123"
+- hideKeyboard
+- tapOn:
+    id: "login-submit"
+- assertVisible:
+    id: "caregiver-home"

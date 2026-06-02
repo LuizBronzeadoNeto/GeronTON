@@ -8,10 +8,10 @@ export function CaregiverHomeScreen() {
   const { user, signOut } = useAuth();
 
   return (
-    <View style={styles.container}>
+    <View testID="caregiver-home" style={styles.container}>
       <Text style={styles.title}>Área do Cuidador</Text>
       <Text style={styles.subtitle}>Usuário #{user?.id}</Text>
-      <Button title="Sair" onPress={signOut} />
+      <Button testID="signout" title="Sair" onPress={signOut} />
     </View>
   );
 }

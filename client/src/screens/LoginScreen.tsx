@@ -33,6 +33,7 @@ export function LoginScreen() {
       <Text style={styles.title}>GeronTON</Text>
 
       <TextInput
+        testID="login-email"
         style={styles.input}
         placeholder="Email"
         autoCapitalize="none"
@@ -42,6 +43,7 @@ export function LoginScreen() {
         onChangeText={setEmail}
       />
       <TextInput
+        testID="login-password"
         style={styles.input}
         placeholder="Senha"
         secureTextEntry
@@ -49,12 +51,17 @@ export function LoginScreen() {
         onChangeText={setPassword}
       />
 
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+      {error ? (
+        <Text testID="login-error" style={styles.error}>
+          {error}
+        </Text>
+      ) : null}
 
       {isSigningIn ? (
-        <ActivityIndicator />
+        <ActivityIndicator testID="login-loading" />
       ) : (
         <Button
+          testID="login-submit"
           title="Entrar"
           onPress={handleSubmit}
           disabled={!email || !password}

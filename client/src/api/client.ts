@@ -6,13 +6,6 @@ const hostIsLocal = !host || host === "localhost" || host === "127.0.0.1";
 
 /**
  * Base URL of the auth backend (which listens on port 3000).
- *
- * `localhost` from an emulator or physical device does not reach the dev
- * machine, so we resolve a reachable host: an explicit EXPO_PUBLIC_API_URL wins;
- * otherwise we use the LAN host Expo is already serving from (correct for
- * physical devices and LAN-mode emulators), falling back to 10.0.2.2 on Android
- * emulators and localhost on iOS simulators. Set EXPO_PUBLIC_API_URL if requests
- * fail to connect.
  */
 export const BASE_URL =
   process.env.EXPO_PUBLIC_API_URL ??

@@ -8,10 +8,10 @@ export function ProfessionalHomeScreen() {
   const { user, signOut } = useAuth();
 
   return (
-    <View style={styles.container}>
+    <View testID="professional-home" style={styles.container}>
       <Text style={styles.title}>Área do Profissional</Text>
       <Text style={styles.subtitle}>Usuário #{user?.id}</Text>
-      <Button title="Sair" onPress={signOut} />
+      <Button testID="signout" title="Sair" onPress={signOut} />
     </View>
   );
 }
