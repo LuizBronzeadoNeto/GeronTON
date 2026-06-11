@@ -7,8 +7,8 @@ const router = Router();
 /**
  * POST /login — authenticate a user by email and password.
  *
- * Responds with `{ id, role }` on success, 401 on invalid credentials, and 400
- * on a malformed body. No token is issued; the client holds onto the returned
+ * Responds with `{ id, role, token }` on success, 401 on invalid credentials, and 400
+ * on a malformed body. The client holds onto the returned
  * user. The password column is never included in the response.
  *
  * TODO: passwords are stored in plain text for the MVP. Replace the equality
@@ -35,7 +35,7 @@ router.post("/login", async (req, res) => {
     process.env.JWT_SECRET!,
     {expiresIn: "2h"}
   );
-  return res.json({ token });
+  return res.json({id: user.id, role: user.role, token});
 });
 
 export default router;

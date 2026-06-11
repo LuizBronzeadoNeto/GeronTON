@@ -4,7 +4,13 @@ import { authMiddleware } from "../middleware/authenticateUser.js";
 import { requireRole } from "../middleware/requireRole.js";
 
 const router = Router();
-
+/**
+ * POST /profissionais — create a new professional type user with an email and password.
+ *
+ * Responds with `{ id, email, role }` on success, 409 on duplicate conflicts and 400
+ * on a malformed body. Accounts may only be registered by a healthcare professional,
+ * authentication is based on the session's token.
+**/
 router.post("/", authMiddleware, requireRole("profissional"), async (req: Request, res: Response) => {
     const {email, password} = req.body;
 
