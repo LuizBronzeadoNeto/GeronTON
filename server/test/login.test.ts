@@ -21,6 +21,7 @@ describe("POST /login", () => {
     expect(res.body).toMatchObject({ role: "cuidador" });
     expect(res.body.id).toEqual(expect.any(Number));
     expect(res.body.password).toBeUndefined();
+    expect(res.body.token).toBeDefined();
   });
 
   it("returns id and role for a valid healthcare professional", async () => {
@@ -30,6 +31,9 @@ describe("POST /login", () => {
 
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ role: "profissional" });
+    expect(res.body.id).toEqual(expect.any(Number));
+    expect(res.body.password).toBeUndefined();
+    expect(res.body.token).toBeDefined();
   });
 
   it("responds 401 on a wrong password", async () => {
