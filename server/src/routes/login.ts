@@ -1,5 +1,6 @@
 import { Router } from "express";
-import { pool, type UserRow } from "../db.js";
+import { pool, Role, type UserRow } from "../db.js";
+import jwt from "jsonwebtoken";
 
 const router = Router();
 
@@ -30,8 +31,11 @@ router.post("/login", async (req, res) => {
   if (!user || user.password !== password) {
     return res.status(401).json({ error: "invalid credentials" });
   }
-
-  return res.json({ id: user.id, role: user.role });
+  const token = jwt.sign({id: user.id, email: user.email, role: user.role}, 
+    process.env.JWT_SECRET!,
+    {expiresIn: "2h"}
+  );
+  return res.json({ token });
 });
 
 export default router;
