@@ -2,12 +2,9 @@ import { describe, it, expect, afterAll, beforeAll } from "@jest/globals";
 import request from "supertest";
 import app from "../src/app.js";
 import { pool } from "../src/db.js";
-import { PoolClient } from "pg";
-import { afterEach, before, beforeEach } from "node:test";
 
 let caregiverToken: string;
 let professionalToken: string;
-let client: PoolClient;
 
 
 beforeAll(async() => {
@@ -32,7 +29,6 @@ afterAll(async () => {
  */
 describe("POST /profissionais", () =>{
     it("Authorizes creation. Returns id, email and role of the new professional", async () => {
-        //await pool.query("DELETE FROM users WHERE email = $1", ["newcaregiver@demo.com"]);
         const res = await request(app).post("/profissionais").set("Authorization", `Bearer ${professionalToken}`)
         .send({email: "newprofessional@demo.com", password: "pass123"});
 
