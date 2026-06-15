@@ -1,16 +1,25 @@
 import { Button, StyleSheet, Text, View } from "react-native";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useAuth } from "../context/AuthContext";
+import type { AppStackParamList } from "../types/navigation";
+
+type Props = NativeStackScreenProps<AppStackParamList, "Home">;
 
 /**
  * Home screen for healthcare professional (profissional) profiles.
  */
-export function ProfessionalHomeScreen() {
+export function ProfessionalHomeScreen({ navigation }: Props) {
   const { user, signOut } = useAuth();
 
   return (
     <View testID="professional-home" style={styles.container}>
       <Text style={styles.title}>Área do Profissional</Text>
       <Text style={styles.subtitle}>Usuário #{user?.id}</Text>
+      <Button
+        testID="manage-profiles"
+        title="Gerenciar idosos"
+        onPress={() => navigation.navigate("ProfileList")}
+      />
       <Button testID="signout" title="Sair" onPress={signOut} />
     </View>
   );
