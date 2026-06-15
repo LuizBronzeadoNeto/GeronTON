@@ -1,5 +1,6 @@
 import { Button, StyleSheet, Text, View } from "react-native";
 import { useAuth } from "../context/AuthContext";
+import { colors, typography, spacing } from "../theme";
 
 /**
  * Home screen for caregiver (cuidador) profiles.
@@ -21,15 +22,14 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: 24,
-    gap: 12,
+    padding: spacing.padding,
+    gap: spacing.gap,
   },
   title: {
-    fontSize: 24,
-    fontWeight: "bold",
+    ...typography.title,
   },
   subtitle: {
-    fontSize: 16,
-    color: "#555",
+    ...typography.subtitle,
+    color: colors.text.secondary,
   },
 });
