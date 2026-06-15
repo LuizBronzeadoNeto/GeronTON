@@ -1,6 +1,5 @@
 import { Button, StyleSheet, Text, View } from "react-native";
 import { useAuth } from "../context/AuthContext";
-import { colors, typography, spacing } from "../theme";
 
 /**
  * Home screen for healthcare professional (profissional) profiles.
@@ -22,14 +21,15 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: spacing.padding,
-    gap: spacing.gap,
+    padding: 24,
+    gap: 12,
   },
   title: {
-    ...typography.title,
+    fontSize: 24,
+    fontWeight: "bold",
   },
   subtitle: {
-    ...typography.subtitle,
-    color: colors.text.secondary,
+    fontSize: 16,
+    color: "#555",
   },
 });

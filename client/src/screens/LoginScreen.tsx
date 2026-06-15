@@ -8,7 +8,6 @@ import {
   View,
 } from "react-native";
 import { useAuth } from "../context/AuthContext";
-import { colors, typography, spacing } from "../theme";
 
 /**
  * Email + password form. On success the AuthProvider stores the user, which
@@ -76,23 +75,24 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: "center",
-    padding: spacing.padding,
-    gap: spacing.gap,
+    padding: 24,
+    gap: 12,
   },
   title: {
-    ...typography.heading,
+    fontSize: 28,
+    fontWeight: "bold",
     textAlign: "center",
-    marginBottom: spacing.gap,
+    marginBottom: 12,
   },
   input: {
     borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: spacing.borderRadius,
-    padding: spacing.inputPadding,
-    ...typography.body,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
   },
   error: {
-    color: colors.danger,
+    color: "red",
     textAlign: "center",
   },
 });
