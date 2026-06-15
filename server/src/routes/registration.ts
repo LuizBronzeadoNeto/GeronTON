@@ -4,11 +4,11 @@ import { authMiddleware } from "../middleware/authenticateUser.js";
 import { requireRole } from "../middleware/requireRole.js";
 
 /**
- * Builds a router exposing `POST /` that registers a new user with the given
+ * Builds a router exposing POST / that registers a new user with the given
  * role. Shared by POST /cuidadores and POST /profissionais, which differ only
  * in the role assigned to the created account.
  *
- * Responds with `{ id, email, role }` on success, 409 on a duplicate email, and
+ * Responds with { id, email, role } on success, 409 on a duplicate email, and
  * 400 on a malformed body. Only a healthcare professional may register accounts;
  * the requester is authenticated via the session's bearer token.
  */

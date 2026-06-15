@@ -20,7 +20,7 @@ app.use("/perfis", profilesRouter);
 
 /**
  * Central error handler. Express 5 forwards rejected promises from async route
- * handlers here, so routes can `throw` instead of repeating try/catch. Responds
+ * handlers here, so routes can throw instead of repeating try/catch. Responds
  * with a generic 500 to avoid leaking internal details.
  */
 const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {

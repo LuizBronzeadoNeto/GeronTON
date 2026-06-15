@@ -5,14 +5,14 @@ import { prisma } from "../lib/prisma.js";
 const router = Router();
 
 /**
- * POST /login — authenticate a user by email and password.
+ * POST /login - authenticate a user by email and password.
  *
- * Responds with `{ id, role, token }` on success, 401 on invalid credentials, and 400
- * on a malformed body. The returned token is a 2h JWT carrying `{ id, email, role }`.
+ * Responds with { id, role, token } on success, 401 on invalid credentials, and 400
+ * on a malformed body. The returned token is a 2h JWT carrying { id, email, role }.
  * The password is never included in the response.
  *
  * TODO: passwords are stored in plain text for the MVP. Replace the equality
- * check with `bcrypt.compare(password, user.password)` once hashing is added.
+ * check with bcrypt.compare(password, user.password) once hashing is added.
  */
 router.post("/login", async (req, res) => {
   const { email, password } = req.body ?? {};

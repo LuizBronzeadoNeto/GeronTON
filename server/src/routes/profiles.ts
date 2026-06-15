@@ -15,10 +15,10 @@ router.use("/:perfilId/medicamentos", medicationsRouter);
 router.use("/:perfilId/rotinas", routinesRouter);
 
 /**
- * POST /perfis — create an elderly profile.
+ * POST /perfis - create an elderly profile.
  *
  * A cuidador becomes the owner; a profissional may assign the profile to a
- * caregiver via `caregiverId` in the body, otherwise becomes the owner. Responds
+ * caregiver via caregiverId in the body, otherwise becomes the owner. Responds
  * 201 with the created profile, or 400 on missing/invalid fields.
  */
 router.post("/", async (req: Request, res: Response) => {
@@ -64,7 +64,7 @@ router.post("/", async (req: Request, res: Response) => {
 });
 
 /**
- * GET /perfis — list profiles. A cuidador sees only the profiles they manage;
+ * GET /perfis - list profiles. A cuidador sees only the profiles they manage;
  * a profissional sees all of them.
  */
 router.get("/", async (req: Request, res: Response) => {
@@ -80,7 +80,7 @@ router.get("/", async (req: Request, res: Response) => {
 });
 
 /**
- * GET /perfis/:id — fetch a single profile. Existence and access are enforced
+ * GET /perfis/:id - fetch a single profile. Existence and access are enforced
  * by loadProfile, which attaches the profile to the request.
  */
 router.get("/:id", loadProfile, (req: Request, res: Response) => {
@@ -88,7 +88,7 @@ router.get("/:id", loadProfile, (req: Request, res: Response) => {
 });
 
 /**
- * PUT /perfis/:id — update a profile's editable fields. Only fields present in
+ * PUT /perfis/:id - update a profile's editable fields. Only fields present in
  * the body are changed; ownership is never reassigned here.
  */
 router.put("/:id", loadProfile, async (req: Request, res: Response) => {
@@ -125,7 +125,7 @@ router.put("/:id", loadProfile, async (req: Request, res: Response) => {
 });
 
 /**
- * DELETE /perfis/:id — delete a profile along with its medications and routines
+ * DELETE /perfis/:id - delete a profile along with its medications and routines
  * (cascade). Responds 204 with no body.
  */
 router.delete("/:id", loadProfile, async (req: Request, res: Response) => {

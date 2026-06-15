@@ -20,8 +20,8 @@ type Props = NativeStackScreenProps<AppStackParamList, "ProfileForm">;
 
 /**
  * Form to register or edit an elderly profile. When the route carries a
- * `profileId` it loads that profile and behaves as an edit screen, otherwise it
- * registers a new one. The layout is intentionally minimal — the visual design
+ * profileId it loads that profile and behaves as an edit screen, otherwise it
+ * registers a new one. The layout is intentionally minimal - the visual design
  * comes later from Figma.
  */
 export function ProfileFormScreen({ navigation, route }: Props) {

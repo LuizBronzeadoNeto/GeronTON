@@ -11,15 +11,15 @@ declare global {
 }
 
 /**
- * Loads the profile referenced by `:perfilId` (nested routes) or `:id` (profile
+ * Loads the profile referenced by :perfilId (nested routes) or :id (profile
  * detail routes) and enforces access before the handler runs:
  *
  * - 400 if the id is not a valid integer,
  * - 404 if no such profile exists,
- * - 403 if a `cuidador` requests a profile they do not own (a `profissional`
+ * - 403 if a cuidador requests a profile they do not own (a profissional
  *   may access any profile).
  *
- * On success the profile is attached to `req.profile` for the handler to use.
+ * On success the profile is attached to req.profile for the handler to use.
  */
 export async function loadProfile(
   req: Request,
