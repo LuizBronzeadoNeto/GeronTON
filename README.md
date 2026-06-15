@@ -21,10 +21,11 @@ npm run dev
 
 ## App - `client/`
 
-A phone/emulator can't reach the backend over `localhost`, so set your machine's LAN IP (from `ipconfig`) in `client/.env` as `EXPO_PUBLIC_API_URL=http://<LAN-IP>:3000`. It's baked in at build time, so rebuild after changing it.
+A phone/emulator can't reach the backend over `localhost`, so copy `client/.env.example` to `client/.env` and set your machine's LAN IP (from `ipconfig`): `EXPO_PUBLIC_API_URL=http://<LAN-IP>:3000` (keep the `http://` scheme and the `:3000` port). It's baked in at bundle time, so restart Expo with `npm start -c` after changing it.
 
 ```bash
 cd client
+cp .env.example .env
 npm install
 npm start
 ```
