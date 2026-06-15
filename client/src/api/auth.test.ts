@@ -12,12 +12,13 @@ describe("login", () => {
     global.fetch = jest.fn(async () => ({
       ok: true,
       status: 200,
-      json: async () => ({ id: 1, role: "cuidador" }),
+      json: async () => ({ id: 1, role: "cuidador", token: "jwt-token" }),
     })) as unknown as typeof fetch;
 
     await expect(login("cuidador@demo.com", "senha123")).resolves.toEqual({
       id: 1,
       role: "cuidador",
+      token: "jwt-token",
     });
   });
 

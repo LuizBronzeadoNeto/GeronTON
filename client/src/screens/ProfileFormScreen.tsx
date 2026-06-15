@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Button,
   ScrollView,
   StyleSheet,
@@ -8,17 +9,24 @@ import {
 } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { AppStackParamList } from "../types/navigation";
+import {
+  createProfile,
+  getProfile,
+  updateProfile,
+  type ProfileInput,
+} from "../api/profiles";
 
 type Props = NativeStackScreenProps<AppStackParamList, "ProfileForm">;
 
 /**
  * Form to register or edit an elderly profile. When the route carries a
- * `profileId` it behaves as an edit screen, otherwise as a registration screen.
- * The layout is intentionally minimal — the visual design comes later from
- * Figma, and persistence to the backend is wired in a later step.
+ * `profileId` it loads that profile and behaves as an edit screen, otherwise it
+ * registers a new one. The layout is intentionally minimal — the visual design
+ * comes later from Figma.
  */
 export function ProfileFormScreen({ navigation, route }: Props) {
-  const isEditing = route.params?.profileId != null;
+  const profileId = route.params?.profileId;
+  const isEditing = profileId != null;
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -26,14 +34,74 @@ export function ProfileFormScreen({ navigation, route }: Props) {
   const [scholarship, setScholarship] = useState("");
   const [medicalConditions, setMedicalConditions] = useState("");
 
+  const [loading, setLoading] = useState(isEditing);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (profileId == null) {
+      return;
+    }
+    let active = true;
+    getProfile(profileId)
+      .then((profile) => {
+        if (!active) return;
+        setFirstName(profile.firstName);
+        setLastName(profile.lastName);
+        setBirthDate(profile.birthDate.slice(0, 10));
+        setScholarship(profile.scholarship);
+        setMedicalConditions(profile.medicalConditions.join(", "));
+      })
+      .catch(() => {
+        if (active) setError("Não foi possível carregar o perfil.");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [profileId]);
+
   const canSubmit =
+    !loading &&
+    !saving &&
     firstName.trim() !== "" &&
     lastName.trim() !== "" &&
     birthDate.trim() !== "" &&
     scholarship.trim() !== "";
 
-  function handleSubmit() {
-    navigation.goBack();
+  async function handleSubmit() {
+    setSaving(true);
+    setError(null);
+
+    const input: ProfileInput = {
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      birthDate: birthDate.trim(),
+      scholarship: scholarship.trim(),
+      medicalConditions: medicalConditions
+        .split(",")
+        .map((condition) => condition.trim())
+        .filter((condition) => condition !== ""),
+    };
+
+    try {
+      if (isEditing) {
+        await updateProfile(profileId, input);
+      } else {
+        await createProfile(input);
+      }
+      navigation.goBack();
+    } catch {
+      setError("Não foi possível salvar o perfil.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading) {
+    return <ActivityIndicator testID="profile-form-loading" style={styles.loading} />;
   }
 
   return (
@@ -88,6 +156,12 @@ export function ProfileFormScreen({ navigation, route }: Props) {
         onChangeText={setMedicalConditions}
       />
 
+      {error ? (
+        <Text testID="profile-form-error" style={styles.error}>
+          {error}
+        </Text>
+      ) : null}
+
       <Button
         testID="profile-submit"
         title="Salvar"
@@ -102,6 +176,9 @@ const styles = StyleSheet.create({
   container: {
     padding: 24,
     gap: 8,
+  },
+  loading: {
+    flex: 1,
   },
   title: {
     fontSize: 24,
@@ -119,5 +196,9 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 16,
     marginBottom: 8,
+  },
+  error: {
+    color: "red",
+    textAlign: "center",
   },
 });
