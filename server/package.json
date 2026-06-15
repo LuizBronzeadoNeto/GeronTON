@@ -1,7 +1,7 @@
 {
   "name": "server",
   "version": "1.0.0",
-  "description": "GeronTON auth backend (Express + Postgres)",
+  "description": "GeronTON backend (Express + Prisma + Postgres)",
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
@@ -9,16 +9,24 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:seed": "prisma db seed",
+    "db:reset": "prisma migrate reset",
+    "postinstall": "prisma generate"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@prisma/client": "^6.0.0",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "jsonwebtoken": "^9.0.3",
-    "pg": "^8.16.3"
+    "jsonwebtoken": "^9.0.3"
   },
   "devDependencies": {
     "@babel/core": "^7.29.7",
@@ -27,12 +35,12 @@
     "@types/express": "^5.0.1",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.0.0",
-    "@types/pg": "^8.11.10",
     "@types/supertest": "^7.2.0",
     "babel-jest": "^30.4.1",
     "eslint": "^10.4.1",
     "jest": "^30.4.2",
     "prettier": "^3.8.3",
+    "prisma": "^6.0.0",
     "supertest": "^7.2.2",
     "tsx": "^4.20.0",
     "typescript": "^5.7.0"

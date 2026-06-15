@@ -1,8 +1,8 @@
 import "dotenv/config";
 import express from "express";
 import loginRouter from "./routes/login.js";
-import caregiversRouter from "./routes/carergivers.js"
-import professionalRouter from "./routes/professionals.js"
+import caregiversRouter from "./routes/caregivers.js";
+import professionalRouter from "./routes/professionals.js";
 
 const app = express();
 

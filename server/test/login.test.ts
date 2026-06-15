@@ -1,15 +1,15 @@
 import { describe, it, expect, afterAll } from "@jest/globals";
 import request from "supertest";
 import app from "../src/app.js";
-import { pool } from "../src/db.js";
+import { prisma } from "../src/lib/prisma.js";
 
 afterAll(async () => {
-  await pool.end();
+  await prisma.$disconnect();
 });
 
 /**
  * Integration tests for POST /login. These hit the real database, so Postgres
- * must be running and seeded (see docker-compose.yml + db/seed.sql).
+ * must be running, migrated, and seeded (see docker-compose.yml + prisma db seed).
  */
 describe("POST /login", () => {
   it("returns id and role for a valid caregiver", async () => {

@@ -7,12 +7,16 @@ cd server
 cp .env.example .env
 docker compose up -d
 npm install
+npm run db:migrate
+npm run db:seed
 npm run dev
 ```
 
-- `docker compose up -d` starts Postgres; the schema and seed run automatically on first start.
+- `docker compose up -d` starts Postgres.
+- `npm install` also runs `prisma generate` (postinstall).
+- `npm run db:migrate` applies the Prisma schema (`prisma/schema.prisma`); `npm run db:seed` inserts the demo accounts.
 - `npm run dev` serves the API at http://localhost:3000.
-- `npm test` runs the Jest tests (Postgres must be up).
+- `npm test` runs the Jest tests (Postgres must be up, migrated, and seeded).
 - `npm run build` compiles to `dist/`; `npm start` runs that build.
 
 ## App - `client/`

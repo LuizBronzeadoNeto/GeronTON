@@ -1,3 +1,3 @@
 import { buildRegistrationRouter } from "./registration.js";
 
-export default buildRegistrationRouter("profissional");
+export default buildRegistrationRouter("cuidador");

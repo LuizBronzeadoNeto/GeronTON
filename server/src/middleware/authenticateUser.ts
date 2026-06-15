@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import { Role } from "../db.js";
+import { Role } from "../lib/prisma.js";
 
 
 const JWT_SECRET = process.env.JWT_SECRET!;
