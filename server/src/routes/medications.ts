@@ -83,7 +83,8 @@ router.put("/:medicamentoId", async (req: Request, res: Response) => {
   if (body.dosage !== undefined) data.dosage = body.dosage;
   if (body.frequency !== undefined) data.frequency = body.frequency;
   if (body.notes !== undefined) {
-    data.notes = body.notes === null || body.notes === "" ? null : String(body.notes);
+    data.notes =
+      body.notes === null || body.notes === "" ? null : String(body.notes);
   }
 
   const medication = await prisma.medication.update({ where: { id }, data });

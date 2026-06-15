@@ -1,0 +1,2 @@
+cd server && npx lint-staged || exit 1
+cd ../client && npx lint-staged || exit 1

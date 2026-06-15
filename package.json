@@ -1,0 +1,17 @@
+{
+  "name": "geronton",
+  "version": "1.0.0",
+  "private": true,
+  "description": "GeronTON monorepo root: shared git hooks and tooling for server (API) and client (app)",
+  "scripts": {
+    "prepare": "husky",
+    "lint": "npm --prefix server run lint && npm --prefix client run lint",
+    "format": "npm --prefix server run format && npm --prefix client run format",
+    "format:check": "npm --prefix server run format:check && npm --prefix client run format:check",
+    "test": "npm --prefix server run test && npm --prefix client run test"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.7"
+  }
+}

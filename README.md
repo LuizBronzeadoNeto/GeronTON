@@ -18,6 +18,7 @@ npm run dev
 - `npm run dev` serves the API at http://localhost:3000.
 - `npm test` runs the Jest tests (Postgres must be up, migrated, and seeded).
 - `npm run build` compiles to `dist/`; `npm start` runs that build.
+- `npm run lint` (ESLint) / `npm run format` (Prettier) check and fix code style.
 
 ## App - `client/`
 
@@ -35,6 +36,7 @@ npm start
 - `npm run web` runs the app in the browser.
 - `npm test` runs the Jest + jest-expo unit/component tests.
 - `npm run test:e2e` runs the Maestro E2E flows (needs an installed build and a running emulator/device).
+- `npm run lint` (ESLint, `eslint-config-expo`) / `npm run format` (Prettier) check and fix code style.
 
 ## Maestro setup
 

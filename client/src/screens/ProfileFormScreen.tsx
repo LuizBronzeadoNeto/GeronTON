@@ -101,7 +101,9 @@ export function ProfileFormScreen({ navigation, route }: Props) {
   }
 
   if (loading) {
-    return <ActivityIndicator testID="profile-form-loading" style={styles.loading} />;
+    return (
+      <ActivityIndicator testID="profile-form-loading" style={styles.loading} />
+    );
   }
 
   return (

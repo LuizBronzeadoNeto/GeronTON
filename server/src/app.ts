@@ -1,7 +1,5 @@
 import "dotenv/config";
-import express, {
-  type ErrorRequestHandler,
-} from "express";
+import express, { type ErrorRequestHandler } from "express";
 import loginRouter from "./routes/login.js";
 import caregiversRouter from "./routes/caregivers.js";
 import professionalRouter from "./routes/professionals.js";

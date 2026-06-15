@@ -11,7 +11,10 @@ let profileId: number;
 const PROFILE_MARKER = "TestNested";
 const OTHER_CAREGIVER_EMAIL = "othernested@test.com";
 
-async function login(email: string, password: string): Promise<request.Response> {
+async function login(
+  email: string,
+  password: string,
+): Promise<request.Response> {
   return request(app).post("/login").send({ email, password });
 }
 
@@ -26,7 +29,8 @@ beforeAll(async () => {
     .post("/cuidadores")
     .set("Authorization", `Bearer ${professionalToken}`)
     .send({ email: OTHER_CAREGIVER_EMAIL, password: "pass123" });
-  otherCaregiverToken = (await login(OTHER_CAREGIVER_EMAIL, "pass123")).body.token;
+  otherCaregiverToken = (await login(OTHER_CAREGIVER_EMAIL, "pass123")).body
+    .token;
 
   const profileRes = await request(app)
     .post("/perfis")
@@ -57,7 +61,12 @@ describe("/perfis/:perfilId/medicamentos", () => {
     const res = await request(app)
       .post(`/perfis/${profileId}/medicamentos`)
       .set("Authorization", `Bearer ${caregiverToken}`)
-      .send({ name: "Losartana", dosage: "50mg", frequency: "1x ao dia", notes: "manhã" });
+      .send({
+        name: "Losartana",
+        dosage: "50mg",
+        frequency: "1x ao dia",
+        notes: "manhã",
+      });
 
     expect(res.status).toBe(201);
     expect(res.body.profileId).toBe(profileId);
@@ -88,7 +97,9 @@ describe("/perfis/:perfilId/medicamentos", () => {
       .set("Authorization", `Bearer ${caregiverToken}`);
 
     expect(res.status).toBe(200);
-    expect(res.body.some((m: { id: number }) => m.id === medicationId)).toBe(true);
+    expect(res.body.some((m: { id: number }) => m.id === medicationId)).toBe(
+      true,
+    );
   });
 
   it("updates a medication", async () => {

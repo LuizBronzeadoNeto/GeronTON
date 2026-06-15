@@ -12,7 +12,10 @@ let profileId: number;
 const PROFILE_MARKER = "TestIdoso";
 const OTHER_CAREGIVER_EMAIL = "othercaregiver@test.com";
 
-async function login(email: string, password: string): Promise<request.Response> {
+async function login(
+  email: string,
+  password: string,
+): Promise<request.Response> {
   return request(app).post("/login").send({ email, password });
 }
 
@@ -82,7 +85,11 @@ describe("/perfis", () => {
 
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
-    expect(res.body.every((p: { caregiverId: number }) => p.caregiverId === caregiverId)).toBe(true);
+    expect(
+      res.body.every(
+        (p: { caregiverId: number }) => p.caregiverId === caregiverId,
+      ),
+    ).toBe(true);
     expect(res.body.some((p: { id: number }) => p.id === profileId)).toBe(true);
   });
 

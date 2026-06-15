@@ -27,7 +27,8 @@ router.post("/", async (req: Request, res: Response) => {
       profileId: req.profile!.id,
       title: body.title,
       period: body.period,
-      description: typeof body.description === "string" ? body.description : null,
+      description:
+        typeof body.description === "string" ? body.description : null,
     },
   });
 

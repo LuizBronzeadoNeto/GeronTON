@@ -69,8 +69,7 @@ router.post("/", async (req: Request, res: Response) => {
  */
 router.get("/", async (req: Request, res: Response) => {
   const user = req.user!;
-  const where =
-    user.role === "cuidador" ? { caregiverId: user.id } : {};
+  const where = user.role === "cuidador" ? { caregiverId: user.id } : {};
 
   const profiles = await prisma.profile.findMany({
     where,

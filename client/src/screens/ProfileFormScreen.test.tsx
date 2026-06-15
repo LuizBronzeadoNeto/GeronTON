@@ -24,13 +24,22 @@ function fillRequiredFields() {
   fireEvent.changeText(screen.getByTestId("profile-firstName"), "João");
   fireEvent.changeText(screen.getByTestId("profile-lastName"), "Silva");
   fireEvent.changeText(screen.getByTestId("profile-birthDate"), "1950-05-20");
-  fireEvent.changeText(screen.getByTestId("profile-scholarship"), "fundamental");
+  fireEvent.changeText(
+    screen.getByTestId("profile-scholarship"),
+    "fundamental",
+  );
 }
 
 describe("ProfileFormScreen", () => {
   beforeEach(() => {
-    jest.mocked(createProfile).mockReset().mockResolvedValue({} as never);
-    jest.mocked(updateProfile).mockReset().mockResolvedValue({} as never);
+    jest
+      .mocked(createProfile)
+      .mockReset()
+      .mockResolvedValue({} as never);
+    jest
+      .mocked(updateProfile)
+      .mockReset()
+      .mockResolvedValue({} as never);
     jest.mocked(getProfile).mockReset();
   });
 
@@ -96,11 +105,16 @@ describe("ProfileFormScreen", () => {
       ),
     );
     expect(screen.getByTestId("profile-firstName").props.value).toBe("Ana");
-    expect(screen.getByTestId("profile-birthDate").props.value).toBe("1945-01-02");
+    expect(screen.getByTestId("profile-birthDate").props.value).toBe(
+      "1945-01-02",
+    );
 
     fireEvent.press(screen.getByTestId("profile-submit"));
 
     await waitFor(() => expect(navigation.goBack).toHaveBeenCalled());
-    expect(updateProfile).toHaveBeenCalledWith(7, expect.objectContaining({ firstName: "Ana" }));
+    expect(updateProfile).toHaveBeenCalledWith(
+      7,
+      expect.objectContaining({ firstName: "Ana" }),
+    );
   });
 });
