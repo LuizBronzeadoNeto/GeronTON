@@ -4,10 +4,15 @@ import { prisma } from "../lib/prisma.js";
 import { authMiddleware } from "../middleware/authenticateUser.js";
 import { loadProfile } from "../middleware/loadProfile.js";
 import { missingFields } from "../utils/validation.js";
+import medicationsRouter from "./medications.js";
+import routinesRouter from "./routines.js";
 
 const router = Router();
 
 router.use(authMiddleware);
+
+router.use("/:perfilId/medicamentos", medicationsRouter);
+router.use("/:perfilId/rotinas", routinesRouter);
 
 /**
  * POST /perfis — create an elderly profile.
