@@ -5,6 +5,7 @@ import { CaregiverHomeScreen } from "../screens/CaregiverHomeScreen";
 import { ProfessionalHomeScreen } from "../screens/ProfessionalHomeScreen";
 import { ProfileListScreen } from "../screens/ProfileListScreen";
 import { ProfileFormScreen } from "../screens/ProfileFormScreen";
+import { WeeklyCheckInScreen } from "../screens/WeeklyCheckInScreen";
 
 const Stack = createNativeStackNavigator<AppStackParamList>();
 
@@ -33,6 +34,11 @@ export function AppStack({ role }: { role: Role }) {
         name="ProfileForm"
         component={ProfileFormScreen}
         options={{ title: "Perfil" }}
+      />
+      <Stack.Screen
+        name="WeeklyCheckIn"
+        component={WeeklyCheckInScreen}
+        options={{ title: "Check-in semanal" }}
       />
     </Stack.Navigator>
   );

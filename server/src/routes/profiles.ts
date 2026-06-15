@@ -6,6 +6,7 @@ import { loadProfile } from "../middleware/loadProfile.js";
 import { missingFields } from "../utils/validation.js";
 import medicationsRouter from "./medications.js";
 import routinesRouter from "./routines.js";
+import checkinsRouter from "./checkins.js";
 
 const router = Router();
 
@@ -13,6 +14,7 @@ router.use(authMiddleware);
 
 router.use("/:perfilId/medicamentos", medicationsRouter);
 router.use("/:perfilId/rotinas", routinesRouter);
+router.use("/:perfilId/avaliacoes", checkinsRouter);
 
 /**
  * POST /perfis — create an elderly profile.
