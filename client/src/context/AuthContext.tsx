@@ -6,6 +6,7 @@ import {
   type ReactNode,
 } from "react";
 import { login as loginRequest } from "../api/auth";
+import { setAuthToken } from "../api/http";
 import type { User } from "../types/auth";
 
 interface AuthContextValue {
@@ -18,9 +19,10 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 /**
- * Holds the authenticated user for the whole app. No token is used: signIn
- * stores the { id, role } returned by the backend in memory and signOut clears
- * it. RootNavigator reads this state to decide which navigation stack to show.
+ * Holds the authenticated user for the whole app. signIn stores the
+ * { id, role, token } returned by the backend in memory and registers the token
+ * with the API client so authenticated requests carry it; signOut clears both.
+ * RootNavigator reads this state to decide which navigation stack to show.
  */
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -33,12 +35,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async signIn(email, password) {
         setIsSigningIn(true);
         try {
-          setUser(await loginRequest(email, password));
+          const signedIn = await loginRequest(email, password);
+          setAuthToken(signedIn.token);
+          setUser(signedIn);
         } finally {
           setIsSigningIn(false);
         }
       },
       signOut() {
+        setAuthToken(null);
         setUser(null);
       },
     }),

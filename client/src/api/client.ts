@@ -15,7 +15,7 @@ export const BASE_URL =
 
 /**
  * JSON fetch helper for the backend. Sends/expects JSON and throws an Error
- * carrying the HTTP `status` when the response is not ok, so callers can branch
+ * carrying the HTTP status when the response is not ok, so callers can branch
  * on specific failures.
  */
 export async function apiFetch<T>(
@@ -31,7 +31,9 @@ export async function apiFetch<T>(
   });
 
   if (!res.ok) {
-    const error = new Error(`Request failed with status ${res.status}`) as Error & {
+    const error = new Error(
+      `Request failed with status ${res.status}`,
+    ) as Error & {
       status?: number;
     };
     error.status = res.status;

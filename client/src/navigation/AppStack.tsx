@@ -3,13 +3,15 @@ import type { AppStackParamList } from "../types/navigation";
 import type { Role } from "../types/auth";
 import { CaregiverHomeScreen } from "../screens/CaregiverHomeScreen";
 import { ProfessionalHomeScreen } from "../screens/ProfessionalHomeScreen";
+import { ProfileListScreen } from "../screens/ProfileListScreen";
+import { ProfileFormScreen } from "../screens/ProfileFormScreen";
 
 const Stack = createNativeStackNavigator<AppStackParamList>();
 
 /**
  * Navigation shown once a user is signed in. The Home screen is chosen by role:
  * caregivers (cuidador) and healthcare professionals (profissional) each get a
- * distinct home screen.
+ * distinct home screen, and both reach the shared elderly-profile screens.
  */
 export function AppStack({ role }: { role: Role }) {
   const HomeScreen =
@@ -21,6 +23,16 @@ export function AppStack({ role }: { role: Role }) {
         name="Home"
         component={HomeScreen}
         options={{ title: "Início" }}
+      />
+      <Stack.Screen
+        name="ProfileList"
+        component={ProfileListScreen}
+        options={{ title: "Idosos" }}
+      />
+      <Stack.Screen
+        name="ProfileForm"
+        component={ProfileFormScreen}
+        options={{ title: "Perfil" }}
       />
     </Stack.Navigator>
   );

@@ -1,18 +1,18 @@
 import { Router } from "express";
-import { pool, Role, type UserRow } from "../db.js";
 import jwt from "jsonwebtoken";
+import { prisma } from "../lib/prisma.js";
 
 const router = Router();
 
 /**
- * POST /login — authenticate a user by email and password.
+ * POST /login - authenticate a user by email and password.
  *
- * Responds with `{ id, role, token }` on success, 401 on invalid credentials, and 400
- * on a malformed body. The client holds onto the returned
- * user. The password column is never included in the response.
+ * Responds with { id, role, token } on success, 401 on invalid credentials, and 400
+ * on a malformed body. The returned token is a 2h JWT carrying { id, email, role }.
+ * The password is never included in the response.
  *
  * TODO: passwords are stored in plain text for the MVP. Replace the equality
- * check with `bcrypt.compare(password, user.password)` once hashing is added.
+ * check with bcrypt.compare(password, user.password) once hashing is added.
  */
 router.post("/login", async (req, res) => {
   const { email, password } = req.body ?? {};
@@ -21,21 +21,19 @@ router.post("/login", async (req, res) => {
     return res.status(400).json({ error: "email and password are required" });
   }
 
-  const { rows } = await pool.query<UserRow>(
-    "SELECT id, email, password, role FROM users WHERE email = $1",
-    [email],
-  );
-
-  const user = rows[0];
+  const user = await prisma.user.findUnique({ where: { email } });
 
   if (!user || user.password !== password) {
     return res.status(401).json({ error: "invalid credentials" });
   }
-  const token = jwt.sign({id: user.id, email: user.email, role: user.role}, 
+
+  const token = jwt.sign(
+    { id: user.id, email: user.email, role: user.role },
     process.env.JWT_SECRET!,
-    {expiresIn: "2h"}
+    { expiresIn: "2h" },
   );
-  return res.json({id: user.id, role: user.role, token});
+
+  return res.json({ id: user.id, role: user.role, token });
 });
 
 export default router;
