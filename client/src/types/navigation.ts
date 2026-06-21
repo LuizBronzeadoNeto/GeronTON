@@ -3,6 +3,7 @@ export type AuthStackParamList = {
 };
 
 export type AppStackParamList = {
+  Redirect: undefined;
   Home: undefined;
   ProfileList: undefined;
   ProfileForm: { profileId?: number } | undefined;

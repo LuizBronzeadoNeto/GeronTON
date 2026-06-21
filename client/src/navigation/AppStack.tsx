@@ -7,6 +7,7 @@ import { ProfileListScreen } from "../screens/ProfileListScreen";
 import { ProfileFormScreen } from "../screens/ProfileFormScreen";
 import { WeeklyCheckInScreen } from "../screens/WeeklyCheckInScreen";
 import { CheckInDetailScreen } from "../screens/CheckInDetailScreen";
+import { RedirectScreen } from "../screens/RedirectScreen";
 
 const Stack = createNativeStackNavigator<AppStackParamList>();
 
@@ -20,7 +21,12 @@ export function AppStack({ role }: { role: Role }) {
     role === "cuidador" ? CaregiverHomeScreen : ProfessionalHomeScreen;
 
   return (
-    <Stack.Navigator>
+    <Stack.Navigator initialRouteName="Redirect">
+      <Stack.Screen
+        name="Redirect"
+        component={RedirectScreen}
+        options={{ headerShown: false }}
+      />
       <Stack.Screen
         name="Home"
         component={HomeScreen}
