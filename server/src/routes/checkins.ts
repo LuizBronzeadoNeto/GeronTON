@@ -1,4 +1,5 @@
 import { Router, Request, Response } from "express";
+import { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 import { loadProfile } from "../middleware/loadProfile.js";
 
@@ -86,6 +87,107 @@ router.get("/", async (req: Request, res: Response) => {
   });
 
   return res.json(checkIns);
+});
+
+/**
+ * Returns the names of the check-in fields present in `body` that have the wrong
+ * type. Used by the partial update: absent fields are left unchanged, but a
+ * field the caller chose to send must still be a finite number / boolean, just
+ * like on create.
+ */
+function invalidCheckInUpdates(body: Record<string, unknown>): string[] {
+  const invalid: string[] = [];
+
+  for (const field of NUMBER_FIELDS) {
+    const value = body[field];
+    if (
+      value !== undefined &&
+      (typeof value !== "number" || !Number.isFinite(value))
+    ) {
+      invalid.push(field);
+    }
+  }
+
+  for (const field of BOOLEAN_FIELDS) {
+    const value = body[field];
+    if (value !== undefined && typeof value !== "boolean") {
+      invalid.push(field);
+    }
+  }
+
+  return invalid;
+}
+
+/**
+ * GET /perfis/:perfilId/avaliacoes/:avaliacaoId — fetch one check-in.
+ * 404 if it does not belong to the profile.
+ */
+router.get("/:avaliacaoId", async (req: Request, res: Response) => {
+  const checkIn = await prisma.checkIn.findFirst({
+    where: { id: Number(req.params.avaliacaoId), profileId: req.profile!.id },
+  });
+
+  if (!checkIn) {
+    return res.status(404).json({ error: "check-in not found" });
+  }
+
+  return res.json(checkIn);
+});
+
+/**
+ * PUT /perfis/:perfilId/avaliacoes/:avaliacaoId — update a check-in. Only fields
+ * present in the body are changed, and each must keep its type (numbers finite,
+ * the rest booleans), so `false`/`0` are valid. 404 if not found on the profile.
+ */
+router.put("/:avaliacaoId", async (req: Request, res: Response) => {
+  const id = Number(req.params.avaliacaoId);
+  const existing = await prisma.checkIn.findFirst({
+    where: { id, profileId: req.profile!.id },
+  });
+
+  if (!existing) {
+    return res.status(404).json({ error: "check-in not found" });
+  }
+
+  const body = (req.body ?? {}) as Record<string, unknown>;
+
+  const invalid = invalidCheckInUpdates(body);
+  if (invalid.length) {
+    return res
+      .status(400)
+      .json({ error: `invalid fields: ${invalid.join(", ")}` });
+  }
+
+  const data: Prisma.CheckInUpdateInput = {};
+  if (body.falls !== undefined) data.falls = Math.trunc(body.falls as number);
+  if (body.weightLoss !== undefined)
+    data.weightLoss = body.weightLoss as number;
+  for (const field of BOOLEAN_FIELDS) {
+    if (body[field] !== undefined) {
+      data[field] = body[field] as boolean;
+    }
+  }
+
+  const checkIn = await prisma.checkIn.update({ where: { id }, data });
+  return res.json(checkIn);
+});
+
+/**
+ * DELETE /perfis/:perfilId/avaliacoes/:avaliacaoId — remove a check-in.
+ * Responds 204, or 404 if not found on the profile.
+ */
+router.delete("/:avaliacaoId", async (req: Request, res: Response) => {
+  const id = Number(req.params.avaliacaoId);
+  const existing = await prisma.checkIn.findFirst({
+    where: { id, profileId: req.profile!.id },
+  });
+
+  if (!existing) {
+    return res.status(404).json({ error: "check-in not found" });
+  }
+
+  await prisma.checkIn.delete({ where: { id } });
+  return res.status(204).send();
 });
 
 export default router;

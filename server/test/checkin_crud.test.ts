@@ -146,4 +146,78 @@ describe("/perfis/:perfilId/avaliacoes", () => {
 
     expect(res.status).toBe(201);
   });
+
+  it("fetches one check-in by id", async () => {
+    const res = await request(app)
+      .get(`/perfis/${profileId}/avaliacoes/${checkInId}`)
+      .set("Authorization", `Bearer ${caregiverToken}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.id).toBe(checkInId);
+  });
+
+  it("returns 404 for a check-in not on the profile", async () => {
+    const res = await request(app)
+      .get(`/perfis/${profileId}/avaliacoes/999999`)
+      .set("Authorization", `Bearer ${caregiverToken}`);
+
+    expect(res.status).toBe(404);
+  });
+
+  it("updates a check-in", async () => {
+    const res = await request(app)
+      .put(`/perfis/${profileId}/avaliacoes/${checkInId}`)
+      .set("Authorization", `Bearer ${caregiverToken}`)
+      .send({ falls: 5 });
+
+    expect(res.status).toBe(200);
+    expect(res.body.falls).toBe(5);
+  });
+
+  it("rejects an update with a wrongly typed field, 400", async () => {
+    const res = await request(app)
+      .put(`/perfis/${profileId}/avaliacoes/${checkInId}`)
+      .set("Authorization", `Bearer ${caregiverToken}`)
+      .send({ choking: "yes" });
+
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 404 when updating a check-in not on the profile", async () => {
+    const res = await request(app)
+      .put(`/perfis/${profileId}/avaliacoes/999999`)
+      .set("Authorization", `Bearer ${caregiverToken}`)
+      .send({ falls: 1 });
+
+    expect(res.status).toBe(404);
+  });
+
+  it("forbids another caregiver from updating a check-in, 403", async () => {
+    const res = await request(app)
+      .put(`/perfis/${profileId}/avaliacoes/${checkInId}`)
+      .set("Authorization", `Bearer ${otherCaregiverToken}`)
+      .send({ falls: 1 });
+
+    expect(res.status).toBe(403);
+  });
+
+  it("forbids another caregiver from deleting a check-in, 403", async () => {
+    const res = await request(app)
+      .delete(`/perfis/${profileId}/avaliacoes/${checkInId}`)
+      .set("Authorization", `Bearer ${otherCaregiverToken}`);
+
+    expect(res.status).toBe(403);
+  });
+
+  it("deletes a check-in, then 404 on re-fetch", async () => {
+    const del = await request(app)
+      .delete(`/perfis/${profileId}/avaliacoes/${checkInId}`)
+      .set("Authorization", `Bearer ${caregiverToken}`);
+    expect(del.status).toBe(204);
+
+    const res = await request(app)
+      .get(`/perfis/${profileId}/avaliacoes/${checkInId}`)
+      .set("Authorization", `Bearer ${caregiverToken}`);
+    expect(res.status).toBe(404);
+  });
 });
