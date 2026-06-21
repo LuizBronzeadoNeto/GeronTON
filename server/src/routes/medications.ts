@@ -9,7 +9,7 @@ const router = Router({ mergeParams: true });
 router.use(loadProfile);
 
 /**
- * POST /perfis/:perfilId/medicamentos - add a medication to the profile.
+ * POST /perfis/:perfilId/medicamentos — add a medication to the profile.
  * Responds 201 with the created medication, or 400 on missing fields.
  */
 router.post("/", async (req: Request, res: Response) => {
@@ -36,7 +36,7 @@ router.post("/", async (req: Request, res: Response) => {
 });
 
 /**
- * GET /perfis/:perfilId/medicamentos - list the profile's medications.
+ * GET /perfis/:perfilId/medicamentos — list the profile's medications.
  */
 router.get("/", async (req: Request, res: Response) => {
   const medications = await prisma.medication.findMany({
@@ -48,7 +48,7 @@ router.get("/", async (req: Request, res: Response) => {
 });
 
 /**
- * GET /perfis/:perfilId/medicamentos/:medicamentoId - fetch one medication.
+ * GET /perfis/:perfilId/medicamentos/:medicamentoId — fetch one medication.
  * 404 if it does not belong to the profile.
  */
 router.get("/:medicamentoId", async (req: Request, res: Response) => {
@@ -64,7 +64,7 @@ router.get("/:medicamentoId", async (req: Request, res: Response) => {
 });
 
 /**
- * PUT /perfis/:perfilId/medicamentos/:medicamentoId - update a medication.
+ * PUT /perfis/:perfilId/medicamentos/:medicamentoId — update a medication.
  * Only fields present in the body are changed. 404 if not found on the profile.
  */
 router.put("/:medicamentoId", async (req: Request, res: Response) => {
@@ -92,7 +92,7 @@ router.put("/:medicamentoId", async (req: Request, res: Response) => {
 });
 
 /**
- * DELETE /perfis/:perfilId/medicamentos/:medicamentoId - remove a medication.
+ * DELETE /perfis/:perfilId/medicamentos/:medicamentoId — remove a medication.
  * Responds 204, or 404 if not found on the profile.
  */
 router.delete("/:medicamentoId", async (req: Request, res: Response) => {

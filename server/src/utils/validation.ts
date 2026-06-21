@@ -1,5 +1,5 @@
 /**
- * Returns the names of the required fields that are absent from body (missing,
+ * Returns the names of the required fields that are absent from `body` (missing,
  * null, or an empty string). Used for the MVP's light request validation so each
  * route can report which fields are required without repeating the checks.
  */

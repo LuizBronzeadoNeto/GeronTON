@@ -72,17 +72,26 @@ export function ProfileListScreen({ navigation }: Props) {
           )
         }
         renderItem={({ item }) => (
-          <Pressable
-            testID={`profile-item-${item.id}`}
-            style={styles.item}
-            onPress={() =>
-              navigation.navigate("ProfileForm", { profileId: item.id })
-            }
-          >
-            <Text style={styles.itemName}>
-              {item.firstName} {item.lastName}
-            </Text>
-          </Pressable>
+          <View style={styles.item}>
+            <Pressable
+              testID={`profile-item-${item.id}`}
+              style={styles.itemName}
+              onPress={() =>
+                navigation.navigate("ProfileForm", { profileId: item.id })
+              }
+            >
+              <Text style={styles.itemNameText}>
+                {item.firstName} {item.lastName}
+              </Text>
+            </Pressable>
+            <Button
+              testID={`profile-checkin-${item.id}`}
+              title="Check-in"
+              onPress={() =>
+                navigation.navigate("WeeklyCheckIn", { profileId: item.id })
+              }
+            />
+          </View>
         )}
       />
     </View>
@@ -105,11 +114,19 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   item: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
     paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
   },
   itemName: {
+    flex: 1,
+    paddingVertical: 8,
+  },
+  itemNameText: {
     fontSize: 18,
   },
 });

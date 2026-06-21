@@ -9,7 +9,7 @@ const router = Router({ mergeParams: true });
 router.use(loadProfile);
 
 /**
- * POST /perfis/:perfilId/rotinas - add a routine entry to the profile.
+ * POST /perfis/:perfilId/rotinas — add a routine entry to the profile.
  * Responds 201 with the created routine, or 400 on missing fields.
  */
 router.post("/", async (req: Request, res: Response) => {
@@ -36,7 +36,7 @@ router.post("/", async (req: Request, res: Response) => {
 });
 
 /**
- * GET /perfis/:perfilId/rotinas - list the profile's routine entries.
+ * GET /perfis/:perfilId/rotinas — list the profile's routine entries.
  */
 router.get("/", async (req: Request, res: Response) => {
   const routines = await prisma.routine.findMany({
@@ -48,7 +48,7 @@ router.get("/", async (req: Request, res: Response) => {
 });
 
 /**
- * GET /perfis/:perfilId/rotinas/:rotinaId - fetch one routine entry.
+ * GET /perfis/:perfilId/rotinas/:rotinaId — fetch one routine entry.
  * 404 if it does not belong to the profile.
  */
 router.get("/:rotinaId", async (req: Request, res: Response) => {
@@ -64,7 +64,7 @@ router.get("/:rotinaId", async (req: Request, res: Response) => {
 });
 
 /**
- * PUT /perfis/:perfilId/rotinas/:rotinaId - update a routine entry. Only fields
+ * PUT /perfis/:perfilId/rotinas/:rotinaId — update a routine entry. Only fields
  * present in the body are changed. 404 if not found on the profile.
  */
 router.put("/:rotinaId", async (req: Request, res: Response) => {
@@ -93,7 +93,7 @@ router.put("/:rotinaId", async (req: Request, res: Response) => {
 });
 
 /**
- * DELETE /perfis/:perfilId/rotinas/:rotinaId - remove a routine entry.
+ * DELETE /perfis/:perfilId/rotinas/:rotinaId — remove a routine entry.
  * Responds 204, or 404 if not found on the profile.
  */
 router.delete("/:rotinaId", async (req: Request, res: Response) => {
