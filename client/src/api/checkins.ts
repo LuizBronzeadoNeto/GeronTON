@@ -36,3 +36,32 @@ export async function createCheckIn(
   );
   return data;
 }
+
+export async function getCheckIn(
+  profileId: number,
+  id: number,
+): Promise<CheckIn> {
+  const { data } = await http.get<CheckIn>(
+    `/perfis/${profileId}/avaliacoes/${id}`,
+  );
+  return data;
+}
+
+export async function updateCheckIn(
+  profileId: number,
+  id: number,
+  input: CheckInInput,
+): Promise<CheckIn> {
+  const { data } = await http.put<CheckIn>(
+    `/perfis/${profileId}/avaliacoes/${id}`,
+    input,
+  );
+  return data;
+}
+
+export async function deleteCheckIn(
+  profileId: number,
+  id: number,
+): Promise<void> {
+  await http.delete(`/perfis/${profileId}/avaliacoes/${id}`);
+}
