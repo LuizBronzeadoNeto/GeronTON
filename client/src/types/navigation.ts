@@ -7,4 +7,5 @@ export type AppStackParamList = {
   ProfileList: undefined;
   ProfileForm: { profileId?: number } | undefined;
   WeeklyCheckIn: { profileId: number };
+  CheckInDetail: { profileId: number; checkInId: number };
 };

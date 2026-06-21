@@ -99,4 +99,34 @@ describe("WeeklyCheckInScreen", () => {
       expect(screen.getByTestId("checkin-error")).toBeTruthy(),
     );
   });
+
+  it("opens a history item's detail when pressed", async () => {
+    const created: CheckIn = {
+      id: 7,
+      profileId: 9,
+      date: "2026-06-15T00:00:00.000Z",
+      falls: 1,
+      weightLoss: 0,
+      choking: false,
+      gaitImpairment: false,
+      violenceSign: false,
+      irregularSleep: false,
+      socialIsolation: false,
+      failedComms: false,
+      memoryLoss: false,
+    };
+    jest.mocked(listCheckIns).mockReset().mockResolvedValue([created]);
+
+    const { navigation } = renderScreen(9);
+    await waitFor(() =>
+      expect(screen.getByTestId("checkin-history-item-7")).toBeTruthy(),
+    );
+
+    fireEvent.press(screen.getByTestId("checkin-history-item-7"));
+
+    expect(navigation.navigate).toHaveBeenCalledWith("CheckInDetail", {
+      profileId: 9,
+      checkInId: 7,
+    });
+  });
 });

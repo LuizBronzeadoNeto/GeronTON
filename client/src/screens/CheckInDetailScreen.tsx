@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Button,
-  Pressable,
   ScrollView,
   StyleSheet,
   Switch,
@@ -13,13 +12,13 @@ import {
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { AppStackParamList } from "../types/navigation";
 import {
-  createCheckIn,
-  listCheckIns,
-  type CheckIn,
+  deleteCheckIn,
+  getCheckIn,
+  updateCheckIn,
   type CheckInInput,
 } from "../api/checkins";
 
-type Props = NativeStackScreenProps<AppStackParamList, "WeeklyCheckIn">;
+type Props = NativeStackScreenProps<AppStackParamList, "CheckInDetail">;
 
 const YES_NO_QUESTIONS = [
   { key: "choking", label: "Engasgos ao comer ou beber?" },
@@ -44,32 +43,41 @@ const EMPTY_TOGGLES: Record<BooleanKey, boolean> = {
 };
 
 /**
- * Weekly check-in for an elderly profile. The route carries the `profileId`.
- * The form captures two direct (numeric) questions and seven yes/no questions,
- * submits them, and lists the profile's recent check-in history below. The
- * layout is intentionally minimal — the visual design comes later from Figma.
+ * View and edit a single weekly check-in. The route carries the `profileId` and
+ * the `checkInId`; the record is loaded, shown in the same form the create
+ * screen uses, and can be saved or deleted. The layout is intentionally minimal.
  */
-export function WeeklyCheckInScreen({ navigation, route }: Props) {
-  const { profileId } = route.params;
+export function CheckInDetailScreen({ navigation, route }: Props) {
+  const { profileId, checkInId } = route.params;
 
   const [falls, setFalls] = useState("");
   const [weightLoss, setWeightLoss] = useState("");
   const [toggles, setToggles] =
     useState<Record<BooleanKey, boolean>>(EMPTY_TOGGLES);
 
-  const [history, setHistory] = useState<CheckIn[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
-    listCheckIns(profileId)
-      .then((data) => {
-        if (active) setHistory(data);
+    getCheckIn(profileId, checkInId)
+      .then((checkIn) => {
+        if (!active) return;
+        setFalls(String(checkIn.falls));
+        setWeightLoss(String(checkIn.weightLoss));
+        setToggles({
+          choking: checkIn.choking,
+          gaitImpairment: checkIn.gaitImpairment,
+          violenceSign: checkIn.violenceSign,
+          irregularSleep: checkIn.irregularSleep,
+          socialIsolation: checkIn.socialIsolation,
+          failedComms: checkIn.failedComms,
+          memoryLoss: checkIn.memoryLoss,
+        });
       })
       .catch(() => {
-        if (active) setError("Não foi possível carregar o histórico.");
+        if (active) setError("Não foi possível carregar o check-in.");
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -77,13 +85,13 @@ export function WeeklyCheckInScreen({ navigation, route }: Props) {
     return () => {
       active = false;
     };
-  }, [profileId]);
+  }, [profileId, checkInId]);
 
   function setToggle(key: BooleanKey, value: boolean) {
     setToggles((current) => ({ ...current, [key]: value }));
   }
 
-  async function handleSubmit() {
+  async function handleSave() {
     setSaving(true);
     setError(null);
 
@@ -94,12 +102,8 @@ export function WeeklyCheckInScreen({ navigation, route }: Props) {
     };
 
     try {
-      await createCheckIn(profileId, input);
-      setFalls("");
-      setWeightLoss("");
-      setToggles(EMPTY_TOGGLES);
-      const data = await listCheckIns(profileId);
-      setHistory(data);
+      await updateCheckIn(profileId, checkInId, input);
+      navigation.goBack();
     } catch {
       setError("Não foi possível salvar o check-in.");
     } finally {
@@ -107,10 +111,32 @@ export function WeeklyCheckInScreen({ navigation, route }: Props) {
     }
   }
 
+  async function handleDelete() {
+    setSaving(true);
+    setError(null);
+    try {
+      await deleteCheckIn(profileId, checkInId);
+      navigation.goBack();
+    } catch {
+      setError("Não foi possível excluir o check-in.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <ActivityIndicator
+        testID="checkin-detail-loading"
+        style={styles.loading}
+      />
+    );
+  }
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text testID="checkin-title" style={styles.title}>
-        Check-in semanal
+      <Text testID="checkin-detail-title" style={styles.title}>
+        Editar check-in
       </Text>
 
       <Text style={styles.label}>Quantas quedas nesta semana?</Text>
@@ -145,45 +171,26 @@ export function WeeklyCheckInScreen({ navigation, route }: Props) {
       ))}
 
       {error ? (
-        <Text testID="checkin-error" style={styles.error}>
+        <Text testID="checkin-detail-error" style={styles.error}>
           {error}
         </Text>
       ) : null}
 
       <Button
-        testID="checkin-submit"
-        title="Salvar check-in"
-        onPress={handleSubmit}
+        testID="checkin-detail-save"
+        title="Salvar"
+        onPress={handleSave}
         disabled={saving}
       />
 
-      <Text style={styles.subtitle}>Histórico</Text>
-      {loading ? <ActivityIndicator testID="checkin-loading" /> : null}
-      {!loading && history.length === 0 ? (
-        <Text testID="checkin-history-empty" style={styles.empty}>
-          Nenhum check-in registrado.
-        </Text>
-      ) : null}
-
-      <View testID="checkin-history">
-        {history.map((item) => (
-          <Pressable
-            key={item.id}
-            testID={`checkin-history-item-${item.id}`}
-            style={styles.historyItem}
-            onPress={() =>
-              navigation.navigate("CheckInDetail", {
-                profileId,
-                checkInId: item.id,
-              })
-            }
-          >
-            <Text style={styles.historyDate}>{item.date.slice(0, 10)}</Text>
-            <Text style={styles.historySummary}>
-              Quedas: {item.falls} · Perda de peso: {item.weightLoss} kg
-            </Text>
-          </Pressable>
-        ))}
+      <View style={styles.deleteButton}>
+        <Button
+          testID="checkin-delete"
+          title="Excluir"
+          color="#c0392b"
+          onPress={handleDelete}
+          disabled={saving}
+        />
       </View>
     </ScrollView>
   );
@@ -194,16 +201,13 @@ const styles = StyleSheet.create({
     padding: 24,
     gap: 8,
   },
+  loading: {
+    flex: 1,
+  },
   title: {
     fontSize: 24,
     fontWeight: "bold",
     marginBottom: 12,
-  },
-  subtitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginTop: 24,
-    marginBottom: 8,
   },
   label: {
     fontSize: 14,
@@ -232,22 +236,7 @@ const styles = StyleSheet.create({
     color: "red",
     textAlign: "center",
   },
-  empty: {
-    fontSize: 16,
-    color: "#555",
-    textAlign: "center",
-  },
-  historyItem: {
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-  },
-  historyDate: {
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  historySummary: {
-    fontSize: 14,
-    color: "#555",
+  deleteButton: {
+    marginTop: 12,
   },
 });
