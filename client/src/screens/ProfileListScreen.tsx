@@ -84,13 +84,33 @@ export function ProfileListScreen({ navigation }: Props) {
                 {item.firstName} {item.lastName}
               </Text>
             </Pressable>
-            <Button
-              testID={`profile-checkin-${item.id}`}
-              title="Check-in"
-              onPress={() =>
-                navigation.navigate("WeeklyCheckIn", { profileId: item.id })
-              }
-            />
+            <View style={styles.itemActions}>
+              <Button
+                testID={`profile-checkin-${item.id}`}
+                title="Check-in"
+                onPress={() =>
+                  navigation.navigate("WeeklyCheckIn", { profileId: item.id })
+                }
+              />
+              <Button
+                testID={`profile-medication-${item.id}`}
+                title="Medicação"
+                onPress={() =>
+                  navigation.navigate("MedicationInventory", {
+                    profileId: item.id,
+                  })
+                }
+              />
+              <Button
+                testID={`profile-routine-${item.id}`}
+                title="Rotina"
+                onPress={() =>
+                  navigation.navigate("RoutineRegistration", {
+                    profileId: item.id,
+                  })
+                }
+              />
+            </View>
           </View>
         )}
       />
@@ -128,5 +148,9 @@ const styles = StyleSheet.create({
   },
   itemNameText: {
     fontSize: 18,
+  },
+  itemActions: {
+    flexDirection: "row",
+    gap: 8,
   },
 });

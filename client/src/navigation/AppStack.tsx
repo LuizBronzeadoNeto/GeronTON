@@ -6,6 +6,10 @@ import { ProfessionalHomeScreen } from "../screens/ProfessionalHomeScreen";
 import { ProfileListScreen } from "../screens/ProfileListScreen";
 import { ProfileFormScreen } from "../screens/ProfileFormScreen";
 import { WeeklyCheckInScreen } from "../screens/WeeklyCheckInScreen";
+import { MedicationInventoryScreen } from "../screens/MedicationInventoryScreen";
+import { MedicationFormScreen } from "../screens/MedicationFormScreen";
+import { RoutineRegistrationScreen } from "../screens/RoutineRegistrationScreen";
+import { RoutineFormScreen } from "../screens/RoutineFormScreen";
 
 const Stack = createNativeStackNavigator<AppStackParamList>();
 
@@ -39,6 +43,26 @@ export function AppStack({ role }: { role: Role }) {
         name="WeeklyCheckIn"
         component={WeeklyCheckInScreen}
         options={{ title: "Check-in semanal" }}
+      />
+      <Stack.Screen
+        name="MedicationInventory"
+        component={MedicationInventoryScreen}
+        options={{ title: "Medicação contínua" }}
+      />
+      <Stack.Screen
+        name="MedicationForm"
+        component={MedicationFormScreen}
+        options={{ title: "Medicamento" }}
+      />
+      <Stack.Screen
+        name="RoutineRegistration"
+        component={RoutineRegistrationScreen}
+        options={{ title: "Rotina e aspectos" }}
+      />
+      <Stack.Screen
+        name="RoutineForm"
+        component={RoutineFormScreen}
+        options={{ title: "Rotina" }}
       />
     </Stack.Navigator>
   );

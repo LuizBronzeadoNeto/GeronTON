@@ -7,4 +7,8 @@ export type AppStackParamList = {
   ProfileList: undefined;
   ProfileForm: { profileId?: number } | undefined;
   WeeklyCheckIn: { profileId: number };
+  MedicationInventory: { profileId: number };
+  MedicationForm: { profileId: number; medicationId?: number };
+  RoutineRegistration: { profileId: number };
+  RoutineForm: { profileId: number; routineId?: number };
 };
