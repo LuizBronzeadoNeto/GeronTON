@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Button,
@@ -62,22 +63,24 @@ export function WeeklyCheckInScreen({ navigation, route }: Props) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let active = true;
-    listCheckIns(profileId)
-      .then((data) => {
-        if (active) setHistory(data);
-      })
-      .catch(() => {
-        if (active) setError("Não foi possível carregar o histórico.");
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, [profileId]);
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      listCheckIns(profileId)
+        .then((data) => {
+          if (active) setHistory(data);
+        })
+        .catch(() => {
+          if (active) setError("Não foi possível carregar o histórico.");
+        })
+        .finally(() => {
+          if (active) setLoading(false);
+        });
+      return () => {
+        active = false;
+      };
+    }, [profileId]),
+  );
 
   function setToggle(key: BooleanKey, value: boolean) {
     setToggles((current) => ({ ...current, [key]: value }));
@@ -108,7 +111,7 @@ export function WeeklyCheckInScreen({ navigation, route }: Props) {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView contentContainerStyle={styles.container} testID="checkin">
       <Text testID="checkin-title" style={styles.title}>
         Check-in semanal
       </Text>

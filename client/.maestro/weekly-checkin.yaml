@@ -1,0 +1,65 @@
+appId: com.geronton.client
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "login-email"
+- inputText: "cuidador@demo.com"
+- tapOn:
+    id: "login-password"
+- inputText: "senha123"
+- hideKeyboard
+- tapOn:
+    id: "login-submit"
+- assertVisible:
+    id: "checkin"
+- tapOn:
+    id: "checkin-falls"
+- inputText: "2"
+- tapOn:
+    id: "checkin-weightLoss"
+- inputText: "15"
+- hideKeyboard
+- tapOn:
+    id: "checkin-choking"
+- tapOn:
+    id: "checkin-submit"
+- assertVisible:
+    id: "checkin-history"
+- assertVisible:
+    text: "\\d{4}-\\d{2}-\\d{2}"
+- assertVisible:
+    text: "Quedas: 2 · Perda de peso: 15 kg"
+- tapOn:
+    text: "\\d{4}-\\d{2}-\\d{2}"
+- assertVisible:
+    text: "15"
+- assertVisible:
+    text: "0"
+- assertVisible:
+    id: "checkin-choking"
+    checked: true
+#editing
+- tapOn:
+    id: "checkin-weightLoss"
+- eraseText: 2
+- inputText: "20"
+- hideKeyboard
+- tapOn:
+    id: "checkin-memoryLoss"
+- tapOn:
+    id: "checkin-detail-save"
+- assertVisible:
+    text: "\\d{4}-\\d{2}-\\d{2}"
+- assertVisible:
+    text: "Quedas: 2 · Perda de peso: 20 kg"
+#deleting
+- tapOn:
+    text: "\\d{4}-\\d{2}-\\d{2}"
+- assertVisible:
+    id: "checkin-memoryLoss"
+    checked: true
+- tapOn:
+    id: "checkin-delete"
+- assertNotVisible:
+    text: "\\d{4}-\\d{2}-\\d{2}"

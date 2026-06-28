@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Button,
@@ -59,33 +60,35 @@ export function CheckInDetailScreen({ navigation, route }: Props) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let active = true;
-    getCheckIn(profileId, checkInId)
-      .then((checkIn) => {
-        if (!active) return;
-        setFalls(String(checkIn.falls));
-        setWeightLoss(String(checkIn.weightLoss));
-        setToggles({
-          choking: checkIn.choking,
-          gaitImpairment: checkIn.gaitImpairment,
-          violenceSign: checkIn.violenceSign,
-          irregularSleep: checkIn.irregularSleep,
-          socialIsolation: checkIn.socialIsolation,
-          failedComms: checkIn.failedComms,
-          memoryLoss: checkIn.memoryLoss,
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      getCheckIn(profileId, checkInId)
+        .then((checkIn) => {
+          if (!active) return;
+          setFalls(String(checkIn.falls));
+          setWeightLoss(String(checkIn.weightLoss));
+          setToggles({
+            choking: checkIn.choking,
+            gaitImpairment: checkIn.gaitImpairment,
+            violenceSign: checkIn.violenceSign,
+            irregularSleep: checkIn.irregularSleep,
+            socialIsolation: checkIn.socialIsolation,
+            failedComms: checkIn.failedComms,
+            memoryLoss: checkIn.memoryLoss,
+          });
+        })
+        .catch(() => {
+          if (active) setError("Não foi possível carregar o check-in.");
+        })
+        .finally(() => {
+          if (active) setLoading(false);
         });
-      })
-      .catch(() => {
-        if (active) setError("Não foi possível carregar o check-in.");
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, [profileId, checkInId]);
+      return () => {
+        active = false;
+      };
+    }, [profileId, checkInId]),
+  );
 
   function setToggle(key: BooleanKey, value: boolean) {
     setToggles((current) => ({ ...current, [key]: value }));
