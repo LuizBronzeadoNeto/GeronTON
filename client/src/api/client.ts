@@ -42,3 +42,4 @@ export async function apiFetch<T>(
 
   return (await res.json()) as T;
 }
+console.log("BASE_URL:", BASE_URL);

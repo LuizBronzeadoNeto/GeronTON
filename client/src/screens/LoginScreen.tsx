@@ -29,7 +29,7 @@ export function LoginScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} testID="login-screen">
       <Text style={styles.title}>GeronTON</Text>
 
       <TextInput
