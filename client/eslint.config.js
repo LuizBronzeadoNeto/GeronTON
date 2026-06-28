@@ -13,4 +13,23 @@ module.exports = defineConfig([
   {
     ignores: ["dist/**", ".expo/**"],
   },
+  {
+    files: ["e2e/**/*.js"],
+    languageOptions: {
+      globals: {
+        describe: "readonly",
+        beforeAll: "readonly",
+        beforeEach: "readonly",
+        afterAll: "readonly",
+        afterEach: "readonly",
+        it: "readonly",
+        test: "readonly",
+        expect: "readonly",
+        device: "readonly",
+        element: "readonly",
+        by: "readonly",
+        waitFor: "readonly",
+      },
+    },
+  },
 ]);
