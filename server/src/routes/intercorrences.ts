@@ -79,7 +79,7 @@ router.delete("/:id", async (req: Request, res: Response) => {
 
     return res.status(204).send();
   } catch (err) {
-    console.error("DELETE /intercorrences/:id error:", err);
+    console.error("DELETE /intercorrencias/:id error:", err);
     return res.status(500).json({ error: "Internal server error." });
   }
 });
