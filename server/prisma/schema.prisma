@@ -12,6 +12,17 @@ enum Role {
   profissional
 }
 
+enum EventType {
+  fall
+  fever
+  choking
+  breathing_difficulties
+  bleeding
+  confusion
+  chest_pain
+  other
+}
+
 model User {
   id       Int       @id @default(autoincrement())
   email    String    @unique
@@ -34,6 +45,7 @@ model Profile {
   medications       Medication[]
   routines          Routine[]
   checkIns          CheckIn[]
+  intercorrences    Intercorrence[]
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
 
@@ -83,4 +95,14 @@ model CheckIn {
   memoryLoss       Boolean
 
   @@map("check_ins")
+}
+
+model Intercorrence {
+  id               Int      @id @default(autoincrement())
+  profileId        Int
+  profile          Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  date             DateTime @default(now())
+  eventType        EventType
+  isCritical       Boolean  @default(false)
+  description      String
 }
