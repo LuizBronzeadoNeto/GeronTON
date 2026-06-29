@@ -42,6 +42,20 @@ router.post("/", async (req: Request, res: Response) => {
   return res.status(201).json(intercorrence);
 });
 
+router.get("/", async (req: Request, res: Response) => {
+  try {
+    const intercorrences = await prisma.intercorrence.findMany({
+      where: { profileId: req.profile!.id },
+      orderBy: { date: "desc" },
+    });
+
+    return res.json(intercorrences);
+  } catch (err) {
+    console.error("GET /intercorrencias error:", err);
+    return res.status(500).json({ error: "Internal server error." });
+  }
+});
+
 router.get("/:id", async (req: Request, res: Response) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id))
