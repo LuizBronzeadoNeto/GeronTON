@@ -15,6 +15,7 @@ import {
   updateProfile,
   type ProfileInput,
 } from "../api/profiles";
+import { RiskStatusBadge } from "../components/RiskStatusBadge";
 
 type Props = NativeStackScreenProps<AppStackParamList, "ProfileForm">;
 
@@ -111,6 +112,8 @@ export function ProfileFormScreen({ navigation, route }: Props) {
       <Text testID="profile-form-title" style={styles.title}>
         {isEditing ? "Editar idoso" : "Cadastrar idoso"}
       </Text>
+
+      {isEditing ? <RiskStatusBadge profileId={profileId} /> : null}
 
       <Text style={styles.label}>Nome</Text>
       <TextInput

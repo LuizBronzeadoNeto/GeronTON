@@ -14,8 +14,35 @@ import {
   updateCheckIn,
   type CheckIn,
 } from "../api/checkins";
+import {
+  getRiskStatus,
+  subscribeRiskStatusInvalidation,
+  type RiskStatus,
+} from "../api/risk";
 
 jest.mock("../api/checkins");
+jest.mock("../api/risk");
+jest.mock("@react-navigation/native", () => {
+  const actual = jest.requireActual<typeof import("@react-navigation/native")>(
+    "@react-navigation/native",
+  );
+  const React = jest.requireActual<typeof import("react")>("react");
+  return {
+    ...actual,
+    useFocusEffect: (callback: () => void) => {
+      React.useEffect(() => {
+        callback();
+      }, [callback]);
+    },
+  };
+});
+
+const MOCK_RISK: RiskStatus = {
+  profileId: 9,
+  status: "low",
+  score: 0,
+  evaluatedAt: "2026-06-15T00:00:00.000Z",
+};
 
 type Props = NativeStackScreenProps<AppStackParamList, "CheckInDetail">;
 
@@ -51,6 +78,11 @@ describe("CheckInDetailScreen", () => {
       .mockReset()
       .mockResolvedValue({} as never);
     jest.mocked(deleteCheckIn).mockReset().mockResolvedValue(undefined);
+    jest.mocked(getRiskStatus).mockReset().mockResolvedValue(MOCK_RISK);
+    jest
+      .mocked(subscribeRiskStatusInvalidation)
+      .mockReset()
+      .mockReturnValue(() => {});
   });
 
   it("loads the check-in and populates the form", async () => {

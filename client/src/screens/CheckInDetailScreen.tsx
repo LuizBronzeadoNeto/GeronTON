@@ -18,6 +18,7 @@ import {
   updateCheckIn,
   type CheckInInput,
 } from "../api/checkins";
+import { RiskStatusBadge } from "../components/RiskStatusBadge";
 
 type Props = NativeStackScreenProps<AppStackParamList, "CheckInDetail">;
 
@@ -141,6 +142,8 @@ export function CheckInDetailScreen({ navigation, route }: Props) {
       <Text testID="checkin-detail-title" style={styles.title}>
         Editar check-in
       </Text>
+
+      <RiskStatusBadge profileId={profileId} />
 
       <Text style={styles.label}>Quantas quedas nesta semana?</Text>
       <TextInput

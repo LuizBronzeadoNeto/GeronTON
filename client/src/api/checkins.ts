@@ -1,4 +1,5 @@
 import { http } from "./http";
+import { invalidateRiskStatus } from "./risk";
 
 export interface CheckIn {
   id: number;
@@ -34,6 +35,7 @@ export async function createCheckIn(
     `/perfis/${profileId}/avaliacoes`,
     input,
   );
+  invalidateRiskStatus(profileId);
   return data;
 }
 
@@ -56,6 +58,7 @@ export async function updateCheckIn(
     `/perfis/${profileId}/avaliacoes/${id}`,
     input,
   );
+  invalidateRiskStatus(profileId);
   return data;
 }
 
@@ -64,4 +67,5 @@ export async function deleteCheckIn(
   id: number,
 ): Promise<void> {
   await http.delete(`/perfis/${profileId}/avaliacoes/${id}`);
+  invalidateRiskStatus(profileId);
 }

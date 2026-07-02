@@ -8,6 +8,7 @@ import medicationsRouter from "./medications.js";
 import routinesRouter from "./routines.js";
 import checkinsRouter from "./checkins.js";
 import intercorrencesRouter from "../routes/intercorrences.js";
+import riskRouter from "./risk.js";
 
 const router = Router();
 
@@ -17,6 +18,7 @@ router.use("/:perfilId/medicamentos", medicationsRouter);
 router.use("/:perfilId/rotinas", routinesRouter);
 router.use("/:perfilId/avaliacoes", checkinsRouter);
 router.use("/:perfilId/intercorrencias", intercorrencesRouter);
+router.use("/:perfilId/risco", riskRouter);
 
 /**
  * POST /perfis — create an elderly profile.

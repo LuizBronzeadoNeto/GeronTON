@@ -17,14 +17,16 @@ import {
 
 jest.mock("../api/medications");
 jest.mock("@react-navigation/native", () => {
-  const actual = jest.requireActual("@react-navigation/native");
-  const React = jest.requireActual("react");
+  const actual = jest.requireActual<typeof import("@react-navigation/native")>(
+    "@react-navigation/native",
+  );
+  const React = jest.requireActual<typeof import("react")>("react");
   return {
     ...actual,
     useFocusEffect: (callback: () => void) => {
       React.useEffect(() => {
         callback();
-      }, []);
+      }, [callback]);
     },
   };
 });

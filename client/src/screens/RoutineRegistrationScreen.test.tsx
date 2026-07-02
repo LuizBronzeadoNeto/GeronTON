@@ -13,14 +13,16 @@ import { deleteRoutine, listRoutines, type Routine } from "../api/routines";
 
 jest.mock("../api/routines");
 jest.mock("@react-navigation/native", () => {
-  const actual = jest.requireActual("@react-navigation/native");
-  const React = jest.requireActual("react");
+  const actual = jest.requireActual<typeof import("@react-navigation/native")>(
+    "@react-navigation/native",
+  );
+  const React = jest.requireActual<typeof import("react")>("react");
   return {
     ...actual,
     useFocusEffect: (callback: () => void) => {
       React.useEffect(() => {
         callback();
-      }, []);
+      }, [callback]);
     },
   };
 });

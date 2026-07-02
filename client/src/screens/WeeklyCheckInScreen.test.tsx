@@ -9,8 +9,35 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { WeeklyCheckInScreen } from "./WeeklyCheckInScreen";
 import type { AppStackParamList } from "../types/navigation";
 import { createCheckIn, listCheckIns, type CheckIn } from "../api/checkins";
+import {
+  getRiskStatus,
+  subscribeRiskStatusInvalidation,
+  type RiskStatus,
+} from "../api/risk";
 
 jest.mock("../api/checkins");
+jest.mock("../api/risk");
+jest.mock("@react-navigation/native", () => {
+  const actual = jest.requireActual<typeof import("@react-navigation/native")>(
+    "@react-navigation/native",
+  );
+  const React = jest.requireActual<typeof import("react")>("react");
+  return {
+    ...actual,
+    useFocusEffect: (callback: () => void) => {
+      React.useEffect(() => {
+        callback();
+      }, [callback]);
+    },
+  };
+});
+
+const MOCK_RISK: RiskStatus = {
+  profileId: 5,
+  status: "low",
+  score: 0,
+  evaluatedAt: "2026-06-15T00:00:00.000Z",
+};
 
 type Props = NativeStackScreenProps<AppStackParamList, "WeeklyCheckIn">;
 
@@ -30,6 +57,11 @@ describe("WeeklyCheckInScreen", () => {
       .mocked(createCheckIn)
       .mockReset()
       .mockResolvedValue({} as never);
+    jest.mocked(getRiskStatus).mockReset().mockResolvedValue(MOCK_RISK);
+    jest
+      .mocked(subscribeRiskStatusInvalidation)
+      .mockReset()
+      .mockReturnValue(() => {});
   });
 
   it("loads the profile's history on mount", async () => {

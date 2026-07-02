@@ -19,6 +19,7 @@ import {
   type CheckIn,
   type CheckInInput,
 } from "../api/checkins";
+import { RiskStatusBadge } from "../components/RiskStatusBadge";
 
 type Props = NativeStackScreenProps<AppStackParamList, "WeeklyCheckIn">;
 
@@ -115,6 +116,8 @@ export function WeeklyCheckInScreen({ navigation, route }: Props) {
       <Text testID="checkin-title" style={styles.title}>
         Check-in semanal
       </Text>
+
+      <RiskStatusBadge profileId={profileId} />
 
       <Text style={styles.label}>Quantas quedas nesta semana?</Text>
       <TextInput
