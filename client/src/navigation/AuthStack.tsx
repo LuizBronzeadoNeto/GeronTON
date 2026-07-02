@@ -13,7 +13,7 @@ export function AuthStack() {
       <Stack.Screen
         name="Login"
         component={LoginScreen}
-        options={{ title: "Entrar" }}
+        options={{ headerShown: false }}
       />
     </Stack.Navigator>
   );

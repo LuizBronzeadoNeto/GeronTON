@@ -1,22 +1,41 @@
 import { useState } from "react";
 import {
   ActivityIndicator,
-  Button,
+  Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../context/AuthContext";
+import { ErrorToast } from "../components/ErrorToast";
+
+const COLORS = {
+  primary: "#1A65B5",
+  heading: "#001413",
+  subtitle: "#999999",
+  placeholder: "#B3B3B3",
+  border: "#CCCCCC",
+  footerText: "#191A1D",
+  white: "#FFFFFF",
+};
 
 /**
- * Email + password form. On success the AuthProvider stores the user, which
- * flips RootNavigator to the app stack; on failure it shows the error message.
+ * Email + password form styled after the GeronTON Figma design: branded logo,
+ * labeled inputs with a password visibility toggle, primary "Entrar" button and
+ * a sign-up footer. On success the AuthProvider stores the user, which flips
+ * RootNavigator to the app stack; on failure a dismissible error toast floats
+ * over the top of the form. The "Esqueceu a senha?" and "Cadastre-se agora!"
+ * links are visual-only for now — those flows do not exist yet.
  */
 export function LoginScreen() {
   const { signIn, isSigningIn } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit() {
@@ -28,71 +47,213 @@ export function LoginScreen() {
     }
   }
 
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>GeronTON</Text>
+  const canSubmit = !isSigningIn && email !== "" && password !== "";
 
-      <TextInput
-        testID="login-email"
-        style={styles.input}
-        placeholder="Email"
-        autoCapitalize="none"
-        autoCorrect={false}
-        keyboardType="email-address"
-        value={email}
-        onChangeText={setEmail}
-      />
-      <TextInput
-        testID="login-password"
-        style={styles.input}
-        placeholder="Senha"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Text style={styles.logo}>GeronTON</Text>
+
+        <Text style={styles.heading}>Login</Text>
+        <Text style={styles.subtitle}>
+          Insira seus dados para acessar a plataforma
+        </Text>
+
+        <Text style={styles.label}>E-mail</Text>
+        <TextInput
+          testID="login-email"
+          style={styles.input}
+          placeholder="Digite seu e-mail"
+          placeholderTextColor={COLORS.placeholder}
+          autoCapitalize="none"
+          autoCorrect={false}
+          keyboardType="email-address"
+          value={email}
+          onChangeText={setEmail}
+        />
+
+        <Text style={styles.label}>Senha</Text>
+        <View style={styles.passwordField}>
+          <TextInput
+            testID="login-password"
+            style={[styles.input, styles.passwordInput]}
+            placeholder="Digite sua senha"
+            placeholderTextColor={COLORS.placeholder}
+            secureTextEntry={!showPassword}
+            value={password}
+            onChangeText={setPassword}
+          />
+          <Pressable
+            testID="login-password-toggle"
+            accessibilityRole="button"
+            accessibilityLabel={
+              showPassword ? "Ocultar senha" : "Mostrar senha"
+            }
+            style={styles.passwordToggle}
+            onPress={() => setShowPassword((current) => !current)}
+          >
+            <Ionicons
+              name={showPassword ? "eye-outline" : "eye-off-outline"}
+              size={24}
+              color={COLORS.subtitle}
+            />
+          </Pressable>
+        </View>
+
+        <Text style={styles.forgotLink}>Esqueceu a senha?</Text>
+
+        <Pressable
+          testID="login-submit"
+          accessibilityRole="button"
+          style={[styles.button, !canSubmit && styles.buttonDisabled]}
+          disabled={!canSubmit}
+          onPress={handleSubmit}
+        >
+          {isSigningIn ? (
+            <ActivityIndicator testID="login-loading" color={COLORS.white} />
+          ) : (
+            <Text style={styles.buttonText}>Entrar</Text>
+          )}
+        </Pressable>
+
+        <Text style={styles.footer}>
+          <Text style={styles.footerText}>Ainda não possui uma conta? </Text>
+          <Text style={styles.footerLink}>Cadastre-se agora!</Text>
+        </Text>
+      </ScrollView>
 
       {error ? (
-        <Text testID="login-error" style={styles.error}>
-          {error}
-        </Text>
+        <View style={styles.toastWrapper}>
+          <ErrorToast
+            testID="login-error"
+            title={
+              error === "Invalid credentials"
+                ? "E-mail ou Senha incorretos"
+                : "Não foi possível entrar"
+            }
+            message={
+              error === "Invalid credentials"
+                ? "Tente novamente, ou altere a senha"
+                : error
+            }
+            onDismiss={() => setError(null)}
+          />
+        </View>
       ) : null}
-
-      {isSigningIn ? (
-        <ActivityIndicator testID="login-loading" />
-      ) : (
-        <Button
-          testID="login-submit"
-          title="Entrar"
-          onPress={handleSubmit}
-          disabled={!email || !password}
-        />
-      )}
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
-    justifyContent: "center",
-    padding: 24,
-    gap: 12,
+    backgroundColor: COLORS.white,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
+  container: {
+    flexGrow: 1,
+    paddingHorizontal: 21,
+    paddingTop: 64,
+    paddingBottom: 32,
+  },
+  logo: {
+    fontFamily: "NunitoSans_800ExtraBold",
+    fontSize: 32,
+    color: COLORS.primary,
     textAlign: "center",
-    marginBottom: 12,
+  },
+  heading: {
+    fontFamily: "NunitoSans_600SemiBold",
+    fontSize: 20,
+    lineHeight: 28,
+    color: COLORS.heading,
+    textAlign: "center",
+    marginTop: 48,
+  },
+  subtitle: {
+    fontFamily: "NunitoSans_600SemiBold",
+    fontSize: 14,
+    lineHeight: 22,
+    color: COLORS.subtitle,
+    textAlign: "center",
+    marginTop: 8,
+    marginBottom: 32,
+  },
+  label: {
+    fontFamily: "NunitoSans_600SemiBold",
+    fontSize: 14,
+    lineHeight: 22,
+    color: COLORS.heading,
+    marginBottom: 6,
   },
   input: {
+    height: 50,
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: COLORS.border,
     borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
+    paddingHorizontal: 16,
+    fontFamily: "NunitoSans_600SemiBold",
+    fontSize: 14,
+    color: COLORS.heading,
+    marginBottom: 24,
   },
-  error: {
-    color: "red",
+  passwordField: {
+    position: "relative",
+  },
+  passwordInput: {
+    paddingRight: 52,
+  },
+  passwordToggle: {
+    position: "absolute",
+    right: 16,
+    top: 13,
+  },
+  forgotLink: {
+    fontFamily: "NunitoSans_600SemiBold",
+    fontSize: 14,
+    color: COLORS.primary,
+    textDecorationLine: "underline",
+    marginTop: -8,
+    marginBottom: 24,
+  },
+  toastWrapper: {
+    position: "absolute",
+    top: 24,
+    left: 21,
+    right: 21,
+  },
+  button: {
+    height: 45,
+    borderRadius: 8,
+    backgroundColor: COLORS.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 8,
+  },
+  buttonDisabled: {
+    opacity: 0.5,
+  },
+  buttonText: {
+    fontFamily: "NunitoSans_600SemiBold",
+    fontSize: 14,
+    color: COLORS.white,
+  },
+  footer: {
     textAlign: "center",
+    marginTop: "auto",
+    paddingTop: 48,
+  },
+  footerText: {
+    fontFamily: "NunitoSans_600SemiBold",
+    fontSize: 14,
+    color: COLORS.footerText,
+  },
+  footerLink: {
+    fontFamily: "NunitoSans_600SemiBold",
+    fontSize: 14,
+    color: COLORS.primary,
+    textDecorationLine: "underline",
   },
 });
