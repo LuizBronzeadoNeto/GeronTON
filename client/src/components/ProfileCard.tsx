@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import type { Profile } from "../api/profiles";
 import { listCheckIns } from "../api/checkins";
 import { RiskStatusBadge } from "./RiskStatusBadge";
+import { ageInYears } from "../utils/date";
 import { COLORS, FONTS } from "../theme";
 
 interface Props {
@@ -11,20 +12,6 @@ interface Props {
   testIDPrefix: string;
   onOpen: () => void;
   showLastCheckIn?: boolean;
-}
-
-/**
- * Returns a person's age in years for the "NN anos" card subtitle.
- */
-function ageInYears(birthDate: string): number {
-  const birth = new Date(birthDate);
-  const now = new Date();
-  let age = now.getFullYear() - birth.getFullYear();
-  const hadBirthday =
-    now.getMonth() > birth.getMonth() ||
-    (now.getMonth() === birth.getMonth() && now.getDate() >= birth.getDate());
-  if (!hadBirthday) age -= 1;
-  return age;
 }
 
 /**

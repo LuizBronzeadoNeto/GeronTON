@@ -15,11 +15,13 @@ interface Props {
   disabled?: boolean;
   loading?: boolean;
   variant?: "primary" | "danger" | "outline";
+  size?: "regular" | "small";
   style?: StyleProp<ViewStyle>;
 }
 
 /**
- * Button from the Figma design system: 45px tall, 8px radius, semibold label.
+ * Button from the Figma design system: 45px tall (36px in the "small" size
+ * used for header actions like "+ Novo idoso"), 8px radius, semibold label.
  * "primary" is the filled blue action, "danger" the filled red destructive one
  * and "outline" a bordered secondary action. While loading it shows a spinner
  * in place of the label and stays disabled.
@@ -31,6 +33,7 @@ export function PrimaryButton({
   disabled = false,
   loading = false,
   variant = "primary",
+  size = "regular",
   style,
 }: Props) {
   const isDisabled = disabled || loading;
@@ -41,6 +44,7 @@ export function PrimaryButton({
       accessibilityRole="button"
       style={[
         styles.button,
+        size === "small" && styles.small,
         variant === "danger" && styles.danger,
         variant === "outline" && styles.outline,
         isDisabled && styles.disabled,
@@ -72,6 +76,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 20,
+  },
+  small: {
+    height: 36,
+    paddingHorizontal: 16,
+    alignSelf: "flex-end",
   },
   danger: {
     backgroundColor: COLORS.danger,

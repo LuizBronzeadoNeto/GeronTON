@@ -2,7 +2,6 @@ import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
-  Pressable,
   StyleSheet,
   Text,
   View,
@@ -12,6 +11,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { AppStackParamList } from "../types/navigation";
 import { listProfiles, type Profile } from "../api/profiles";
 import { ProfileCard } from "../components/ProfileCard";
+import { PrimaryButton } from "../components/PrimaryButton";
 import { COLORS, FONTS } from "../theme";
 
 type Props = NativeStackScreenProps<AppStackParamList, "Home">;
@@ -56,14 +56,12 @@ export function ProfessionalHomeScreen({ navigation }: Props) {
         indicam prioridade clínica.
       </Text>
 
-      <Pressable
+      <PrimaryButton
         testID="professional-add"
-        accessibilityRole="button"
-        style={styles.addButton}
+        title="+ Cadastrar idoso"
+        size="small"
         onPress={() => navigation.navigate("ProfileForm")}
-      >
-        <Text style={styles.addButtonLabel}>+ Cadastrar idoso</Text>
-      </Pressable>
+      />
 
       {loading ? (
         <ActivityIndicator
@@ -117,20 +115,6 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     color: COLORS.grey500,
     paddingHorizontal: 8,
-  },
-  addButton: {
-    alignSelf: "flex-end",
-    height: 36,
-    borderRadius: 8,
-    backgroundColor: COLORS.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 16,
-  },
-  addButtonLabel: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 14,
-    color: COLORS.white,
   },
   listContent: {
     gap: 12,

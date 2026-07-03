@@ -20,6 +20,8 @@ import {
 } from "../api/intercorrences";
 import { eventTypeLabel } from "../constants/intercorrence";
 import { RiskStatusBadge } from "../components/RiskStatusBadge";
+import { StatusPill } from "../components/StatusPill";
+import { ageInYears, formatTimestamp, isoToBrDate } from "../utils/date";
 import { COLORS, FONTS } from "../theme";
 
 type Props = NativeStackScreenProps<AppStackParamList, "ProfileDetail">;
@@ -38,68 +40,16 @@ function hasRecentCriticalEvent(intercorrences: Intercorrence[]): boolean {
 }
 
 /**
- * Returns a person's age in years for the header subtitle.
- */
-function ageInYears(birthDate: string): number {
-  const birth = new Date(birthDate);
-  const now = new Date();
-  let age = now.getFullYear() - birth.getFullYear();
-  const hadBirthday =
-    now.getMonth() > birth.getMonth() ||
-    (now.getMonth() === birth.getMonth() && now.getDate() >= birth.getDate());
-  if (!hadBirthday) age -= 1;
-  return age;
-}
-
-/**
- * Formats an ISO timestamp as the design's "16/06/2026, 11:52:21".
- */
-function formatTimestamp(iso: string): string {
-  const date = new Date(iso);
-  const pad = (value: number): string => String(value).padStart(2, "0");
-  return (
-    `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()}, ` +
-    `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
-  );
-}
-
-/**
- * Formats an ISO date as DD/MM/AAAA for the "Linha de base" card.
- */
-function formatDate(iso: string): string {
-  const [year, month, day] = iso.slice(0, 10).split("-");
-  return `${day}/${month}/${year}`;
-}
-
-/**
  * Severity pill for a history entry: red "Crítico" for critical intercorrences
  * and orange "Atenção" otherwise, as in the Figma history list.
  */
 function SeverityPill({ isCritical }: { isCritical: boolean }) {
   return (
-    <View
-      style={[
-        styles.severityPill,
-        {
-          backgroundColor: isCritical ? COLORS.dangerBadgeBg : COLORS.warningBg,
-        },
-      ]}
-    >
-      <View
-        style={[
-          styles.severityDot,
-          { backgroundColor: isCritical ? COLORS.danger : COLORS.warning },
-        ]}
-      />
-      <Text
-        style={[
-          styles.severityLabel,
-          { color: isCritical ? COLORS.danger : COLORS.warning },
-        ]}
-      >
-        {isCritical ? "Crítico" : "Atenção"}
-      </Text>
-    </View>
+    <StatusPill
+      label={isCritical ? "Crítico" : "Atenção"}
+      color={isCritical ? COLORS.danger : COLORS.warning}
+      backgroundColor={isCritical ? COLORS.dangerBadgeBg : COLORS.warningBg}
+    />
   );
 }
 
@@ -276,7 +226,7 @@ export function ProfileDetailScreen({ navigation, route }: Props) {
         <View style={styles.baselineRow}>
           <Text style={styles.baselineLabel}>Nascimento</Text>
           <Text style={styles.baselineValue}>
-            {formatDate(profile.birthDate)}
+            {isoToBrDate(profile.birthDate)}
           </Text>
         </View>
         <View style={styles.baselineRow}>
@@ -542,23 +492,6 @@ const styles = StyleSheet.create({
   historyMeta: {
     alignItems: "flex-end",
     gap: 4,
-  },
-  severityPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    height: 20,
-    borderRadius: 10,
-    paddingHorizontal: 10,
-  },
-  severityDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 3,
-  },
-  severityLabel: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 10,
   },
   historyDate: {
     fontFamily: FONTS.regular,

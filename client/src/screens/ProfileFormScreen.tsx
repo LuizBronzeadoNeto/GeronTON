@@ -20,6 +20,7 @@ import {
 import { RiskStatusBadge } from "../components/RiskStatusBadge";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { SelectField } from "../components/SelectField";
+import { brDateToIso, isoToBrDate, maskBrDate } from "../utils/date";
 import { COLORS, FONTS } from "../theme";
 
 type Props = NativeStackScreenProps<AppStackParamList, "ProfileForm">;
@@ -48,39 +49,6 @@ const PRESET_CONDITIONS = [
   "Depressão",
   "Artrose",
 ];
-
-/**
- * Formats typed digits as a DD/MM/AAAA date, inserting the slashes as the
- * user types.
- */
-function maskBrDate(text: string): string {
-  const digits = text.replace(/\D/g, "").slice(0, 8);
-  if (digits.length <= 2) return digits;
-  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
-  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
-}
-
-/**
- * Converts a DD/MM/AAAA string to the ISO format the API expects, or null when
- * the value is not a complete valid date.
- */
-function brDateToIso(text: string): string | null {
-  const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(text);
-  if (!match) return null;
-  const [, day, month, year] = match;
-  const iso = `${year}-${month}-${day}`;
-  const parsed = new Date(iso);
-  if (Number.isNaN(parsed.getTime())) return null;
-  return iso;
-}
-
-/**
- * Converts an ISO date (from the API) to the DD/MM/AAAA display format.
- */
-function isoToBrDate(iso: string): string {
-  const [year, month, day] = iso.slice(0, 10).split("-");
-  return `${day}/${month}/${year}`;
-}
 
 /**
  * "Cadastro idoso" form from the Figma design: full name, DD/MM/AAAA birth

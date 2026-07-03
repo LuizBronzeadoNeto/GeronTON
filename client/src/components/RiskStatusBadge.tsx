@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
 import {
   getRiskStatus,
   subscribeRiskStatusInvalidation,
   type RiskLevel,
 } from "../api/risk";
-import { COLORS, FONTS } from "../theme";
+import { StatusPill } from "./StatusPill";
+import { COLORS } from "../theme";
 
 interface Props {
   profileId: number;
@@ -67,38 +67,12 @@ export function RiskStatusBadge({ profileId }: Props) {
   const level = LEVELS[status];
 
   return (
-    <View
+    <StatusPill
       testID={`risk-badge-${profileId}`}
-      style={[styles.badge, { backgroundColor: level.bg }]}
-    >
-      <View style={[styles.dot, { backgroundColor: level.color }]} />
-      <Text
-        testID={`risk-badge-label-${profileId}`}
-        style={[styles.label, { color: level.color }]}
-      >
-        {level.label}
-      </Text>
-    </View>
+      labelTestID={`risk-badge-label-${profileId}`}
+      label={level.label}
+      color={level.color}
+      backgroundColor={level.bg}
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  badge: {
-    flexDirection: "row",
-    alignItems: "center",
-    alignSelf: "flex-start",
-    gap: 6,
-    height: 20,
-    borderRadius: 10,
-    paddingHorizontal: 10,
-  },
-  dot: {
-    width: 5,
-    height: 5,
-    borderRadius: 3,
-  },
-  label: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 10,
-  },
-});

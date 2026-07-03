@@ -17,6 +17,7 @@ import {
   listMedications,
   type Medication,
 } from "../api/medications";
+import { PrimaryButton } from "../components/PrimaryButton";
 import { COLORS, FONTS } from "../theme";
 
 type Props = NativeStackScreenProps<AppStackParamList, "MedicationInventory">;
@@ -85,14 +86,12 @@ export function MedicationInventoryScreen({ route, navigation }: Props) {
     <View testID="medication-inventory" style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Medicação de Uso Contínuo</Text>
-        <Pressable
+        <PrimaryButton
           testID="medication-add"
-          accessibilityRole="button"
-          style={styles.addButton}
+          title="+ Adicionar"
+          size="small"
           onPress={() => navigation.navigate("MedicationForm", { profileId })}
-        >
-          <Text style={styles.addButtonLabel}>+ Adicionar</Text>
-        </Pressable>
+        />
       </View>
 
       {loading ? (
@@ -171,19 +170,6 @@ const styles = StyleSheet.create({
     lineHeight: 28,
     color: COLORS.heading,
     flexShrink: 1,
-  },
-  addButton: {
-    height: 36,
-    borderRadius: 8,
-    backgroundColor: COLORS.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 16,
-  },
-  addButtonLabel: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 14,
-    color: COLORS.white,
   },
   listContent: {
     gap: 8,

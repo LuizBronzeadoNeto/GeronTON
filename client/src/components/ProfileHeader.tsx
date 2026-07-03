@@ -2,24 +2,11 @@ import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { getProfile, type Profile } from "../api/profiles";
 import { RiskStatusBadge } from "./RiskStatusBadge";
+import { ageInYears } from "../utils/date";
 import { COLORS, FONTS } from "../theme";
 
 interface Props {
   profileId: number;
-}
-
-/**
- * Returns a person's age in years for the "NN anos" subtitle.
- */
-function ageInYears(birthDate: string): number {
-  const birth = new Date(birthDate);
-  const now = new Date();
-  let age = now.getFullYear() - birth.getFullYear();
-  const hadBirthday =
-    now.getMonth() > birth.getMonth() ||
-    (now.getMonth() === birth.getMonth() && now.getDate() >= birth.getDate());
-  if (!hadBirthday) age -= 1;
-  return age;
 }
 
 /**
