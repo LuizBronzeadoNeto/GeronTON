@@ -1,4 +1,5 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
+import { mockNavigationModule } from "../test-utils";
 import {
   render,
   screen,
@@ -11,20 +12,7 @@ import type { AppStackParamList } from "../types/navigation";
 import { deleteCheckIn, getCheckIn, type CheckIn } from "../api/checkins";
 
 jest.mock("../api/checkins");
-jest.mock("@react-navigation/native", () => {
-  const actual = jest.requireActual<typeof import("@react-navigation/native")>(
-    "@react-navigation/native",
-  );
-  const React = jest.requireActual<typeof import("react")>("react");
-  return {
-    ...actual,
-    useFocusEffect: (callback: () => void) => {
-      React.useEffect(() => {
-        callback();
-      }, [callback]);
-    },
-  };
-});
+jest.mock("@react-navigation/native", () => mockNavigationModule());
 
 const EXISTING: CheckIn = {
   id: 4,

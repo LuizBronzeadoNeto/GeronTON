@@ -1,4 +1,5 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
+import { makeProfile, mockRiskApi } from "../test-utils";
 import {
   render,
   screen,
@@ -8,39 +9,18 @@ import {
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ProfileFormScreen } from "./ProfileFormScreen";
 import type { AppStackParamList } from "../types/navigation";
-import {
-  createProfile,
-  getProfile,
-  updateProfile,
-  type Profile,
-} from "../api/profiles";
-import {
-  getRiskStatus,
-  subscribeRiskStatusInvalidation,
-  type RiskStatus,
-} from "../api/risk";
+import { createProfile, getProfile, updateProfile } from "../api/profiles";
 
 jest.mock("../api/profiles");
 jest.mock("../api/risk");
 
-const MOCK_RISK: RiskStatus = {
-  profileId: 7,
-  status: "low",
-  score: 0,
-  evaluatedAt: "2026-06-15T00:00:00.000Z",
-};
-
-const MOCK_PROFILE: Profile = {
+const MOCK_PROFILE = makeProfile({
   id: 7,
-  firstName: "Ozilene",
   lastName: "Leite da Silva",
   birthDate: "1947-11-05T00:00:00.000Z",
-  sex: "Feminino",
-  scholarship: "Superior completo",
   medicalConditions: ["Diabetes", "Sarcopenia"],
   notes: "Prefere visitas pela manhã",
-  caregiverId: 1,
-};
+});
 
 type Props = NativeStackScreenProps<AppStackParamList, "ProfileForm">;
 
@@ -70,11 +50,7 @@ describe("ProfileFormScreen", () => {
       .mockReset()
       .mockResolvedValue({} as never);
     jest.mocked(getProfile).mockReset().mockResolvedValue(MOCK_PROFILE);
-    jest.mocked(getRiskStatus).mockReset().mockResolvedValue(MOCK_RISK);
-    jest
-      .mocked(subscribeRiskStatusInvalidation)
-      .mockReset()
-      .mockReturnValue(() => {});
+    mockRiskApi();
   });
 
   it("renders the registration title and fields when no profileId is given", () => {

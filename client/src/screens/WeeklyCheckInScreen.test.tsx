@@ -1,4 +1,5 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
+import { makeProfile, mockNavigationModule, mockRiskApi } from "../test-utils";
 import {
   render,
   screen,
@@ -9,49 +10,14 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { WeeklyCheckInScreen } from "./WeeklyCheckInScreen";
 import type { AppStackParamList } from "../types/navigation";
 import { createCheckIn, listCheckIns, type CheckIn } from "../api/checkins";
-import { getProfile, type Profile } from "../api/profiles";
-import {
-  getRiskStatus,
-  subscribeRiskStatusInvalidation,
-  type RiskStatus,
-} from "../api/risk";
+import { getProfile } from "../api/profiles";
 
 jest.mock("../api/checkins");
 jest.mock("../api/profiles");
 jest.mock("../api/risk");
-jest.mock("@react-navigation/native", () => {
-  const actual = jest.requireActual<typeof import("@react-navigation/native")>(
-    "@react-navigation/native",
-  );
-  const React = jest.requireActual<typeof import("react")>("react");
-  return {
-    ...actual,
-    useFocusEffect: (callback: () => void) => {
-      React.useEffect(() => {
-        callback();
-      }, [callback]);
-    },
-  };
-});
+jest.mock("@react-navigation/native", () => mockNavigationModule());
 
-const MOCK_RISK: RiskStatus = {
-  profileId: 5,
-  status: "low",
-  score: 0,
-  evaluatedAt: "2026-06-15T00:00:00.000Z",
-};
-
-const MOCK_PROFILE: Profile = {
-  id: 5,
-  firstName: "Ozilene",
-  lastName: "Leite",
-  birthDate: "1947-11-05",
-  sex: "Feminino",
-  scholarship: "superior completo",
-  medicalConditions: [],
-  notes: null,
-  caregiverId: 1,
-};
+const MOCK_PROFILE = makeProfile();
 
 const MOCK_CHECKIN: CheckIn = {
   id: 1,
@@ -135,11 +101,7 @@ describe("WeeklyCheckInScreen", () => {
       .mockReset()
       .mockResolvedValue({} as never);
     jest.mocked(getProfile).mockReset().mockResolvedValue(MOCK_PROFILE);
-    jest.mocked(getRiskStatus).mockReset().mockResolvedValue(MOCK_RISK);
-    jest
-      .mocked(subscribeRiskStatusInvalidation)
-      .mockReset()
-      .mockReturnValue(() => {});
+    mockRiskApi();
   });
 
   it("loads the profile's history on mount and shows the first domain", async () => {

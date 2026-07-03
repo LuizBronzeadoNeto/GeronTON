@@ -1,5 +1,11 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import {
+  makeProfile,
+  makeRiskStatus,
+  mockNavigationModule,
+  mockRiskApi,
+} from "../test-utils";
+import {
   render,
   screen,
   fireEvent,
@@ -8,54 +14,24 @@ import {
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ProfileDetailScreen } from "./ProfileDetailScreen";
 import type { AppStackParamList } from "../types/navigation";
-import { getProfile, updateProfile, type Profile } from "../api/profiles";
+import { getProfile, updateProfile } from "../api/profiles";
 import {
   deleteIntercorrence,
   listIntercorrences,
   type Intercorrence,
 } from "../api/intercorrences";
-import {
-  getRiskStatus,
-  subscribeRiskStatusInvalidation,
-  type RiskStatus,
-} from "../api/risk";
 
 jest.mock("../api/profiles");
 jest.mock("../api/intercorrences");
 jest.mock("../api/risk");
-jest.mock("@react-navigation/native", () => {
-  const actual = jest.requireActual<typeof import("@react-navigation/native")>(
-    "@react-navigation/native",
-  );
-  const React = jest.requireActual<typeof import("react")>("react");
-  return {
-    ...actual,
-    useFocusEffect: (callback: () => void) => {
-      React.useEffect(() => {
-        callback();
-      }, [callback]);
-    },
-  };
-});
+jest.mock("@react-navigation/native", () => mockNavigationModule());
 
-const MOCK_RISK: RiskStatus = {
-  profileId: 7,
-  status: "high",
-  score: 8,
-  evaluatedAt: "2026-06-15T00:00:00.000Z",
-};
-
-const MOCK_PROFILE: Profile = {
+const MOCK_PROFILE = makeProfile({
   id: 7,
-  firstName: "Ozilene",
-  lastName: "Leite",
   birthDate: "1947-11-05T00:00:00.000Z",
-  sex: "Feminino",
   scholarship: "Superior Completo",
   medicalConditions: ["Diabetes", "Sarcopenia"],
-  notes: null,
-  caregiverId: 1,
-};
+});
 
 const RECENT_FALL: Intercorrence = {
   id: 21,
@@ -98,11 +74,7 @@ describe("ProfileDetailScreen", () => {
       .mockReset()
       .mockResolvedValue([RECENT_FALL, OLD_CONFUSION]);
     jest.mocked(deleteIntercorrence).mockReset().mockResolvedValue(undefined);
-    jest.mocked(getRiskStatus).mockReset().mockResolvedValue(MOCK_RISK);
-    jest
-      .mocked(subscribeRiskStatusInvalidation)
-      .mockReset()
-      .mockReturnValue(() => {});
+    mockRiskApi(makeRiskStatus({ profileId: 7, status: "high", score: 8 }));
   });
 
   it("shows the header, baseline, conditions and history", async () => {

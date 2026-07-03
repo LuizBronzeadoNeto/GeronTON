@@ -1,4 +1,5 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
+import { makeProfile, mockRiskApi } from "../test-utils";
 import {
   render,
   screen,
@@ -9,35 +10,13 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { IntercorrenceFormScreen } from "./IntercorrenceFormScreen";
 import type { AppStackParamList } from "../types/navigation";
 import { createIntercorrence } from "../api/intercorrences";
-import { getProfile, type Profile } from "../api/profiles";
-import {
-  getRiskStatus,
-  subscribeRiskStatusInvalidation,
-  type RiskStatus,
-} from "../api/risk";
+import { getProfile } from "../api/profiles";
 
 jest.mock("../api/intercorrences");
 jest.mock("../api/profiles");
 jest.mock("../api/risk");
 
-const MOCK_RISK: RiskStatus = {
-  profileId: 7,
-  status: "low",
-  score: 0,
-  evaluatedAt: "2026-06-15T00:00:00.000Z",
-};
-
-const MOCK_PROFILE: Profile = {
-  id: 7,
-  firstName: "Ozilene",
-  lastName: "Leite",
-  birthDate: "1947-11-05",
-  sex: "Feminino",
-  scholarship: "Superior Completo",
-  medicalConditions: [],
-  notes: null,
-  caregiverId: 1,
-};
+const MOCK_PROFILE = makeProfile({ id: 7 });
 
 type Props = NativeStackScreenProps<AppStackParamList, "IntercorrenceForm">;
 
@@ -57,11 +36,7 @@ describe("IntercorrenceFormScreen", () => {
       .mockReset()
       .mockResolvedValue({} as never);
     jest.mocked(getProfile).mockReset().mockResolvedValue(MOCK_PROFILE);
-    jest.mocked(getRiskStatus).mockReset().mockResolvedValue(MOCK_RISK);
-    jest
-      .mocked(subscribeRiskStatusInvalidation)
-      .mockReset()
-      .mockReturnValue(() => {});
+    mockRiskApi();
   });
 
   it("keeps submit disabled until event type and severity are chosen", () => {

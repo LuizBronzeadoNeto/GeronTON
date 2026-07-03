@@ -1,5 +1,11 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import {
+  makeProfile,
+  makeRiskStatus,
+  mockNavigationModule,
+  mockRiskApi,
+} from "../test-utils";
+import {
   render,
   screen,
   fireEvent,
@@ -8,50 +14,15 @@ import {
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ProfessionalHomeScreen } from "./ProfessionalHomeScreen";
 import type { AppStackParamList } from "../types/navigation";
-import { listProfiles, type Profile } from "../api/profiles";
+import { listProfiles } from "../api/profiles";
 import { listCheckIns } from "../api/checkins";
-import {
-  getRiskStatus,
-  subscribeRiskStatusInvalidation,
-  type RiskStatus,
-} from "../api/risk";
 
 jest.mock("../api/profiles");
 jest.mock("../api/checkins");
 jest.mock("../api/risk");
-jest.mock("@react-navigation/native", () => {
-  const actual = jest.requireActual<typeof import("@react-navigation/native")>(
-    "@react-navigation/native",
-  );
-  const React = jest.requireActual<typeof import("react")>("react");
-  return {
-    ...actual,
-    useFocusEffect: (callback: () => void) => {
-      React.useEffect(() => {
-        callback();
-      }, [callback]);
-    },
-  };
-});
+jest.mock("@react-navigation/native", () => mockNavigationModule());
 
-const MOCK_RISK: RiskStatus = {
-  profileId: 1,
-  status: "high",
-  score: 8,
-  evaluatedAt: "2026-06-15T00:00:00.000Z",
-};
-
-const MOCK_PROFILE: Profile = {
-  id: 1,
-  firstName: "Ozilene",
-  lastName: "Leite",
-  birthDate: "1947-11-05",
-  sex: "Feminino",
-  scholarship: "Superior completo",
-  medicalConditions: [],
-  notes: null,
-  caregiverId: 2,
-};
+const MOCK_PROFILE = makeProfile({ id: 1, caregiverId: 2 });
 
 type Props = NativeStackScreenProps<AppStackParamList, "Home">;
 
@@ -68,11 +39,7 @@ describe("ProfessionalHomeScreen", () => {
   beforeEach(() => {
     jest.mocked(listProfiles).mockReset().mockResolvedValue([MOCK_PROFILE]);
     jest.mocked(listCheckIns).mockReset().mockResolvedValue([]);
-    jest.mocked(getRiskStatus).mockReset().mockResolvedValue(MOCK_RISK);
-    jest
-      .mocked(subscribeRiskStatusInvalidation)
-      .mockReset()
-      .mockReturnValue(() => {});
+    mockRiskApi(makeRiskStatus({ profileId: 1, status: "high", score: 8 }));
   });
 
   it("lists the profiles as triage cards with risk pill and last check-in", async () => {
