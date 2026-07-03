@@ -1,4 +1,5 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
+import { makeProfile } from "../test-utils";
 import {
   render,
   screen,
@@ -9,21 +10,21 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RedirectScreen } from "./RedirectScreen";
 import type { AppStackParamList } from "../types/navigation";
 import { listProfiles, type Profile } from "../api/profiles";
+import { useAuth } from "../context/AuthContext";
+import type { Role } from "../types/auth";
 
 jest.mock("../api/profiles");
+jest.mock("../context/AuthContext");
 
 type Props = NativeStackScreenProps<AppStackParamList, "Redirect">;
 
-function makeProfile(id: number): Profile {
-  return {
-    id,
-    firstName: "Idoso",
-    lastName: String(id),
-    birthDate: "1950-01-01",
-    scholarship: "fundamental",
-    medicalConditions: [],
-    caregiverId: 1,
-  };
+function mockRole(role: Role) {
+  jest.mocked(useAuth).mockReturnValue({
+    user: { id: 1, role, token: "jwt" },
+    isSigningIn: false,
+    signIn: jest.fn<() => Promise<void>>(),
+    signOut: jest.fn(),
+  });
 }
 
 function renderScreen() {
@@ -38,6 +39,20 @@ function renderScreen() {
 describe("RedirectScreen", () => {
   beforeEach(() => {
     jest.mocked(listProfiles).mockReset();
+    jest.mocked(useAuth).mockReset();
+    mockRole("cuidador");
+  });
+
+  it("sends a profissional straight to the triage-panel Home", async () => {
+    mockRole("profissional");
+    const { navigation } = renderScreen();
+
+    await waitFor(() => expect(navigation.reset).toHaveBeenCalled());
+    expect(navigation.reset).toHaveBeenCalledWith({
+      index: 0,
+      routes: [{ name: "Home" }],
+    });
+    expect(listProfiles).not.toHaveBeenCalled();
   });
 
   it("shows a loading indicator while profiles load", () => {
@@ -58,8 +73,8 @@ describe("RedirectScreen", () => {
     });
   });
 
-  it("opens the only profile's weekly check-in", async () => {
-    jest.mocked(listProfiles).mockResolvedValue([makeProfile(7)]);
+  it("opens the only profile's detail hub", async () => {
+    jest.mocked(listProfiles).mockResolvedValue([makeProfile({ id: 7 })]);
     const { navigation } = renderScreen();
 
     await waitFor(() => expect(navigation.reset).toHaveBeenCalled());
@@ -67,7 +82,7 @@ describe("RedirectScreen", () => {
       index: 1,
       routes: [
         { name: "Home" },
-        { name: "WeeklyCheckIn", params: { profileId: 7 } },
+        { name: "ProfileDetail", params: { profileId: 7 } },
       ],
     });
   });
@@ -75,7 +90,7 @@ describe("RedirectScreen", () => {
   it("sends a user with several profiles to the list", async () => {
     jest
       .mocked(listProfiles)
-      .mockResolvedValue([makeProfile(1), makeProfile(2)]);
+      .mockResolvedValue([makeProfile({ id: 1 }), makeProfile({ id: 2 })]);
     const { navigation } = renderScreen();
 
     await waitFor(() => expect(navigation.reset).toHaveBeenCalled());

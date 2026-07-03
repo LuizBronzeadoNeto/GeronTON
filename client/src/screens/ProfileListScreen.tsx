@@ -1,9 +1,7 @@
 import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
-  Button,
   FlatList,
-  Pressable,
   StyleSheet,
   Text,
   View,
@@ -12,14 +10,18 @@ import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { AppStackParamList } from "../types/navigation";
 import { listProfiles, type Profile } from "../api/profiles";
-import { RiskStatusBadge } from "../components/RiskStatusBadge";
+import { ProfileCard } from "../components/ProfileCard";
+import { PrimaryButton } from "../components/PrimaryButton";
+import { COLORS, FONTS } from "../theme";
 
 type Props = NativeStackScreenProps<AppStackParamList, "ProfileList">;
 
 /**
- * Lists the elderly profiles the user may access and is the entry point for
- * registering a new one or editing an existing one. The list is refetched each
- * time the screen regains focus, so it reflects changes made on the form.
+ * "Meus idosos" screen from the Figma design: lists the elderly profiles the
+ * user may access as outlined cards (avatar initial, name, risk pill and age)
+ * with a "+ Novo idoso" button on top and the design's empty state. Tapping a
+ * card opens the elder's detail hub. The list is refetched each time the
+ * screen regains focus, so it reflects changes made elsewhere.
  */
 export function ProfileListScreen({ navigation }: Props) {
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -49,13 +51,19 @@ export function ProfileListScreen({ navigation }: Props) {
 
   return (
     <View testID="profile-list" style={styles.container}>
-      <Button
+      <PrimaryButton
         testID="profile-add"
-        title="Cadastrar idoso"
+        title="+ Novo idoso"
+        size="small"
         onPress={() => navigation.navigate("ProfileForm")}
       />
 
-      {loading ? <ActivityIndicator testID="profile-list-loading" /> : null}
+      {loading ? (
+        <ActivityIndicator
+          testID="profile-list-loading"
+          color={COLORS.primary}
+        />
+      ) : null}
       {error ? (
         <Text testID="profile-list-error" style={styles.error}>
           {error}
@@ -65,55 +73,22 @@ export function ProfileListScreen({ navigation }: Props) {
       <FlatList
         data={profiles}
         keyExtractor={(item) => String(item.id)}
+        contentContainerStyle={styles.listContent}
         ListEmptyComponent={
           loading ? null : (
             <Text testID="profile-list-empty" style={styles.empty}>
-              Nenhum idoso cadastrado.
+              Você ainda não registrou nenhum idoso.
             </Text>
           )
         }
         renderItem={({ item }) => (
-          <View style={styles.item}>
-            <Pressable
-              testID={`profile-item-${item.id}`}
-              style={styles.itemName}
-              onPress={() =>
-                navigation.navigate("ProfileForm", { profileId: item.id })
-              }
-            >
-              <Text style={styles.itemNameText}>
-                {item.firstName} {item.lastName}
-              </Text>
-              <RiskStatusBadge profileId={item.id} />
-            </Pressable>
-            <View style={styles.itemActions}>
-              <Button
-                testID={`profile-checkin-${item.id}`}
-                title="Check-in"
-                onPress={() =>
-                  navigation.navigate("WeeklyCheckIn", { profileId: item.id })
-                }
-              />
-              <Button
-                testID={`profile-medication-${item.id}`}
-                title="Medicação"
-                onPress={() =>
-                  navigation.navigate("MedicationInventory", {
-                    profileId: item.id,
-                  })
-                }
-              />
-              <Button
-                testID={`profile-routine-${item.id}`}
-                title="Rotina"
-                onPress={() =>
-                  navigation.navigate("RoutineRegistration", {
-                    profileId: item.id,
-                  })
-                }
-              />
-            </View>
-          </View>
+          <ProfileCard
+            profile={item}
+            testIDPrefix="profile"
+            onOpen={() =>
+              navigation.navigate("ProfileDetail", { profileId: item.id })
+            }
+          />
         )}
       />
     </View>
@@ -123,36 +98,25 @@ export function ProfileListScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 24,
+    backgroundColor: COLORS.white,
+    paddingHorizontal: 13,
+    paddingTop: 16,
     gap: 16,
   },
+  listContent: {
+    gap: 12,
+    paddingBottom: 24,
+  },
   empty: {
-    fontSize: 16,
-    color: "#555",
+    fontFamily: FONTS.semiBold,
+    fontSize: 14,
+    color: COLORS.primary,
     textAlign: "center",
+    marginTop: 120,
   },
   error: {
-    color: "red",
+    fontFamily: FONTS.semiBold,
+    color: COLORS.danger,
     textAlign: "center",
-  },
-  item: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-  },
-  itemName: {
-    flex: 1,
-    paddingVertical: 8,
-  },
-  itemNameText: {
-    fontSize: 18,
-  },
-  itemActions: {
-    flexDirection: "row",
-    gap: 8,
   },
 });

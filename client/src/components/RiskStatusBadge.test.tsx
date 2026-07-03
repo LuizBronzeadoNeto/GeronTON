@@ -24,9 +24,9 @@ describe("RiskStatusBadge", () => {
   });
 
   it.each([
-    ["low", "Baixo risco"],
-    ["moderate", "Risco moderado"],
-    ["high", "Alto risco"],
+    ["low", "Estável"],
+    ["moderate", "Atenção"],
+    ["high", "Crítico"],
     ["unknown", "Sem dados"],
   ] as [RiskLevel, string][])(
     "renders the %s level with its label",
@@ -68,11 +68,11 @@ describe("RiskStatusBadge", () => {
       .mockResolvedValueOnce(riskFor(5, "high"));
 
     render(<RiskStatusBadge profileId={5} />);
-    await waitFor(() => expect(screen.getByText("Baixo risco")).toBeTruthy());
+    await waitFor(() => expect(screen.getByText("Estável")).toBeTruthy());
 
     notify?.(5);
 
-    await waitFor(() => expect(screen.getByText("Alto risco")).toBeTruthy());
+    await waitFor(() => expect(screen.getByText("Crítico")).toBeTruthy());
     expect(getRiskStatus).toHaveBeenCalledTimes(2);
   });
 
@@ -86,7 +86,7 @@ describe("RiskStatusBadge", () => {
       });
 
     render(<RiskStatusBadge profileId={5} />);
-    await waitFor(() => expect(screen.getByText("Baixo risco")).toBeTruthy());
+    await waitFor(() => expect(screen.getByText("Estável")).toBeTruthy());
 
     notify?.(99);
 

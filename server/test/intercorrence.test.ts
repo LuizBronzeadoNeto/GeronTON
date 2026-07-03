@@ -66,6 +66,18 @@ describe("POST /perfis/:perfilId/intercorrencias", () => {
 
     createdIds.push(res.body.id);
   });
+  it("accepts the breathing_difficulties event type", async () => {
+    const res = await request(app)
+      .post(`/perfis/${perfilId}/intercorrencias`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ eventType: "breathing_difficulties", isCritical: true });
+
+    expect(res.status).toBe(201);
+    expect(res.body.eventType).toBe("breathing_difficulties");
+
+    createdIds.push(res.body.id);
+  });
+
   it("rejects an invalid eventType", async () => {
     const res = await request(app)
       .post(`/perfis/${perfilId}/intercorrencias`)

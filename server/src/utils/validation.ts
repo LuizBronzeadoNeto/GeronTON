@@ -12,3 +12,11 @@ export function missingFields(
     return value === undefined || value === null || value === "";
   });
 }
+
+/**
+ * Normalizes an optional free-text field: returns the value when it is a
+ * non-empty string, and null otherwise (missing, empty, or not a string).
+ */
+export function optionalText(value: unknown): string | null {
+  return typeof value === "string" && value !== "" ? value : null;
+}

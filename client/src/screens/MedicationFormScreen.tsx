@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Button,
   ScrollView,
   StyleSheet,
   Text,
@@ -18,6 +17,8 @@ import {
   updateMedication,
   type MedicationInput,
 } from "../api/medications";
+import { PrimaryButton } from "../components/PrimaryButton";
+import { COLORS, FONTS } from "../theme";
 
 type Props = NativeStackScreenProps<AppStackParamList, "MedicationForm">;
 
@@ -107,7 +108,7 @@ export function MedicationFormScreen({ route, navigation }: Props) {
   if (loading) {
     return (
       <View testID="medication-form-loading" style={styles.centered}>
-        <ActivityIndicator />
+        <ActivityIndicator color={COLORS.primary} />
       </View>
     );
   }
@@ -173,14 +174,17 @@ export function MedicationFormScreen({ route, navigation }: Props) {
         />
 
         <View style={styles.buttons}>
-          <Button
+          <PrimaryButton
             testID="medication-form-cancel"
             title="Cancelar"
+            variant="outline"
+            style={styles.button}
             onPress={() => navigation.goBack()}
           />
-          <Button
+          <PrimaryButton
             testID="medication-form-save"
             title="Salvar"
+            style={styles.button}
             onPress={handleSave}
             disabled={saving}
           />
@@ -203,40 +207,53 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: 24,
+    padding: 20,
     gap: 4,
+    backgroundColor: COLORS.white,
   },
   title: {
-    fontSize: 22,
-    fontWeight: "bold",
+    fontFamily: FONTS.semiBold,
+    fontSize: 20,
+    lineHeight: 28,
+    color: COLORS.heading,
     marginBottom: 16,
   },
   error: {
-    color: "red",
+    fontFamily: FONTS.semiBold,
+    color: COLORS.danger,
     textAlign: "center",
     marginBottom: 8,
   },
   label: {
+    fontFamily: FONTS.semiBold,
     fontSize: 14,
-    color: "#555",
+    lineHeight: 22,
+    color: COLORS.heading,
     marginTop: 12,
   },
   input: {
+    height: 50,
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: COLORS.grey300,
     borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
+    paddingHorizontal: 16,
+    fontFamily: FONTS.semiBold,
+    fontSize: 14,
+    color: COLORS.heading,
     marginTop: 4,
   },
   textArea: {
-    minHeight: 80,
+    height: undefined,
+    minHeight: 100,
+    paddingVertical: 12,
     textAlignVertical: "top",
   },
   buttons: {
     flexDirection: "row",
-    justifyContent: "flex-end",
     gap: 12,
     marginTop: 24,
+  },
+  button: {
+    flex: 1,
   },
 });

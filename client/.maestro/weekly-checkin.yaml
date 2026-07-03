@@ -11,54 +11,81 @@ appId: com.geronton.client
 - hideKeyboard
 - tapOn:
     id: "login-submit"
+# single-profile caregivers land on the elder's detail hub
+- assertVisible:
+    id: "profile-detail"
+- tapOn:
+    id: "detail-checkin"
 - assertVisible:
     id: "checkin"
+# step 1 — health domain
 - tapOn:
-    id: "checkin-falls"
-- inputText: "2"
+    id: "checkin-skinIssues-no"
 - tapOn:
-    id: "checkin-weightLoss"
-- inputText: "15"
+    id: "checkin-bowelRegular-yes"
+- tapOn:
+    id: "checkin-sleepWell-yes"
+- tapOn:
+    id: "checkin-unstableGait-no"
+- tapOn:
+    id: "checkin-event-fever"
+- tapOn:
+    id: "checkin-next"
+# step 2 — nutrition & medication
+- tapOn:
+    id: "checkin-appetite-good"
+- tapOn:
+    id: "checkin-hydrationGoal-yes"
+- tapOn:
+    id: "checkin-medsOnTime-yes"
+- tapOn:
+    id: "checkin-next"
+# step 3 — behavior
+- tapOn:
+    id: "checkin-mood-happy"
+- tapOn:
+    id: "checkin-stress-2"
+- tapOn:
+    id: "checkin-sunExposure-yes"
+- tapOn:
+    id: "checkin-selfExpression-yes"
+- tapOn:
+    id: "checkin-stimulation-no"
+- tapOn:
+    id: "checkin-next"
+# step 4 — hygiene
+- tapOn:
+    id: "checkin-dailyBath-yes"
+- tapOn:
+    id: "checkin-oralHygiene-yes"
+- tapOn:
+    id: "checkin-groomedNails-yes"
+- tapOn:
+    id: "checkin-next"
+# step 5 — stock & logistics
+- tapOn:
+    id: "checkin-needsMedications"
+- inputText: "Losartana"
 - hideKeyboard
 - tapOn:
-    id: "checkin-choking"
-- tapOn:
     id: "checkin-submit"
+# submitting returns to the elder's detail screen
+- assertVisible:
+    id: "profile-detail"
+# reopen the wizard to check the history
+- tapOn:
+    id: "detail-checkin"
 - assertVisible:
     id: "checkin-history"
 - assertVisible:
     text: "\\d{4}-\\d{2}-\\d{2}"
 - assertVisible:
-    text: "Quedas: 2 · Perda de peso: 15 kg"
+    text: "Humor: Feliz · Estresse: 2"
+# open the detail and delete it
 - tapOn:
     text: "\\d{4}-\\d{2}-\\d{2}"
 - assertVisible:
-    text: "15"
-- assertVisible:
-    text: "0"
-- assertVisible:
-    id: "checkin-choking"
-    checked: true
-#editing
-- tapOn:
-    id: "checkin-weightLoss"
-- eraseText: 2
-- inputText: "20"
-- hideKeyboard
-- tapOn:
-    id: "checkin-memoryLoss"
-- tapOn:
-    id: "checkin-detail-save"
-- assertVisible:
-    text: "\\d{4}-\\d{2}-\\d{2}"
-- assertVisible:
-    text: "Quedas: 2 · Perda de peso: 20 kg"
-#deleting
-- tapOn:
-    text: "\\d{4}-\\d{2}-\\d{2}"
-- assertVisible:
-    id: "checkin-memoryLoss"
-    checked: true
+    text: "Febre.*"
 - tapOn:
     id: "checkin-delete"
 - assertNotVisible:

@@ -14,15 +14,24 @@ let token: string;
 let perfilId: number;
 
 const CLEAN_CHECKIN = {
-  falls: 0,
-  weightLoss: 0,
-  choking: false,
-  gaitImpairment: false,
-  violenceSign: false,
-  irregularSleep: false,
-  socialIsolation: false,
-  failedComms: false,
-  memoryLoss: false,
+  skinIssues: false,
+  bowelRegular: true,
+  sleepWell: true,
+  unstableGait: false,
+  weeklyEvents: [] as string[],
+  appetite: "good",
+  chokingIncident: false,
+  breathShortness: false,
+  hydrationGoal: true,
+  medsOnTime: true,
+  mood: "happy",
+  stressLevel: 0,
+  sunExposure: true,
+  selfExpression: true,
+  stimulation: true,
+  dailyBath: true,
+  oralHygiene: true,
+  groomedNails: true,
 };
 
 /**
@@ -107,7 +116,11 @@ describe("GET /perfis/:perfilId/risco", () => {
   });
 
   it("returns moderate when warning signs accumulate", async () => {
-    await createCheckIn({ falls: 1, irregularSleep: true, memoryLoss: true });
+    await createCheckIn({
+      appetite: "regular",
+      sleepWell: false,
+      stressLevel: 3,
+    });
 
     const res = await getRisk();
 
@@ -118,10 +131,9 @@ describe("GET /perfis/:perfilId/risco", () => {
 
   it("returns high for severe check-in flags", async () => {
     await createCheckIn({
-      falls: 2,
-      weightLoss: 4,
-      choking: true,
-      violenceSign: true,
+      weeklyEvents: ["fall_with_injury", "fever"],
+      chokingIncident: true,
+      medsOnTime: false,
     });
 
     const res = await getRisk();
@@ -144,9 +156,9 @@ describe("GET /perfis/:perfilId/risco", () => {
 
   it("only scores the most recent check-in", async () => {
     const older = await createCheckIn({
-      falls: 5,
-      choking: true,
-      violenceSign: true,
+      weeklyEvents: ["active_bleeding", "acute_confusion"],
+      chokingIncident: true,
+      medsOnTime: false,
     });
     await prisma.checkIn.update({
       where: { id: older.id },

@@ -1,4 +1,5 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
+import { mockNavigationModule } from "../test-utils";
 import {
   render,
   screen,
@@ -16,20 +17,7 @@ import {
 } from "../api/medications";
 
 jest.mock("../api/medications");
-jest.mock("@react-navigation/native", () => {
-  const actual = jest.requireActual<typeof import("@react-navigation/native")>(
-    "@react-navigation/native",
-  );
-  const React = jest.requireActual<typeof import("react")>("react");
-  return {
-    ...actual,
-    useFocusEffect: (callback: () => void) => {
-      React.useEffect(() => {
-        callback();
-      }, [callback]);
-    },
-  };
-});
+jest.mock("@react-navigation/native", () => mockNavigationModule());
 
 type Props = NativeStackScreenProps<AppStackParamList, "MedicationInventory">;
 

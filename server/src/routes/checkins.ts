@@ -1,41 +1,91 @@
 import { Router, Request, Response } from "express";
-import { Prisma } from "@prisma/client";
+import { Prisma, Appetite, Mood } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 import { loadProfile } from "../middleware/loadProfile.js";
+import { WEEKLY_EVENTS } from "../utils/risk.js";
 
 const router = Router({ mergeParams: true });
 
 router.use(loadProfile);
 
-const NUMBER_FIELDS = ["falls", "weightLoss"] as const;
 const BOOLEAN_FIELDS = [
-  "choking",
-  "gaitImpairment",
-  "violenceSign",
-  "irregularSleep",
-  "socialIsolation",
-  "failedComms",
-  "memoryLoss",
+  "skinIssues",
+  "bowelRegular",
+  "sleepWell",
+  "unstableGait",
+  "chokingIncident",
+  "breathShortness",
+  "hydrationGoal",
+  "medsOnTime",
+  "sunExposure",
+  "selfExpression",
+  "stimulation",
+  "dailyBath",
+  "oralHygiene",
+  "groomedNails",
 ] as const;
+
+const OPTIONAL_STRING_FIELDS = [
+  "otherEvent",
+  "pressure",
+  "saturation",
+  "glycemia",
+  "calfCircumference",
+  "chokingFrequency",
+  "needsMedications",
+  "needsHygiene",
+  "needsFood",
+] as const;
+
+const APPETITE_VALUES = Object.values(Appetite);
+const MOOD_VALUES = Object.values(Mood);
 
 /**
  * Returns the names of the weekly check-in fields that are missing or of the
- * wrong type. The numeric fields (falls, weightLoss) must be finite numbers and
- * the remaining fields must be booleans. Unlike the shared missingFields helper
- * this rejects wrong types, which matters here because `false`/`0` are valid.
+ * wrong type for a create. The yes/no answers must be booleans, `appetite` and
+ * `mood` must match their enums, `stressLevel` must be an integer from 0 to 5,
+ * `weeklyEvents` must be an array of known event keys and the optional fields
+ * must be strings when present. Unlike the shared missingFields helper this
+ * rejects wrong types, which matters here because `false` is a valid answer.
  */
 function invalidCheckInFields(body: Record<string, unknown>): string[] {
   const invalid: string[] = [];
 
-  for (const field of NUMBER_FIELDS) {
-    const value = body[field];
-    if (typeof value !== "number" || !Number.isFinite(value)) {
-      invalid.push(field);
-    }
+  for (const field of BOOLEAN_FIELDS) {
+    if (typeof body[field] !== "boolean") invalid.push(field);
   }
 
-  for (const field of BOOLEAN_FIELDS) {
-    if (typeof body[field] !== "boolean") {
+  if (!APPETITE_VALUES.includes(body.appetite as Appetite)) {
+    invalid.push("appetite");
+  }
+  if (!MOOD_VALUES.includes(body.mood as Mood)) {
+    invalid.push("mood");
+  }
+
+  const stress = body.stressLevel;
+  if (
+    typeof stress !== "number" ||
+    !Number.isInteger(stress) ||
+    stress < 0 ||
+    stress > 5
+  ) {
+    invalid.push("stressLevel");
+  }
+
+  const events = body.weeklyEvents;
+  if (
+    !Array.isArray(events) ||
+    events.some(
+      (event) =>
+        !WEEKLY_EVENTS.includes(event as (typeof WEEKLY_EVENTS)[number]),
+    )
+  ) {
+    invalid.push("weeklyEvents");
+  }
+
+  for (const field of OPTIONAL_STRING_FIELDS) {
+    const value = body[field];
+    if (value !== undefined && value !== null && typeof value !== "string") {
       invalid.push(field);
     }
   }
@@ -44,9 +94,29 @@ function invalidCheckInFields(body: Record<string, unknown>): string[] {
 }
 
 /**
- * POST /perfis/:perfilId/avaliacoes — record a weekly check-in for the profile.
- * Responds 201 with the created check-in, or 400 when a field is missing or has
- * the wrong type. `falls` is stored as an integer and `date` defaults to now().
+ * Builds the persistable optional-string map, normalizing null to undefined so
+ * Prisma stores NULL for absent values.
+ */
+function optionalStrings(
+  body: Record<string, unknown>,
+): Record<(typeof OPTIONAL_STRING_FIELDS)[number], string | null> {
+  const result = {} as Record<
+    (typeof OPTIONAL_STRING_FIELDS)[number],
+    string | null
+  >;
+  for (const field of OPTIONAL_STRING_FIELDS) {
+    const value = body[field];
+    result[field] =
+      typeof value === "string" && value.trim() !== "" ? value : null;
+  }
+  return result;
+}
+
+/**
+ * POST /perfis/:perfilId/avaliacoes — record a weekly check-in for the profile,
+ * covering the five wizard domains (health, nutrition/medication, behavior,
+ * hygiene and logistics). Responds 201 with the created check-in, or 400 when a
+ * field is missing or has the wrong type. `date` defaults to now().
  */
 router.post("/", async (req: Request, res: Response) => {
   const body = (req.body ?? {}) as Record<string, unknown>;
@@ -58,18 +128,20 @@ router.post("/", async (req: Request, res: Response) => {
       .json({ error: `missing/invalid fields: ${invalid.join(", ")}` });
   }
 
+  const booleans = {} as Record<(typeof BOOLEAN_FIELDS)[number], boolean>;
+  for (const field of BOOLEAN_FIELDS) {
+    booleans[field] = body[field] as boolean;
+  }
+
   const checkIn = await prisma.checkIn.create({
     data: {
       profileId: req.profile!.id,
-      falls: Math.trunc(body.falls as number),
-      weightLoss: body.weightLoss as number,
-      choking: body.choking as boolean,
-      gaitImpairment: body.gaitImpairment as boolean,
-      violenceSign: body.violenceSign as boolean,
-      irregularSleep: body.irregularSleep as boolean,
-      socialIsolation: body.socialIsolation as boolean,
-      failedComms: body.failedComms as boolean,
-      memoryLoss: body.memoryLoss as boolean,
+      ...booleans,
+      ...optionalStrings(body),
+      appetite: body.appetite as Appetite,
+      mood: body.mood as Mood,
+      stressLevel: body.stressLevel as number,
+      weeklyEvents: (body.weeklyEvents as string[]).map(String),
     },
   });
 
@@ -90,35 +162,6 @@ router.get("/", async (req: Request, res: Response) => {
 });
 
 /**
- * Returns the names of the check-in fields present in `body` that have the wrong
- * type. Used by the partial update: absent fields are left unchanged, but a
- * field the caller chose to send must still be a finite number / boolean, just
- * like on create.
- */
-function invalidCheckInUpdates(body: Record<string, unknown>): string[] {
-  const invalid: string[] = [];
-
-  for (const field of NUMBER_FIELDS) {
-    const value = body[field];
-    if (
-      value !== undefined &&
-      (typeof value !== "number" || !Number.isFinite(value))
-    ) {
-      invalid.push(field);
-    }
-  }
-
-  for (const field of BOOLEAN_FIELDS) {
-    const value = body[field];
-    if (value !== undefined && typeof value !== "boolean") {
-      invalid.push(field);
-    }
-  }
-
-  return invalid;
-}
-
-/**
  * GET /perfis/:perfilId/avaliacoes/:avaliacaoId — fetch one check-in.
  * 404 if it does not belong to the profile.
  */
@@ -136,8 +179,8 @@ router.get("/:avaliacaoId", async (req: Request, res: Response) => {
 
 /**
  * PUT /perfis/:perfilId/avaliacoes/:avaliacaoId — update a check-in. Only fields
- * present in the body are changed, and each must keep its type (numbers finite,
- * the rest booleans), so `false`/`0` are valid. 404 if not found on the profile.
+ * present in the body are changed, and each must keep the type rules from
+ * create, so `false`/`0` are valid. 404 if not found on the profile.
  */
 router.put("/:avaliacaoId", async (req: Request, res: Response) => {
   const id = Number(req.params.avaliacaoId);
@@ -150,8 +193,10 @@ router.put("/:avaliacaoId", async (req: Request, res: Response) => {
   }
 
   const body = (req.body ?? {}) as Record<string, unknown>;
-
-  const invalid = invalidCheckInUpdates(body);
+  const present = Object.keys(body);
+  const invalid = invalidCheckInFields({ ...existing, ...body }).filter(
+    (field) => present.includes(field),
+  );
   if (invalid.length) {
     return res
       .status(400)
@@ -159,13 +204,18 @@ router.put("/:avaliacaoId", async (req: Request, res: Response) => {
   }
 
   const data: Prisma.CheckInUpdateInput = {};
-  if (body.falls !== undefined) data.falls = Math.trunc(body.falls as number);
-  if (body.weightLoss !== undefined)
-    data.weightLoss = body.weightLoss as number;
   for (const field of BOOLEAN_FIELDS) {
-    if (body[field] !== undefined) {
-      data[field] = body[field] as boolean;
-    }
+    if (body[field] !== undefined) data[field] = body[field] as boolean;
+  }
+  for (const field of OPTIONAL_STRING_FIELDS) {
+    if (body[field] !== undefined) data[field] = body[field] as string | null;
+  }
+  if (body.appetite !== undefined) data.appetite = body.appetite as Appetite;
+  if (body.mood !== undefined) data.mood = body.mood as Mood;
+  if (body.stressLevel !== undefined)
+    data.stressLevel = body.stressLevel as number;
+  if (body.weeklyEvents !== undefined) {
+    data.weeklyEvents = (body.weeklyEvents as string[]).map(String);
   }
 
   const checkIn = await prisma.checkIn.update({ where: { id }, data });

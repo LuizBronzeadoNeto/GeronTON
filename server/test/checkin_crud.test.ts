@@ -12,15 +12,28 @@ const PROFILE_MARKER = "TestCheckIn";
 const OTHER_CAREGIVER_EMAIL = "othercheckin@test.com";
 
 const VALID_CHECKIN = {
-  falls: 2,
-  weightLoss: 1.5,
-  choking: false,
-  gaitImpairment: true,
-  violenceSign: false,
-  irregularSleep: true,
-  socialIsolation: false,
-  failedComms: false,
-  memoryLoss: true,
+  skinIssues: false,
+  bowelRegular: true,
+  sleepWell: false,
+  unstableGait: true,
+  weeklyEvents: ["pain", "fever"],
+  pressure: "120/80",
+  saturation: "96%",
+  glycemia: "110",
+  appetite: "regular",
+  chokingIncident: false,
+  breathShortness: false,
+  hydrationGoal: true,
+  medsOnTime: true,
+  mood: "neutral",
+  stressLevel: 2,
+  sunExposure: true,
+  selfExpression: true,
+  stimulation: false,
+  dailyBath: true,
+  oralHygiene: true,
+  groomedNails: true,
+  needsMedications: "Losartana 50mg",
 };
 
 async function login(
@@ -82,7 +95,7 @@ describe("/perfis/:perfilId/avaliacoes", () => {
   });
 
   it("rejects a check-in with a missing field, 400", async () => {
-    const { memoryLoss: _memoryLoss, ...incomplete } = VALID_CHECKIN;
+    const { groomedNails: _groomedNails, ...incomplete } = VALID_CHECKIN;
     const res = await request(app)
       .post(`/perfis/${profileId}/avaliacoes`)
       .set("Authorization", `Bearer ${caregiverToken}`)
@@ -95,7 +108,34 @@ describe("/perfis/:perfilId/avaliacoes", () => {
     const res = await request(app)
       .post(`/perfis/${profileId}/avaliacoes`)
       .set("Authorization", `Bearer ${caregiverToken}`)
-      .send({ ...VALID_CHECKIN, choking: "yes" });
+      .send({ ...VALID_CHECKIN, chokingIncident: "yes" });
+
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects a check-in with an unknown appetite value, 400", async () => {
+    const res = await request(app)
+      .post(`/perfis/${profileId}/avaliacoes`)
+      .set("Authorization", `Bearer ${caregiverToken}`)
+      .send({ ...VALID_CHECKIN, appetite: "amazing" });
+
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects a check-in with stressLevel out of range, 400", async () => {
+    const res = await request(app)
+      .post(`/perfis/${profileId}/avaliacoes`)
+      .set("Authorization", `Bearer ${caregiverToken}`)
+      .send({ ...VALID_CHECKIN, stressLevel: 9 });
+
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects a check-in with an unknown weekly event, 400", async () => {
+    const res = await request(app)
+      .post(`/perfis/${profileId}/avaliacoes`)
+      .set("Authorization", `Bearer ${caregiverToken}`)
+      .send({ ...VALID_CHECKIN, weeklyEvents: ["alien_abduction"] });
 
     expect(res.status).toBe(400);
   });
@@ -113,7 +153,7 @@ describe("/perfis/:perfilId/avaliacoes", () => {
     await request(app)
       .post(`/perfis/${profileId}/avaliacoes`)
       .set("Authorization", `Bearer ${caregiverToken}`)
-      .send({ ...VALID_CHECKIN, falls: 0 });
+      .send({ ...VALID_CHECKIN, stressLevel: 1 });
 
     const res = await request(app)
       .get(`/perfis/${profileId}/avaliacoes`)
@@ -168,17 +208,17 @@ describe("/perfis/:perfilId/avaliacoes", () => {
     const res = await request(app)
       .put(`/perfis/${profileId}/avaliacoes/${checkInId}`)
       .set("Authorization", `Bearer ${caregiverToken}`)
-      .send({ falls: 5 });
+      .send({ stressLevel: 4 });
 
     expect(res.status).toBe(200);
-    expect(res.body.falls).toBe(5);
+    expect(res.body.stressLevel).toBe(4);
   });
 
   it("rejects an update with a wrongly typed field, 400", async () => {
     const res = await request(app)
       .put(`/perfis/${profileId}/avaliacoes/${checkInId}`)
       .set("Authorization", `Bearer ${caregiverToken}`)
-      .send({ choking: "yes" });
+      .send({ chokingIncident: "yes" });
 
     expect(res.status).toBe(400);
   });
@@ -187,7 +227,7 @@ describe("/perfis/:perfilId/avaliacoes", () => {
     const res = await request(app)
       .put(`/perfis/${profileId}/avaliacoes/999999`)
       .set("Authorization", `Bearer ${caregiverToken}`)
-      .send({ falls: 1 });
+      .send({ stressLevel: 1 });
 
     expect(res.status).toBe(404);
   });
@@ -196,7 +236,7 @@ describe("/perfis/:perfilId/avaliacoes", () => {
     const res = await request(app)
       .put(`/perfis/${profileId}/avaliacoes/${checkInId}`)
       .set("Authorization", `Bearer ${otherCaregiverToken}`)
-      .send({ falls: 1 });
+      .send({ stressLevel: 1 });
 
     expect(res.status).toBe(403);
   });
