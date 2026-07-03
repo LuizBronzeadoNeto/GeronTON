@@ -1,5 +1,5 @@
 import axios from "axios";
-import { BASE_URL } from "./client";
+import { BASE_URL } from "./baseUrl";
 
 let authToken: string | null = null;
 

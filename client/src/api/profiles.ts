@@ -48,7 +48,3 @@ export async function updateProfile(
   const { data } = await http.put<Profile>(`/perfis/${id}`, input);
   return data;
 }
-
-export async function deleteProfile(id: number): Promise<void> {
-  await http.delete(`/perfis/${id}`);
-}

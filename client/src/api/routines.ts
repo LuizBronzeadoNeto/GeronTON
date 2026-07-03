@@ -17,16 +17,6 @@ export type RoutineInput = Pick<Routine, "title" | "period"> & {
 /**
  * Routine API calls against the backend's /perfis/:id/rotinas routes.
  */
-export async function getRoutine(
-  profileId: number,
-  routineId: number,
-): Promise<Routine> {
-  const { data } = await http.get<Routine>(
-    `/perfis/${profileId}/rotinas/${routineId}`,
-  );
-  return data;
-}
-
 export async function listRoutines(profileId: number): Promise<Routine[]> {
   const { data } = await http.get<Routine[]>(`/perfis/${profileId}/rotinas`);
   return data;
