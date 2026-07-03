@@ -10,7 +10,7 @@ const EVENT_TYPES = [
   "fall",
   "fever",
   "choking",
-  "breathing difficulties",
+  "breathing_difficulties",
   "bleeding",
   "confusion",
   "chest_pain",

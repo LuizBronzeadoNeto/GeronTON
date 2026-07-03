@@ -58,10 +58,13 @@ router.post("/", async (req: Request, res: Response) => {
       firstName: body.firstName,
       lastName: body.lastName,
       birthDate,
+      sex: typeof body.sex === "string" && body.sex !== "" ? body.sex : null,
       scholarship: body.scholarship,
       medicalConditions: Array.isArray(body.medicalConditions)
         ? body.medicalConditions.map(String)
         : [],
+      notes:
+        typeof body.notes === "string" && body.notes !== "" ? body.notes : null,
       caregiverId,
     },
   });
@@ -104,6 +107,10 @@ router.put("/:id", loadProfile, async (req: Request, res: Response) => {
   if (body.firstName !== undefined) data.firstName = body.firstName;
   if (body.lastName !== undefined) data.lastName = body.lastName;
   if (body.scholarship !== undefined) data.scholarship = body.scholarship;
+  if (body.sex !== undefined)
+    data.sex = body.sex === "" ? null : String(body.sex);
+  if (body.notes !== undefined)
+    data.notes = body.notes === "" ? null : String(body.notes);
 
   if (body.medicalConditions !== undefined) {
     if (!Array.isArray(body.medicalConditions)) {

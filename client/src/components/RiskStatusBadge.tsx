@@ -5,23 +5,35 @@ import {
   subscribeRiskStatusInvalidation,
   type RiskLevel,
 } from "../api/risk";
+import { COLORS, FONTS } from "../theme";
 
 interface Props {
   profileId: number;
 }
 
-const LEVELS: Record<RiskLevel, { label: string; text: string; bg: string }> = {
-  low: { label: "Baixo risco", text: "#1b5e20", bg: "#e8f5e9" },
-  moderate: { label: "Risco moderado", text: "#e65100", bg: "#fff3e0" },
-  high: { label: "Alto risco", text: "#b71c1c", bg: "#ffebee" },
-  unknown: { label: "Sem dados", text: "#555", bg: "#eeeeee" },
-};
+const LEVELS: Record<RiskLevel, { label: string; color: string; bg: string }> =
+  {
+    low: { label: "Estável", color: COLORS.success, bg: COLORS.successBg },
+    moderate: {
+      label: "Atenção",
+      color: COLORS.warning,
+      bg: COLORS.warningBg,
+    },
+    high: { label: "Crítico", color: COLORS.danger, bg: COLORS.dangerBadgeBg },
+    unknown: {
+      label: "Sem dados",
+      color: COLORS.grey500,
+      bg: "#EEEEEE",
+    },
+  };
 
 /**
- * Reusable pill showing a profile's current risk level. It reads through the
- * cached risk API (so many badges for the same profile share one request) and
- * refetches when the cache is invalidated by a mutation elsewhere in the app.
- * Renders nothing while loading and falls back to "Sem dados" on fetch errors.
+ * Status pill from the Figma design — a small rounded badge with a colored dot
+ * and label ("Crítico", "Atenção", "Estável" or "Sem dados") shown next to a
+ * profile wherever it appears. It reads through the cached risk API (so many
+ * badges for the same profile share one request) and refetches when the cache
+ * is invalidated by a mutation elsewhere in the app. Renders nothing while
+ * loading and falls back to "Sem dados" on fetch errors.
  */
 export function RiskStatusBadge({ profileId }: Props) {
   const [status, setStatus] = useState<RiskLevel | null>(null);
@@ -59,9 +71,10 @@ export function RiskStatusBadge({ profileId }: Props) {
       testID={`risk-badge-${profileId}`}
       style={[styles.badge, { backgroundColor: level.bg }]}
     >
+      <View style={[styles.dot, { backgroundColor: level.color }]} />
       <Text
         testID={`risk-badge-label-${profileId}`}
-        style={[styles.label, { color: level.text }]}
+        style={[styles.label, { color: level.color }]}
       >
         {level.label}
       </Text>
@@ -71,13 +84,21 @@ export function RiskStatusBadge({ profileId }: Props) {
 
 const styles = StyleSheet.create({
   badge: {
+    flexDirection: "row",
+    alignItems: "center",
     alignSelf: "flex-start",
-    borderRadius: 12,
+    gap: 6,
+    height: 20,
+    borderRadius: 10,
     paddingHorizontal: 10,
-    paddingVertical: 4,
+  },
+  dot: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
   },
   label: {
-    fontSize: 12,
-    fontWeight: "bold",
+    fontFamily: FONTS.semiBold,
+    fontSize: 10,
   },
 });

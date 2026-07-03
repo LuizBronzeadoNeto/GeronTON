@@ -9,8 +9,11 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RedirectScreen } from "./RedirectScreen";
 import type { AppStackParamList } from "../types/navigation";
 import { listProfiles, type Profile } from "../api/profiles";
+import { useAuth } from "../context/AuthContext";
+import type { Role } from "../types/auth";
 
 jest.mock("../api/profiles");
+jest.mock("../context/AuthContext");
 
 type Props = NativeStackScreenProps<AppStackParamList, "Redirect">;
 
@@ -20,10 +23,21 @@ function makeProfile(id: number): Profile {
     firstName: "Idoso",
     lastName: String(id),
     birthDate: "1950-01-01",
+    sex: null,
     scholarship: "fundamental",
     medicalConditions: [],
+    notes: null,
     caregiverId: 1,
   };
+}
+
+function mockRole(role: Role) {
+  jest.mocked(useAuth).mockReturnValue({
+    user: { id: 1, role, token: "jwt" },
+    isSigningIn: false,
+    signIn: jest.fn<() => Promise<void>>(),
+    signOut: jest.fn(),
+  });
 }
 
 function renderScreen() {
@@ -38,6 +52,20 @@ function renderScreen() {
 describe("RedirectScreen", () => {
   beforeEach(() => {
     jest.mocked(listProfiles).mockReset();
+    jest.mocked(useAuth).mockReset();
+    mockRole("cuidador");
+  });
+
+  it("sends a profissional straight to the triage-panel Home", async () => {
+    mockRole("profissional");
+    const { navigation } = renderScreen();
+
+    await waitFor(() => expect(navigation.reset).toHaveBeenCalled());
+    expect(navigation.reset).toHaveBeenCalledWith({
+      index: 0,
+      routes: [{ name: "Home" }],
+    });
+    expect(listProfiles).not.toHaveBeenCalled();
   });
 
   it("shows a loading indicator while profiles load", () => {
@@ -58,7 +86,7 @@ describe("RedirectScreen", () => {
     });
   });
 
-  it("opens the only profile's weekly check-in", async () => {
+  it("opens the only profile's detail hub", async () => {
     jest.mocked(listProfiles).mockResolvedValue([makeProfile(7)]);
     const { navigation } = renderScreen();
 
@@ -67,7 +95,7 @@ describe("RedirectScreen", () => {
       index: 1,
       routes: [
         { name: "Home" },
-        { name: "WeeklyCheckIn", params: { profileId: 7 } },
+        { name: "ProfileDetail", params: { profileId: 7 } },
       ],
     });
   });

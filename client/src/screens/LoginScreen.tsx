@@ -12,16 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../context/AuthContext";
 import { ErrorToast } from "../components/ErrorToast";
-
-const COLORS = {
-  primary: "#1A65B5",
-  heading: "#001413",
-  subtitle: "#999999",
-  placeholder: "#B3B3B3",
-  border: "#CCCCCC",
-  footerText: "#191A1D",
-  white: "#FFFFFF",
-};
+import { COLORS, FONTS } from "../theme";
 
 /**
  * Email + password form styled after the GeronTON Figma design: branded logo,
@@ -67,7 +58,7 @@ export function LoginScreen() {
           testID="login-email"
           style={styles.input}
           placeholder="Digite seu e-mail"
-          placeholderTextColor={COLORS.placeholder}
+          placeholderTextColor={COLORS.grey400}
           autoCapitalize="none"
           autoCorrect={false}
           keyboardType="email-address"
@@ -81,8 +72,10 @@ export function LoginScreen() {
             testID="login-password"
             style={[styles.input, styles.passwordInput]}
             placeholder="Digite sua senha"
-            placeholderTextColor={COLORS.placeholder}
+            placeholderTextColor={COLORS.grey400}
             secureTextEntry={!showPassword}
+            autoCapitalize="none"
+            autoCorrect={false}
             value={password}
             onChangeText={setPassword}
           />
@@ -98,7 +91,7 @@ export function LoginScreen() {
             <Ionicons
               name={showPassword ? "eye-outline" : "eye-off-outline"}
               size={24}
-              color={COLORS.subtitle}
+              color={COLORS.grey500}
             />
           </Pressable>
         </View>
@@ -159,13 +152,13 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   logo: {
-    fontFamily: "NunitoSans_800ExtraBold",
+    fontFamily: FONTS.extraBold,
     fontSize: 32,
     color: COLORS.primary,
     textAlign: "center",
   },
   heading: {
-    fontFamily: "NunitoSans_600SemiBold",
+    fontFamily: FONTS.semiBold,
     fontSize: 20,
     lineHeight: 28,
     color: COLORS.heading,
@@ -173,16 +166,16 @@ const styles = StyleSheet.create({
     marginTop: 48,
   },
   subtitle: {
-    fontFamily: "NunitoSans_600SemiBold",
+    fontFamily: FONTS.semiBold,
     fontSize: 14,
     lineHeight: 22,
-    color: COLORS.subtitle,
+    color: COLORS.grey500,
     textAlign: "center",
     marginTop: 8,
     marginBottom: 32,
   },
   label: {
-    fontFamily: "NunitoSans_600SemiBold",
+    fontFamily: FONTS.semiBold,
     fontSize: 14,
     lineHeight: 22,
     color: COLORS.heading,
@@ -191,10 +184,10 @@ const styles = StyleSheet.create({
   input: {
     height: 50,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: COLORS.grey300,
     borderRadius: 8,
     paddingHorizontal: 16,
-    fontFamily: "NunitoSans_600SemiBold",
+    fontFamily: FONTS.semiBold,
     fontSize: 14,
     color: COLORS.heading,
     marginBottom: 24,
@@ -211,7 +204,7 @@ const styles = StyleSheet.create({
     top: 13,
   },
   forgotLink: {
-    fontFamily: "NunitoSans_600SemiBold",
+    fontFamily: FONTS.semiBold,
     fontSize: 14,
     color: COLORS.primary,
     textDecorationLine: "underline",
@@ -236,7 +229,7 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   buttonText: {
-    fontFamily: "NunitoSans_600SemiBold",
+    fontFamily: FONTS.semiBold,
     fontSize: 14,
     color: COLORS.white,
   },
@@ -246,12 +239,12 @@ const styles = StyleSheet.create({
     paddingTop: 48,
   },
   footerText: {
-    fontFamily: "NunitoSans_600SemiBold",
+    fontFamily: FONTS.semiBold,
     fontSize: 14,
-    color: COLORS.footerText,
+    color: COLORS.text,
   },
   footerLink: {
-    fontFamily: "NunitoSans_600SemiBold",
+    fontFamily: FONTS.semiBold,
     fontSize: 14,
     color: COLORS.primary,
     textDecorationLine: "underline",

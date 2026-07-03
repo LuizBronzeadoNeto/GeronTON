@@ -38,8 +38,10 @@ model Profile {
   firstName         String
   lastName          String
   birthDate         DateTime     @db.Date
+  sex               String?
   scholarship       String
   medicalConditions String[]
+  notes             String?
   caregiverId       Int
   caregiver         User         @relation("CaregiverProfiles", fields: [caregiverId], references: [id], onDelete: Cascade)
   medications       Medication[]
@@ -79,20 +81,52 @@ model Routine {
   @@map("routines")
 }
 
+enum Appetite {
+  good
+  regular
+  bad
+}
+
+enum Mood {
+  very_happy
+  happy
+  neutral
+  sad
+  very_sad
+}
+
 model CheckIn {
-  id               Int      @id @default(autoincrement())
-  profileId        Int
-  profile          Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  date             DateTime @default(now())
-  falls            Int
-  choking          Boolean
-  gaitImpairment   Boolean
-  weightLoss       Float
-  violenceSign     Boolean
-  irregularSleep   Boolean
-  socialIsolation  Boolean
-  failedComms      Boolean
-  memoryLoss       Boolean
+  id                Int      @id @default(autoincrement())
+  profileId         Int
+  profile           Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  date              DateTime @default(now())
+  skinIssues        Boolean
+  bowelRegular      Boolean
+  sleepWell         Boolean
+  unstableGait      Boolean
+  weeklyEvents      String[]
+  otherEvent        String?
+  pressure          String?
+  saturation        String?
+  glycemia          String?
+  calfCircumference String?
+  appetite          Appetite
+  chokingIncident   Boolean
+  chokingFrequency  String?
+  breathShortness   Boolean
+  hydrationGoal     Boolean
+  medsOnTime        Boolean
+  mood              Mood
+  stressLevel       Int
+  sunExposure       Boolean
+  selfExpression    Boolean
+  stimulation       Boolean
+  dailyBath         Boolean
+  oralHygiene       Boolean
+  groomedNails      Boolean
+  needsMedications  String?
+  needsHygiene      String?
+  needsFood         String?
 
   @@map("check_ins")
 }

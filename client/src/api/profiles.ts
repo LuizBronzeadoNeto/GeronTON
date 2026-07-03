@@ -5,8 +5,10 @@ export interface Profile {
   firstName: string;
   lastName: string;
   birthDate: string;
+  sex: string | null;
   scholarship: string;
   medicalConditions: string[];
+  notes: string | null;
   caregiverId: number;
 }
 
@@ -14,8 +16,10 @@ export interface ProfileInput {
   firstName: string;
   lastName: string;
   birthDate: string;
+  sex: string | null;
   scholarship: string;
   medicalConditions: string[];
+  notes: string | null;
 }
 
 /**
@@ -39,7 +43,7 @@ export async function createProfile(input: ProfileInput): Promise<Profile> {
 
 export async function updateProfile(
   id: number,
-  input: ProfileInput,
+  input: Partial<ProfileInput>,
 ): Promise<Profile> {
   const { data } = await http.put<Profile>(`/perfis/${id}`, input);
   return data;

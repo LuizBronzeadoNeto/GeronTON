@@ -2,7 +2,6 @@ import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Button,
   FlatList,
   Pressable,
   StyleSheet,
@@ -10,6 +9,7 @@ import {
   View,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
+import { Ionicons } from "@expo/vector-icons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { AppStackParamList } from "../types/navigation";
 import {
@@ -17,13 +17,15 @@ import {
   listMedications,
   type Medication,
 } from "../api/medications";
+import { COLORS, FONTS } from "../theme";
 
 type Props = NativeStackScreenProps<AppStackParamList, "MedicationInventory">;
 
 /**
- * Medication inventory screen for an elderly profile. Lists all medications of
- * continuous use for the profile (passed via route params) and allows adding,
- * editing, and removing entries.
+ * Medication inventory screen for an elderly profile, styled with the design
+ * system: section title, a small primary "add" action and outlined item cards
+ * with a trash icon to remove. Lists all medications of continuous use for the
+ * profile (passed via route params).
  */
 export function MedicationInventoryScreen({ route, navigation }: Props) {
   const { profileId } = route.params;
@@ -81,15 +83,21 @@ export function MedicationInventoryScreen({ route, navigation }: Props) {
 
   return (
     <View testID="medication-inventory" style={styles.container}>
-      <Text style={styles.title}>Medicação de Uso Contínuo</Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>Medicação de Uso Contínuo</Text>
+        <Pressable
+          testID="medication-add"
+          accessibilityRole="button"
+          style={styles.addButton}
+          onPress={() => navigation.navigate("MedicationForm", { profileId })}
+        >
+          <Text style={styles.addButtonLabel}>+ Adicionar</Text>
+        </Pressable>
+      </View>
 
-      <Button
-        testID="medication-add"
-        title="Adicionar medicamento"
-        onPress={() => navigation.navigate("MedicationForm", { profileId })}
-      />
-
-      {loading ? <ActivityIndicator testID="medication-loading" /> : null}
+      {loading ? (
+        <ActivityIndicator testID="medication-loading" color={COLORS.primary} />
+      ) : null}
 
       {error ? (
         <Text testID="medication-error" style={styles.error}>
@@ -100,6 +108,7 @@ export function MedicationInventoryScreen({ route, navigation }: Props) {
       <FlatList
         data={medications}
         keyExtractor={(item) => String(item.id)}
+        contentContainerStyle={styles.listContent}
         ListEmptyComponent={
           loading ? null : (
             <Text testID="medication-empty" style={styles.empty}>
@@ -110,6 +119,7 @@ export function MedicationInventoryScreen({ route, navigation }: Props) {
         renderItem={({ item }) => (
           <View testID={`medication-item-${item.id}`} style={styles.item}>
             <Pressable
+              accessibilityRole="button"
               style={styles.itemContent}
               onPress={() =>
                 navigation.navigate("MedicationForm", {
@@ -126,12 +136,15 @@ export function MedicationInventoryScreen({ route, navigation }: Props) {
                 <Text style={styles.itemNotes}>{item.notes}</Text>
               ) : null}
             </Pressable>
-            <Button
+            <Pressable
               testID={`medication-delete-${item.id}`}
-              title="Remover"
-              color="#d32f2f"
+              accessibilityRole="button"
+              accessibilityLabel="Remover medicamento"
+              style={styles.deleteButton}
               onPress={() => handleDelete(item.id)}
-            />
+            >
+              <Ionicons name="trash-outline" size={18} color={COLORS.danger} />
+            </Pressable>
           </View>
         )}
       />
@@ -142,48 +155,85 @@ export function MedicationInventoryScreen({ route, navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 24,
+    backgroundColor: COLORS.white,
+    padding: 20,
+    gap: 12,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     gap: 12,
   },
   title: {
-    fontSize: 24,
-    fontWeight: "bold",
+    fontFamily: FONTS.semiBold,
+    fontSize: 20,
+    lineHeight: 28,
+    color: COLORS.heading,
+    flexShrink: 1,
+  },
+  addButton: {
+    height: 36,
+    borderRadius: 8,
+    backgroundColor: COLORS.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 16,
+  },
+  addButtonLabel: {
+    fontFamily: FONTS.semiBold,
+    fontSize: 14,
+    color: COLORS.white,
+  },
+  listContent: {
+    gap: 8,
+    paddingBottom: 24,
   },
   empty: {
-    fontSize: 16,
-    color: "#555",
+    fontFamily: FONTS.semiBold,
+    fontSize: 14,
+    color: COLORS.grey500,
     textAlign: "center",
     marginTop: 24,
   },
   error: {
-    color: "red",
+    fontFamily: FONTS.semiBold,
+    color: COLORS.danger,
     textAlign: "center",
   },
   item: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
     gap: 12,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    borderWidth: 1,
+    borderColor: COLORS.grey300,
+    borderRadius: 8,
+    padding: 12,
   },
   itemContent: {
     flex: 1,
-    paddingVertical: 4,
   },
   itemName: {
-    fontSize: 18,
-    fontWeight: "600",
+    fontFamily: FONTS.semiBold,
+    fontSize: 16,
+    color: COLORS.heading,
   },
   itemDetails: {
-    fontSize: 14,
-    color: "#555",
+    fontFamily: FONTS.regular,
+    fontSize: 13,
+    color: COLORS.grey500,
     marginTop: 2,
   },
   itemNotes: {
-    fontSize: 13,
-    color: "#888",
+    fontFamily: FONTS.regular,
+    fontSize: 12,
+    color: COLORS.grey400,
     marginTop: 4,
+  },
+  deleteButton: {
+    width: 32,
+    height: 32,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
