@@ -2,12 +2,6 @@ import { describe, it, expect } from "@jest/globals";
 import { computeRiskStatus } from "../src/utils/risk.js";
 import type { CheckIn, Intercorrence } from "@prisma/client";
 
-/**
- * Base check-in with every flag in its "safe" state, so each test only
- * needs to override the fields relevant to what it's checking. Similar to
- * the integration suite, but kept local so this file
- * has no dependency on the DB
- */
 const CLEAN_CHECKIN = {
   id: 1,
   profileId: 1,
@@ -40,6 +34,13 @@ function intercorrence(isCritical: boolean): Intercorrence {
   return { isCritical } as Intercorrence;
 }
 
+/**
+ * Risk engine regression test suite, to be ran before each commit, probides
+ * a base check-in with every flag in its "safe" state, so each test only
+ * needs to override the fields relevant to what it's checking. Similar to
+ * the integration suite, but kept local so these tests
+ * have no dependency on the DB
+ */
 describe("computeRiskStatus — no data", () => {
   it("is unknown with no check-in and no intercorrences", () => {
     expect(computeRiskStatus(null, [])).toEqual({
@@ -238,7 +239,7 @@ describe("computeRiskStatus — worst case", () => {
       oralHygiene: false,
       groomedNails: false,
     });
-    // I had to sum these by hand smh
+
     expect(computeRiskStatus(worst, []).score).toBe(35);
     expect(computeRiskStatus(worst, []).status).toBe("high");
   });
