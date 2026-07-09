@@ -48,6 +48,7 @@ model Profile {
   routines          Routine[]
   checkIns          CheckIn[]
   intercorrences    Intercorrence[]
+  alerts            Alert[]
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
 
@@ -127,6 +128,7 @@ model CheckIn {
   needsMedications  String?
   needsHygiene      String?
   needsFood         String?
+  alerts            Alert[]
 
   @@map("check_ins")
 }
@@ -139,4 +141,31 @@ model Intercorrence {
   eventType        EventType
   isCritical       Boolean  @default(false)
   description      String
+}
+
+enum AlertType {
+  weakened_home_bond
+  clinical_warning
+  metabolic_decompensation
+  sarcopenia_risk
+}
+
+enum AlertSeverity {
+  attention
+  critical
+}
+
+model Alert {
+  id         Int           @id @default(autoincrement())
+  profileId  Int
+  profile    Profile       @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  checkInId  Int?
+  checkIn    CheckIn?      @relation(fields: [checkInId], references: [id], onDelete: Cascade)
+  type       AlertType
+  severity   AlertSeverity
+  message    String
+  createdAt  DateTime      @default(now())
+  resolvedAt DateTime?
+
+  @@map("alerts")
 }

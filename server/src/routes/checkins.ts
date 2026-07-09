@@ -3,6 +3,10 @@ import { Prisma, Appetite, Mood } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 import { loadProfile } from "../middleware/loadProfile.js";
 import { WEEKLY_EVENTS } from "../utils/risk.js";
+import {
+  resolveHomeBondAlerts,
+  syncCheckInAlerts,
+} from "../services/alerts.js";
 
 const router = Router({ mergeParams: true });
 
@@ -115,8 +119,11 @@ function optionalStrings(
 /**
  * POST /perfis/:perfilId/avaliacoes — record a weekly check-in for the profile,
  * covering the five wizard domains (health, nutrition/medication, behavior,
- * hygiene and logistics). Responds 201 with the created check-in, or 400 when a
- * field is missing or has the wrong type. `date` defaults to now().
+ * hygiene and logistics). Persists the clinical alerts derived from the vital
+ * signs, and resolves any open "Vínculo Domiciliar Fragilizado" alert since a
+ * new weekly report re-establishes the home bond. Responds 201 with the created
+ * check-in, or 400 when a field is missing or has the wrong type. `date`
+ * defaults to now().
  */
 router.post("/", async (req: Request, res: Response) => {
   const body = (req.body ?? {}) as Record<string, unknown>;
@@ -144,6 +151,9 @@ router.post("/", async (req: Request, res: Response) => {
       weeklyEvents: (body.weeklyEvents as string[]).map(String),
     },
   });
+
+  await syncCheckInAlerts(checkIn);
+  await resolveHomeBondAlerts(checkIn.profileId);
 
   return res.status(201).json(checkIn);
 });
@@ -180,7 +190,8 @@ router.get("/:avaliacaoId", async (req: Request, res: Response) => {
 /**
  * PUT /perfis/:perfilId/avaliacoes/:avaliacaoId — update a check-in. Only fields
  * present in the body are changed, and each must keep the type rules from
- * create, so `false`/`0` are valid. 404 if not found on the profile.
+ * create, so `false`/`0` are valid. The check-in's clinical alerts are
+ * regenerated from the updated vital signs. 404 if not found on the profile.
  */
 router.put("/:avaliacaoId", async (req: Request, res: Response) => {
   const id = Number(req.params.avaliacaoId);
@@ -219,6 +230,7 @@ router.put("/:avaliacaoId", async (req: Request, res: Response) => {
   }
 
   const checkIn = await prisma.checkIn.update({ where: { id }, data });
+  await syncCheckInAlerts(checkIn);
   return res.json(checkIn);
 });
 
