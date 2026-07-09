@@ -1,4 +1,5 @@
 import { jest } from "@jest/globals";
+import type { Alert, DashboardAlert } from "../api/alerts";
 import type { Profile } from "../api/profiles";
 import type { RiskStatus } from "../api/risk";
 import { getRiskStatus, subscribeRiskStatusInvalidation } from "../api/risk";
@@ -55,7 +56,41 @@ export function makeRiskStatus(
     profileId: 5,
     status: "low",
     score: 0,
+    criticalEvents: [],
     evaluatedAt: "2026-06-15T00:00:00.000Z",
+    ...overrides,
+  };
+}
+
+/**
+ * Builds a clinical Alert fixture; pass overrides for the fields a test cares
+ * about.
+ */
+export function makeAlert(overrides: Partial<Alert> = {}): Alert {
+  return {
+    id: 31,
+    profileId: 5,
+    checkInId: null,
+    type: "weakened_home_bond",
+    severity: "attention",
+    message:
+      "Vínculo Domiciliar Fragilizado: sem check-in semanal há 4 semanas.",
+    createdAt: "2026-06-20T09:00:00.000Z",
+    resolvedAt: null,
+    ...overrides,
+  };
+}
+
+/**
+ * Builds a DashboardAlert fixture (an alert carrying the elder's name for the
+ * professional feed); pass overrides for the fields a test cares about.
+ */
+export function makeDashboardAlert(
+  overrides: Partial<DashboardAlert> = {},
+): DashboardAlert {
+  return {
+    ...makeAlert(),
+    profile: { id: 5, firstName: "Ozilene", lastName: "Leite" },
     ...overrides,
   };
 }

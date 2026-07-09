@@ -11,7 +11,13 @@ import {
 jest.mock("../api/risk");
 
 function riskFor(profileId: number, status: RiskLevel): RiskStatus {
-  return { profileId, status, score: 0, evaluatedAt: "2026-07-01T00:00:00Z" };
+  return {
+    profileId,
+    status,
+    score: 0,
+    criticalEvents: [],
+    evaluatedAt: "2026-07-01T00:00:00Z",
+  };
 }
 
 describe("RiskStatusBadge", () => {
