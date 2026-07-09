@@ -79,11 +79,14 @@ async function createCheckIn(overrides: Record<string, unknown> = {}) {
   return res.body;
 }
 
-async function createIntercorrence(isCritical: boolean) {
+async function createIntercorrence(
+  isCritical: boolean,
+  eventType = "fall",
+): Promise<{ id: number }> {
   const res = await request(app)
     .post(`/perfis/${perfilId}/intercorrencias`)
     .set("Authorization", `Bearer ${token}`)
-    .send({ eventType: "fall", isCritical, description: "risk test" });
+    .send({ eventType, isCritical, description: "risk test" });
   expect(res.status).toBe(201);
   return res.body;
 }
@@ -102,6 +105,7 @@ describe("GET /perfis/:perfilId/risco", () => {
     expect(res.body.profileId).toBe(perfilId);
     expect(res.body.status).toBe("unknown");
     expect(res.body.score).toBe(0);
+    expect(res.body.criticalEvents).toEqual([]);
     expect(typeof res.body.evaluatedAt).toBe("string");
   });
 
@@ -115,23 +119,44 @@ describe("GET /perfis/:perfilId/risco", () => {
     expect(res.body.score).toBe(0);
   });
 
-  it("returns moderate when warning signs accumulate", async () => {
+  it("stays low up to a functional score of 5", async () => {
+    await createCheckIn({ chokingIncident: true });
+
+    const res = await getRisk();
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe("low");
+    expect(res.body.score).toBe(5);
+  });
+
+  it("returns moderate from a functional score of 6", async () => {
+    await createCheckIn({ chokingIncident: true, appetite: "regular" });
+
+    const res = await getRisk();
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe("moderate");
+    expect(res.body.score).toBe(6);
+  });
+
+  it("weighs the health-domain warning signs", async () => {
     await createCheckIn({
-      appetite: "regular",
+      skinIssues: true,
+      bowelRegular: false,
       sleepWell: false,
-      stressLevel: 3,
+      unstableGait: true,
     });
 
     const res = await getRisk();
 
     expect(res.status).toBe(200);
     expect(res.body.status).toBe("moderate");
-    expect(res.body.score).toBe(3);
+    expect(res.body.score).toBe(11);
   });
 
-  it("returns high for severe check-in flags", async () => {
+  it("returns high from a functional score of 12", async () => {
     await createCheckIn({
-      weeklyEvents: ["fall_with_injury", "fever"],
+      unstableGait: true,
       chokingIncident: true,
       medsOnTime: false,
     });
@@ -140,18 +165,101 @@ describe("GET /perfis/:perfilId/risco", () => {
 
     expect(res.status).toBe(200);
     expect(res.body.status).toBe("high");
-    expect(res.body.score).toBe(8);
+    expect(res.body.score).toBe(12);
   });
 
-  it("counts recent intercorrences, weighting critical ones", async () => {
-    await createIntercorrence(true);
+  it("adds 5 points per critical weekly event and flags them", async () => {
+    await createCheckIn({
+      weeklyEvents: ["fever", "active_bleeding", "pain"],
+    });
+
+    const res = await getRisk();
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe("high");
+    expect(res.body.score).toBe(12);
+    expect(res.body.criticalEvents).toEqual(["fever", "active_bleeding"]);
+  });
+
+  it("scores the behavioral and stimulation domain", async () => {
+    await createCheckIn({
+      mood: "very_sad",
+      sunExposure: false,
+      selfExpression: false,
+      stimulation: false,
+    });
+
+    const res = await getRisk();
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe("low");
+    expect(res.body.score).toBe(5);
+  });
+
+  it("scores low saturation and small calf circumference from the vital signs", async () => {
+    await createCheckIn({ saturation: "90%", calfCircumference: "30,5" });
+
+    const res = await getRisk();
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe("moderate");
+    expect(res.body.score).toBe(6);
+  });
+
+  it("does not score blood pressure or glycemia outliers (flags only)", async () => {
+    await createCheckIn({ pressure: "150/95", glycemia: "250" });
+
+    const res = await getRisk();
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe("low");
+    expect(res.body.score).toBe(0);
+  });
+
+  it("forces at least moderate when a non-critical intercorrence exists", async () => {
+    await createCheckIn();
     await createIntercorrence(false);
 
     const res = await getRisk();
 
     expect(res.status).toBe(200);
     expect(res.body.status).toBe("moderate");
-    expect(res.body.score).toBe(4);
+    expect(res.body.score).toBe(0);
+  });
+
+  it("forces high when a critical intercorrence exists", async () => {
+    await createIntercorrence(true);
+
+    const res = await getRisk();
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe("high");
+    expect(res.body.score).toBe(0);
+  });
+
+  it("forces high for intrinsically critical event types regardless of severity", async () => {
+    await createIntercorrence(false, "fever");
+
+    const res = await getRisk();
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe("high");
+    expect(res.body.score).toBe(0);
+  });
+
+  it("preserves the more severe status when the weekly score is already high", async () => {
+    await createCheckIn({
+      unstableGait: true,
+      chokingIncident: true,
+      medsOnTime: false,
+    });
+    await createIntercorrence(false);
+
+    const res = await getRisk();
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe("high");
+    expect(res.body.score).toBe(12);
   });
 
   it("only scores the most recent check-in", async () => {
