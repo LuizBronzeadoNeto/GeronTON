@@ -1,5 +1,6 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import {
+  makeAlert,
   makeProfile,
   makeRiskStatus,
   mockNavigationModule,
@@ -14,7 +15,10 @@ import {
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ProfileDetailScreen } from "./ProfileDetailScreen";
 import type { AppStackParamList } from "../types/navigation";
+import type { Role } from "../types/auth";
+import { useAuth } from "../context/AuthContext";
 import { getProfile, updateProfile } from "../api/profiles";
+import { listProfileAlerts, resolveAlert } from "../api/alerts";
 import {
   deleteIntercorrence,
   listIntercorrences,
@@ -24,7 +28,18 @@ import {
 jest.mock("../api/profiles");
 jest.mock("../api/intercorrences");
 jest.mock("../api/risk");
+jest.mock("../api/alerts");
+jest.mock("../context/AuthContext");
 jest.mock("@react-navigation/native", () => mockNavigationModule());
+
+function mockSignedInAs(role: Role) {
+  jest.mocked(useAuth).mockReturnValue({
+    user: { id: 99, role, token: "test-token" },
+    isSigningIn: false,
+    signIn: jest.fn(async () => {}),
+    signOut: jest.fn(),
+  });
+}
 
 const MOCK_PROFILE = makeProfile({
   id: 7,
@@ -74,7 +89,13 @@ describe("ProfileDetailScreen", () => {
       .mockReset()
       .mockResolvedValue([RECENT_FALL, OLD_CONFUSION]);
     jest.mocked(deleteIntercorrence).mockReset().mockResolvedValue(undefined);
-    mockRiskApi(makeRiskStatus({ profileId: 7, status: "high", score: 8 }));
+    jest.mocked(listProfileAlerts).mockReset().mockResolvedValue([]);
+    jest
+      .mocked(resolveAlert)
+      .mockReset()
+      .mockResolvedValue(makeAlert({ resolvedAt: new Date().toISOString() }));
+    mockSignedInAs("profissional");
+    mockRiskApi(makeRiskStatus({ profileId: 7, status: "high", score: 14 }));
   });
 
   it("shows the header, baseline, conditions and history", async () => {
@@ -165,5 +186,53 @@ describe("ProfileDetailScreen", () => {
     await waitFor(() =>
       expect(screen.getByTestId("profile-detail-error")).toBeTruthy(),
     );
+  });
+
+  it("shows the open alerts with a resolve action for professionals", async () => {
+    jest
+      .mocked(listProfileAlerts)
+      .mockResolvedValue([makeAlert({ id: 31, profileId: 7 })]);
+    renderScreen();
+
+    await waitFor(() =>
+      expect(screen.getByTestId("detail-alert-31")).toBeTruthy(),
+    );
+    expect(listProfileAlerts).toHaveBeenCalledWith(7, true);
+
+    fireEvent.press(screen.getByTestId("detail-alert-31-resolve"));
+
+    await waitFor(() => expect(resolveAlert).toHaveBeenCalledWith(7, 31));
+    expect(screen.queryByTestId("detail-alert-31")).toBeNull();
+  });
+
+  it("hides the resolve action from caregivers", async () => {
+    mockSignedInAs("cuidador");
+    jest
+      .mocked(listProfileAlerts)
+      .mockResolvedValue([makeAlert({ id: 31, profileId: 7 })]);
+    renderScreen();
+
+    await waitFor(() =>
+      expect(screen.getByTestId("detail-alert-31")).toBeTruthy(),
+    );
+    expect(screen.queryByTestId("detail-alert-31-resolve")).toBeNull();
+  });
+
+  it("restores the alert when resolving fails", async () => {
+    jest
+      .mocked(listProfileAlerts)
+      .mockResolvedValue([makeAlert({ id: 31, profileId: 7 })]);
+    jest.mocked(resolveAlert).mockRejectedValueOnce(new Error("boom") as never);
+    renderScreen();
+
+    await waitFor(() =>
+      expect(screen.getByTestId("detail-alert-31")).toBeTruthy(),
+    );
+    fireEvent.press(screen.getByTestId("detail-alert-31-resolve"));
+
+    await waitFor(() =>
+      expect(screen.getByTestId("detail-alert-31")).toBeTruthy(),
+    );
+    expect(screen.getByTestId("profile-detail-error")).toBeTruthy();
   });
 });
