@@ -20,3 +20,6 @@ expo-env.d.ts
 # misc
 npm-debug.*
 .DS_Store
+.env.*
+!.env.production.example
+!.env.example
