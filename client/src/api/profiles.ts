@@ -1,4 +1,6 @@
 import { http } from "./http";
+import type { Alert } from "./alerts";
+import type { CheckIn } from "./checkins";
 
 export interface Profile {
   id: number;
@@ -33,6 +35,21 @@ export async function listProfiles(): Promise<Profile[]> {
 
 export async function getProfile(id: number): Promise<Profile> {
   const { data } = await http.get<Profile>(`/perfis/${id}`);
+  return data;
+}
+
+/**
+ * The elder's detail view in a single response: the profile, its latest weekly
+ * check-in (null when none was recorded yet) and its open alerts.
+ */
+export interface ProfileDetails {
+  profile: Profile;
+  latestCheckIn: CheckIn | null;
+  alerts: Alert[];
+}
+
+export async function getProfileDetails(id: number): Promise<ProfileDetails> {
+  const { data } = await http.get<ProfileDetails>(`/perfis/${id}/detalhes`);
   return data;
 }
 

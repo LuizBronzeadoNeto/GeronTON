@@ -1,8 +1,10 @@
 import { jest } from "@jest/globals";
 import type { Alert, DashboardAlert } from "../api/alerts";
-import type { Profile } from "../api/profiles";
+import type { CheckIn } from "../api/checkins";
+import type { Profile, ProfileDetails } from "../api/profiles";
 import type { RiskStatus } from "../api/risk";
 import { getRiskStatus, subscribeRiskStatusInvalidation } from "../api/risk";
+import type { TriageEntry } from "../api/triage";
 
 /**
  * Module mock for @react-navigation/native shared by the screen tests: keeps
@@ -58,6 +60,76 @@ export function makeRiskStatus(
     score: 0,
     criticalEvents: [],
     evaluatedAt: "2026-06-15T00:00:00.000Z",
+    ...overrides,
+  };
+}
+
+/**
+ * Builds a TriageEntry fixture (a profile carrying its computed risk, as the
+ * /triagem dashboard returns); pass overrides for the fields a test cares
+ * about.
+ */
+export function makeTriageEntry(
+  overrides: Partial<TriageEntry> = {},
+): TriageEntry {
+  return {
+    ...makeProfile(),
+    risk: { status: "low", score: 0, criticalEvents: [] },
+    ...overrides,
+  };
+}
+
+/**
+ * Builds a ProfileDetails fixture (the /perfis/:id/detalhes response); pass
+ * overrides for the fields a test cares about.
+ */
+export function makeProfileDetails(
+  overrides: Partial<ProfileDetails> = {},
+): ProfileDetails {
+  return {
+    profile: makeProfile(),
+    latestCheckIn: makeCheckIn(),
+    alerts: [],
+    ...overrides,
+  };
+}
+
+/**
+ * Builds a weekly CheckIn fixture with every answer in its "safe" state; pass
+ * overrides for the fields a test cares about.
+ */
+export function makeCheckIn(overrides: Partial<CheckIn> = {}): CheckIn {
+  return {
+    id: 40,
+    profileId: 5,
+    date: "2026-06-15T00:00:00.000Z",
+    skinIssues: false,
+    bowelRegular: true,
+    sleepWell: true,
+    unstableGait: false,
+    weeklyEvents: [],
+    otherEvent: null,
+    pressure: null,
+    saturation: null,
+    glycemia: null,
+    calfCircumference: null,
+    appetite: "good",
+    chokingIncident: false,
+    chokingFrequency: null,
+    breathShortness: false,
+    hydrationGoal: true,
+    medsOnTime: true,
+    mood: "happy",
+    stressLevel: 0,
+    sunExposure: true,
+    selfExpression: true,
+    stimulation: true,
+    dailyBath: true,
+    oralHygiene: true,
+    groomedNails: true,
+    needsMedications: null,
+    needsHygiene: null,
+    needsFood: null,
     ...overrides,
   };
 }

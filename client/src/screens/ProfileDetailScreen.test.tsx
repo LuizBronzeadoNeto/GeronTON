@@ -1,7 +1,9 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import {
   makeAlert,
+  makeCheckIn,
   makeProfile,
+  makeProfileDetails,
   makeRiskStatus,
   mockNavigationModule,
   mockRiskApi,
@@ -17,8 +19,8 @@ import { ProfileDetailScreen } from "./ProfileDetailScreen";
 import type { AppStackParamList } from "../types/navigation";
 import type { Role } from "../types/auth";
 import { useAuth } from "../context/AuthContext";
-import { getProfile, updateProfile } from "../api/profiles";
-import { listProfileAlerts, resolveAlert } from "../api/alerts";
+import { getProfileDetails, updateProfile } from "../api/profiles";
+import { resolveAlert } from "../api/alerts";
 import {
   deleteIntercorrence,
   listIntercorrences,
@@ -79,7 +81,22 @@ function renderScreen(profileId = 7) {
 
 describe("ProfileDetailScreen", () => {
   beforeEach(() => {
-    jest.mocked(getProfile).mockReset().mockResolvedValue(MOCK_PROFILE);
+    jest
+      .mocked(getProfileDetails)
+      .mockReset()
+      .mockResolvedValue(
+        makeProfileDetails({
+          profile: MOCK_PROFILE,
+          latestCheckIn: makeCheckIn({
+            id: 40,
+            profileId: 7,
+            date: "2026-07-06T00:00:00.000Z",
+            mood: "sad",
+            appetite: "regular",
+            weeklyEvents: ["fever"],
+          }),
+        }),
+      );
     jest
       .mocked(updateProfile)
       .mockReset()
@@ -89,7 +106,6 @@ describe("ProfileDetailScreen", () => {
       .mockReset()
       .mockResolvedValue([RECENT_FALL, OLD_CONFUSION]);
     jest.mocked(deleteIntercorrence).mockReset().mockResolvedValue(undefined);
-    jest.mocked(listProfileAlerts).mockReset().mockResolvedValue([]);
     jest
       .mocked(resolveAlert)
       .mockReset()
@@ -179,8 +195,48 @@ describe("ProfileDetailScreen", () => {
     expect(screen.queryByTestId("detail-condition-remove-Diabetes")).toBeNull();
   });
 
+  it("summarizes the latest check-in", async () => {
+    renderScreen();
+
+    await waitFor(() =>
+      expect(screen.getByTestId("detail-last-checkin")).toBeTruthy(),
+    );
+    expect(screen.getByText("06/07/2026")).toBeTruthy();
+    expect(screen.getByText("Triste")).toBeTruthy();
+    expect(screen.getByText("Regular")).toBeTruthy();
+    expect(screen.getByText("Febre")).toBeTruthy();
+  });
+
+  it("opens the full check-in from the summary card", async () => {
+    const { navigation } = renderScreen();
+    await waitFor(() =>
+      expect(screen.getByTestId("detail-last-checkin-open")).toBeTruthy(),
+    );
+
+    fireEvent.press(screen.getByTestId("detail-last-checkin-open"));
+
+    expect(navigation.navigate).toHaveBeenCalledWith("CheckInDetail", {
+      profileId: 7,
+      checkInId: 40,
+    });
+  });
+
+  it("shows an empty line when there is no check-in yet", async () => {
+    jest
+      .mocked(getProfileDetails)
+      .mockResolvedValue(
+        makeProfileDetails({ profile: MOCK_PROFILE, latestCheckIn: null }),
+      );
+    renderScreen();
+
+    await waitFor(() =>
+      expect(screen.getByTestId("detail-last-checkin-empty")).toBeTruthy(),
+    );
+    expect(screen.queryByTestId("detail-last-checkin-open")).toBeNull();
+  });
+
   it("shows an error when loading fails", async () => {
-    jest.mocked(getProfile).mockRejectedValueOnce(new Error("boom"));
+    jest.mocked(getProfileDetails).mockRejectedValueOnce(new Error("boom"));
     renderScreen();
 
     await waitFor(() =>
@@ -189,15 +245,18 @@ describe("ProfileDetailScreen", () => {
   });
 
   it("shows the open alerts with a resolve action for professionals", async () => {
-    jest
-      .mocked(listProfileAlerts)
-      .mockResolvedValue([makeAlert({ id: 31, profileId: 7 })]);
+    jest.mocked(getProfileDetails).mockResolvedValue(
+      makeProfileDetails({
+        profile: MOCK_PROFILE,
+        alerts: [makeAlert({ id: 31, profileId: 7 })],
+      }),
+    );
     renderScreen();
 
     await waitFor(() =>
       expect(screen.getByTestId("detail-alert-31")).toBeTruthy(),
     );
-    expect(listProfileAlerts).toHaveBeenCalledWith(7, true);
+    expect(getProfileDetails).toHaveBeenCalledWith(7);
 
     fireEvent.press(screen.getByTestId("detail-alert-31-resolve"));
 
@@ -207,9 +266,12 @@ describe("ProfileDetailScreen", () => {
 
   it("hides the resolve action from caregivers", async () => {
     mockSignedInAs("cuidador");
-    jest
-      .mocked(listProfileAlerts)
-      .mockResolvedValue([makeAlert({ id: 31, profileId: 7 })]);
+    jest.mocked(getProfileDetails).mockResolvedValue(
+      makeProfileDetails({
+        profile: MOCK_PROFILE,
+        alerts: [makeAlert({ id: 31, profileId: 7 })],
+      }),
+    );
     renderScreen();
 
     await waitFor(() =>
@@ -219,9 +281,12 @@ describe("ProfileDetailScreen", () => {
   });
 
   it("restores the alert when resolving fails", async () => {
-    jest
-      .mocked(listProfileAlerts)
-      .mockResolvedValue([makeAlert({ id: 31, profileId: 7 })]);
+    jest.mocked(getProfileDetails).mockResolvedValue(
+      makeProfileDetails({
+        profile: MOCK_PROFILE,
+        alerts: [makeAlert({ id: 31, profileId: 7 })],
+      }),
+    );
     jest.mocked(resolveAlert).mockRejectedValueOnce(new Error("boom") as never);
     renderScreen();
 
