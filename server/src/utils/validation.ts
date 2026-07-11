@@ -20,3 +20,14 @@ export function missingFields(
 export function optionalText(value: unknown): string | null {
   return typeof value === "string" && value !== "" ? value : null;
 }
+
+/**
+ * Parses a route id parameter: the id as a number when the raw value is a
+ * positive integer string, and null otherwise, so routes can respond 400
+ * instead of passing NaN to Prisma (which would surface as a 500).
+ */
+export function parseId(raw: unknown): number | null {
+  if (typeof raw !== "string") return null;
+  const id = Number(raw);
+  return Number.isInteger(id) && id > 0 ? id : null;
+}

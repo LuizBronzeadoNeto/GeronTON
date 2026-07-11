@@ -55,6 +55,18 @@ router.post("/", async (req: Request, res: Response) => {
       ? body.caregiverId
       : user.id;
 
+  if (caregiverId !== user.id) {
+    const caregiver = await prisma.user.findUnique({
+      where: { id: caregiverId },
+      select: { id: true },
+    });
+    if (!caregiver) {
+      return res
+        .status(400)
+        .json({ error: "caregiverId does not match an existing user" });
+    }
+  }
+
   const profile = await prisma.profile.create({
     data: {
       firstName: body.firstName,

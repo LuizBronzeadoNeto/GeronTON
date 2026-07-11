@@ -1,4 +1,5 @@
 import { Router, Request, Response } from "express";
+import { Prisma } from "@prisma/client";
 import { prisma, Role } from "../lib/prisma.js";
 import { authMiddleware } from "../middleware/authenticateUser.js";
 import { requireRole } from "../middleware/requireRole.js";
@@ -22,25 +23,34 @@ export function buildRegistrationRouter(role: Role): Router {
     async (req: Request, res: Response) => {
       const { email, password } = req.body ?? {};
 
-      if (!email || !password) {
+      if (
+        typeof email !== "string" ||
+        email === "" ||
+        typeof password !== "string" ||
+        password === ""
+      ) {
         return res
           .status(400)
           .json({ error: "email and password are required." });
       }
 
-      const existing = await prisma.user.findUnique({ where: { email } });
-      if (existing) {
-        return res
-          .status(409)
-          .json({ error: "A user with this email already exists" });
+      try {
+        const user = await prisma.user.create({
+          data: { email, password, role },
+          select: { id: true, email: true, role: true },
+        });
+        return res.status(201).json(user);
+      } catch (error) {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === "P2002"
+        ) {
+          return res
+            .status(409)
+            .json({ error: "A user with this email already exists" });
+        }
+        throw error;
       }
-
-      const user = await prisma.user.create({
-        data: { email, password, role },
-        select: { id: true, email: true, role: true },
-      });
-
-      return res.status(201).json(user);
     },
   );
 

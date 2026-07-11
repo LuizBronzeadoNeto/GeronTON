@@ -3,6 +3,7 @@ import { Prisma, Appetite, Mood } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 import { loadProfile } from "../middleware/loadProfile.js";
 import { WEEKLY_EVENTS } from "../utils/risk.js";
+import { parseId } from "../utils/validation.js";
 import {
   resolveHomeBondAlerts,
   syncCheckInAlerts,
@@ -176,8 +177,13 @@ router.get("/", async (req: Request, res: Response) => {
  * 404 if it does not belong to the profile.
  */
 router.get("/:avaliacaoId", async (req: Request, res: Response) => {
+  const id = parseId(req.params.avaliacaoId);
+  if (id === null) {
+    return res.status(400).json({ error: "invalid check-in id" });
+  }
+
   const checkIn = await prisma.checkIn.findFirst({
-    where: { id: Number(req.params.avaliacaoId), profileId: req.profile!.id },
+    where: { id, profileId: req.profile!.id },
   });
 
   if (!checkIn) {
@@ -194,7 +200,11 @@ router.get("/:avaliacaoId", async (req: Request, res: Response) => {
  * regenerated from the updated vital signs. 404 if not found on the profile.
  */
 router.put("/:avaliacaoId", async (req: Request, res: Response) => {
-  const id = Number(req.params.avaliacaoId);
+  const id = parseId(req.params.avaliacaoId);
+  if (id === null) {
+    return res.status(400).json({ error: "invalid check-in id" });
+  }
+
   const existing = await prisma.checkIn.findFirst({
     where: { id, profileId: req.profile!.id },
   });
@@ -219,7 +229,11 @@ router.put("/:avaliacaoId", async (req: Request, res: Response) => {
     if (body[field] !== undefined) data[field] = body[field] as boolean;
   }
   for (const field of OPTIONAL_STRING_FIELDS) {
-    if (body[field] !== undefined) data[field] = body[field] as string | null;
+    if (body[field] !== undefined) {
+      const value = body[field];
+      data[field] =
+        typeof value === "string" && value.trim() !== "" ? value : null;
+    }
   }
   if (body.appetite !== undefined) data.appetite = body.appetite as Appetite;
   if (body.mood !== undefined) data.mood = body.mood as Mood;
@@ -239,7 +253,11 @@ router.put("/:avaliacaoId", async (req: Request, res: Response) => {
  * Responds 204, or 404 if not found on the profile.
  */
 router.delete("/:avaliacaoId", async (req: Request, res: Response) => {
-  const id = Number(req.params.avaliacaoId);
+  const id = parseId(req.params.avaliacaoId);
+  if (id === null) {
+    return res.status(400).json({ error: "invalid check-in id" });
+  }
+
   const existing = await prisma.checkIn.findFirst({
     where: { id, profileId: req.profile!.id },
   });
