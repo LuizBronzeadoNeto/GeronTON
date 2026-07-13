@@ -6,6 +6,7 @@ export interface RiskStatus {
   profileId: number;
   status: RiskLevel;
   score: number;
+  criticalEvents: string[];
   evaluatedAt: string;
 }
 

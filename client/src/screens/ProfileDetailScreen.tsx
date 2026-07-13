@@ -18,7 +18,14 @@ import {
   listIntercorrences,
   type Intercorrence,
 } from "../api/intercorrences";
+import {
+  listProfileAlerts,
+  resolveAlert,
+  type Alert as ClinicalAlert,
+} from "../api/alerts";
 import { eventTypeLabel } from "../constants/intercorrence";
+import { useAuth } from "../context/AuthContext";
+import { AlertCard } from "../components/AlertCard";
 import { RiskStatusBadge } from "../components/RiskStatusBadge";
 import { StatusPill } from "../components/StatusPill";
 import { ageInYears, formatTimestamp, isoToBrDate } from "../utils/date";
@@ -55,16 +62,20 @@ function SeverityPill({ isCritical }: { isCritical: boolean }) {
 
 /**
  * "Cuidador/Idoso{id}" hub from the Figma design, used by both roles: the
- * elder's header with risk pill and critical-event warning, the per-profile
- * actions (weekly check-in, intercorrence, rotina and medication), the
- * "Linha de base" card, the removable condition chips (pencil opens the full
- * edit form) and the recent intercorrence history with severity pills.
+ * elder's header with risk pill and critical-event warning, the open clinical
+ * alerts raised by the monitoring system (resolvable by professionals), the
+ * per-profile actions (weekly check-in, intercorrence, rotina and medication),
+ * the "Linha de base" card, the removable condition chips (pencil opens the
+ * full edit form) and the recent intercorrence history with severity pills.
  */
 export function ProfileDetailScreen({ navigation, route }: Props) {
   const { profileId } = route.params;
+  const { user } = useAuth();
+  const isProfessional = user?.role === "profissional";
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [intercorrences, setIntercorrences] = useState<Intercorrence[]>([]);
+  const [alerts, setAlerts] = useState<ClinicalAlert[]>([]);
   const [hasRecentCritical, setHasRecentCritical] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -73,11 +84,16 @@ export function ProfileDetailScreen({ navigation, route }: Props) {
     useCallback(() => {
       let active = true;
       setError(null);
-      Promise.all([getProfile(profileId), listIntercorrences(profileId)])
-        .then(([profileData, intercorrenceData]) => {
+      Promise.all([
+        getProfile(profileId),
+        listIntercorrences(profileId),
+        listProfileAlerts(profileId, true),
+      ])
+        .then(([profileData, intercorrenceData, alertData]) => {
           if (!active) return;
           setProfile(profileData);
           setIntercorrences(intercorrenceData);
+          setAlerts(alertData);
           setHasRecentCritical(hasRecentCriticalEvent(intercorrenceData));
         })
         .catch(() => {
@@ -91,6 +107,17 @@ export function ProfileDetailScreen({ navigation, route }: Props) {
       };
     }, [profileId]),
   );
+
+  async function handleResolveAlert(alertId: number) {
+    const previous = alerts;
+    setAlerts((old) => old.filter((item) => item.id !== alertId));
+    try {
+      await resolveAlert(profileId, alertId);
+    } catch {
+      setAlerts(previous);
+      setError("Não foi possível resolver o alerta.");
+    }
+  }
 
   async function removeCondition(condition: string) {
     if (!profile) return;
@@ -219,6 +246,22 @@ export function ProfileDetailScreen({ navigation, route }: Props) {
         <Text testID="profile-detail-error" style={styles.error}>
           {error}
         </Text>
+      ) : null}
+
+      {alerts.length > 0 ? (
+        <View testID="detail-alerts" style={styles.alertsSection}>
+          <Text style={styles.cardTitle}>Alertas ativos</Text>
+          {alerts.map((alert) => (
+            <AlertCard
+              key={alert.id}
+              testID={`detail-alert-${alert.id}`}
+              alert={alert}
+              onResolve={
+                isProfessional ? () => handleResolveAlert(alert.id) : undefined
+              }
+            />
+          ))}
+        </View>
       ) : null}
 
       <View style={styles.card}>
@@ -360,6 +403,9 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: 10,
     marginTop: 8,
+  },
+  alertsSection: {
+    gap: 8,
   },
   actionButton: {
     flexDirection: "row",

@@ -4,6 +4,7 @@ import loginRouter from "./routes/login.js";
 import caregiversRouter from "./routes/caregivers.js";
 import professionalRouter from "./routes/professionals.js";
 import profilesRouter from "./routes/profiles.js";
+import { alertsDashboardRouter } from "./routes/alerts.js";
 
 const app = express();
 
@@ -17,6 +18,7 @@ app.use(loginRouter);
 app.use("/cuidadores", caregiversRouter);
 app.use("/profissionais", professionalRouter);
 app.use("/perfis", profilesRouter);
+app.use("/alertas", alertsDashboardRouter);
 
 /**
  * Central error handler. Express 5 forwards rejected promises from async route

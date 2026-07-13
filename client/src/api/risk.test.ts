@@ -15,7 +15,13 @@ const mockedGet = jest.mocked(http.get);
 
 function riskFor(profileId: number, status: RiskStatus["status"] = "low") {
   return {
-    data: { profileId, status, score: 0, evaluatedAt: "2026-07-01T00:00:00Z" },
+    data: {
+      profileId,
+      status,
+      score: 0,
+      criticalEvents: [],
+      evaluatedAt: "2026-07-01T00:00:00Z",
+    },
   };
 }
 
