@@ -12,6 +12,7 @@ import type { AppStackParamList } from "../types/navigation";
 import { listProfiles, type Profile } from "../api/profiles";
 import { ProfileCard } from "../components/ProfileCard";
 import { PrimaryButton } from "../components/PrimaryButton";
+import { RiskLegend } from "../components/RiskLegend";
 import { COLORS, FONTS } from "../theme";
 
 type Props = NativeStackScreenProps<AppStackParamList, "ProfileList">;
@@ -20,8 +21,9 @@ type Props = NativeStackScreenProps<AppStackParamList, "ProfileList">;
  * "Meus idosos" screen from the Figma design: lists the elderly profiles the
  * user may access as outlined cards (avatar initial, name, risk pill and age)
  * with a "+ Novo idoso" button on top and the design's empty state. Tapping a
- * card opens the elder's detail hub. The list is refetched each time the
- * screen regains focus, so it reflects changes made elsewhere.
+ * card opens the elder's detail hub. The risk-level legend closes the list so
+ * caregivers can read each elder's current status pill. The list is refetched
+ * each time the screen regains focus, so it reflects changes made elsewhere.
  */
 export function ProfileListScreen({ navigation }: Props) {
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -74,6 +76,8 @@ export function ProfileListScreen({ navigation }: Props) {
         data={profiles}
         keyExtractor={(item) => String(item.id)}
         contentContainerStyle={styles.listContent}
+        ListFooterComponent={loading ? null : <RiskLegend />}
+        ListFooterComponentStyle={styles.legendFooter}
         ListEmptyComponent={
           loading ? null : (
             <Text testID="profile-list-empty" style={styles.empty}>
@@ -107,12 +111,15 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingBottom: 24,
   },
+  legendFooter: {
+    marginTop: 12,
+  },
   empty: {
     fontFamily: FONTS.semiBold,
     fontSize: 14,
     color: COLORS.primary,
     textAlign: "center",
-    marginTop: 120,
+    marginTop: 24,
   },
   error: {
     fontFamily: FONTS.semiBold,

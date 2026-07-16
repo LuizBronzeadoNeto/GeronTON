@@ -4,28 +4,12 @@ import {
   subscribeRiskStatusInvalidation,
   type RiskLevel,
 } from "../api/risk";
+import { RISK_LEVELS } from "../constants/risk";
 import { StatusPill } from "./StatusPill";
-import { COLORS } from "../theme";
 
 interface Props {
   profileId: number;
 }
-
-const LEVELS: Record<RiskLevel, { label: string; color: string; bg: string }> =
-  {
-    low: { label: "Estável", color: COLORS.success, bg: COLORS.successBg },
-    moderate: {
-      label: "Atenção",
-      color: COLORS.warning,
-      bg: COLORS.warningBg,
-    },
-    high: { label: "Crítico", color: COLORS.danger, bg: COLORS.dangerBadgeBg },
-    unknown: {
-      label: "Sem dados",
-      color: COLORS.grey500,
-      bg: "#EEEEEE",
-    },
-  };
 
 /**
  * Status pill from the Figma design — a small rounded badge with a colored dot
@@ -64,7 +48,7 @@ export function RiskStatusBadge({ profileId }: Props) {
 
   if (!status) return null;
 
-  const level = LEVELS[status];
+  const level = RISK_LEVELS[status];
 
   return (
     <StatusPill

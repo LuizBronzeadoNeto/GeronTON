@@ -57,7 +57,9 @@ describe("ProfessionalHomeScreen", () => {
       expect(screen.getByTestId("professional-item-1")).toBeTruthy(),
     );
     expect(screen.getByText("Ozilene Leite")).toBeTruthy();
-    await waitFor(() => expect(screen.getByText("Crítico")).toBeTruthy());
+    await waitFor(() =>
+      expect(screen.getByTestId("risk-badge-label-1")).toBeTruthy(),
+    );
     await waitFor(() =>
       expect(screen.getByText("Último check-in: -----")).toBeTruthy(),
     );
@@ -134,6 +136,13 @@ describe("ProfessionalHomeScreen", () => {
     await waitFor(() =>
       expect(screen.getByTestId("professional-item-1")).toBeTruthy(),
     );
+  });
+
+  it("shows the risk-level legend under the triage cards", async () => {
+    renderScreen();
+
+    await waitFor(() => expect(screen.getByTestId("risk-legend")).toBeTruthy());
+    expect(screen.getByText("Legenda dos níveis de risco")).toBeTruthy();
   });
 
   it("shows the empty state when there are no profiles", async () => {
