@@ -7,13 +7,14 @@ import {
   NunitoSans_800ExtraBold,
 } from "@expo-google-fonts/nunito-sans";
 import { AuthProvider } from "./src/context/AuthContext";
+import { NotificationProvider } from "./src/context/NotificationContext";
 import { RootNavigator } from "./src/navigation/RootNavigator";
 
 /**
  * App root: loads the Nunito Sans faces the design system uses (rendering
- * nothing until they are ready), then provides safe-area insets and auth state
- * and renders the navigator that switches between the login flow and the
- * role-based app.
+ * nothing until they are ready), then provides safe-area insets, auth state
+ * and in-app notifications, and renders the navigator that switches between
+ * the login flow and the role-based app.
  */
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -29,8 +30,10 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <AuthProvider>
-        <StatusBar style="auto" />
-        <RootNavigator />
+        <NotificationProvider>
+          <StatusBar style="auto" />
+          <RootNavigator />
+        </NotificationProvider>
       </AuthProvider>
     </SafeAreaProvider>
   );

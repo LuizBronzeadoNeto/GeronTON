@@ -166,6 +166,19 @@ describe("ProfileDetailScreen", () => {
     });
   });
 
+  it("opens the full history from the recent-history link", async () => {
+    const { navigation } = renderScreen();
+    await waitFor(() =>
+      expect(screen.getByTestId("detail-history-all")).toBeTruthy(),
+    );
+
+    fireEvent.press(screen.getByTestId("detail-history-all"));
+
+    expect(navigation.navigate).toHaveBeenCalledWith("IntercorrenceList", {
+      profileId: 7,
+    });
+  });
+
   it("opens the edit form from the conditions pencil", async () => {
     const { navigation } = renderScreen();
     await waitFor(() => expect(screen.getByTestId("detail-edit")).toBeTruthy());

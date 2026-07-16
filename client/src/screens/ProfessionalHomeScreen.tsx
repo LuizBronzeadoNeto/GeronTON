@@ -14,6 +14,7 @@ import { listDashboardAlerts, type DashboardAlert } from "../api/alerts";
 import { ProfileCard } from "../components/ProfileCard";
 import { AlertCard } from "../components/AlertCard";
 import { PrimaryButton } from "../components/PrimaryButton";
+import { RiskLegend } from "../components/RiskLegend";
 import { COLORS, FONTS } from "../theme";
 
 type Props = NativeStackScreenProps<AppStackParamList, "Home">;
@@ -120,6 +121,8 @@ export function ProfessionalHomeScreen({ navigation }: Props) {
         keyExtractor={(item) => String(item.id)}
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={alertsPanel}
+        ListFooterComponent={loading ? null : <RiskLegend />}
+        ListFooterComponentStyle={styles.legendFooter}
         ListEmptyComponent={
           loading ? null : (
             <Text testID="professional-empty" style={styles.empty}>
@@ -132,6 +135,7 @@ export function ProfessionalHomeScreen({ navigation }: Props) {
             profile={item}
             testIDPrefix="professional"
             showLastCheckIn
+            criticalEvents={item.risk.criticalEvents}
             onOpen={() =>
               navigation.navigate("ProfileDetail", { profileId: item.id })
             }
@@ -170,12 +174,15 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingBottom: 24,
   },
+  legendFooter: {
+    marginTop: 12,
+  },
   empty: {
     fontFamily: FONTS.semiBold,
     fontSize: 14,
     color: COLORS.primary,
     textAlign: "center",
-    marginTop: 120,
+    marginTop: 24,
   },
   error: {
     fontFamily: FONTS.semiBold,

@@ -11,6 +11,8 @@ import { ProfileListScreen } from "../screens/ProfileListScreen";
 import { ProfileDetailScreen } from "../screens/ProfileDetailScreen";
 import { ProfileFormScreen } from "../screens/ProfileFormScreen";
 import { IntercorrenceFormScreen } from "../screens/IntercorrenceFormScreen";
+import { IntercorrenceConfirmationScreen } from "../screens/IntercorrenceConfirmationScreen";
+import { IntercorrenceListScreen } from "../screens/IntercorrenceListScreen";
 import { WeeklyCheckInScreen } from "../screens/WeeklyCheckInScreen";
 import { CheckInDetailScreen } from "../screens/CheckInDetailScreen";
 import { RedirectScreen } from "../screens/RedirectScreen";
@@ -102,6 +104,16 @@ export function AppStack({ role }: { role: Role }) {
         name="IntercorrenceForm"
         component={IntercorrenceFormScreen}
         options={{ title: "Intercorrência" }}
+      />
+      <Stack.Screen
+        name="IntercorrenceConfirmation"
+        component={IntercorrenceConfirmationScreen}
+        options={{ title: "Intercorrência" }}
+      />
+      <Stack.Screen
+        name="IntercorrenceList"
+        component={IntercorrenceListScreen}
+        options={{ title: "Histórico" }}
       />
       <Stack.Screen
         name="WeeklyCheckIn"

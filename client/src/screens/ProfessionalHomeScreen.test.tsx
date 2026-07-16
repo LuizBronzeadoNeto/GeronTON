@@ -57,7 +57,9 @@ describe("ProfessionalHomeScreen", () => {
       expect(screen.getByTestId("professional-item-1")).toBeTruthy(),
     );
     expect(screen.getByText("Ozilene Leite")).toBeTruthy();
-    await waitFor(() => expect(screen.getByText("Crítico")).toBeTruthy());
+    await waitFor(() =>
+      expect(screen.getByTestId("risk-badge-label-1")).toBeTruthy(),
+    );
     await waitFor(() =>
       expect(screen.getByText("Último check-in: -----")).toBeTruthy(),
     );
@@ -134,6 +136,57 @@ describe("ProfessionalHomeScreen", () => {
     await waitFor(() =>
       expect(screen.getByTestId("professional-item-1")).toBeTruthy(),
     );
+  });
+
+  it("flags critical weekly events on the triage card", async () => {
+    jest.mocked(listTriage).mockResolvedValue([
+      makeTriageEntry({
+        id: 3,
+        risk: {
+          status: "high",
+          score: 15,
+          criticalEvents: ["fever", "active_bleeding"],
+        },
+      }),
+    ]);
+    renderScreen();
+
+    await waitFor(() =>
+      expect(screen.getByTestId("professional-critical-3")).toBeTruthy(),
+    );
+    expect(
+      screen.getByText("Evento crítico na semana: Febre, Sangramento ativo"),
+    ).toBeTruthy();
+  });
+
+  it("does not flag cards without critical weekly events", async () => {
+    renderScreen();
+
+    await waitFor(() =>
+      expect(screen.getByTestId("professional-item-1")).toBeTruthy(),
+    );
+    expect(screen.queryByTestId("professional-critical-1")).toBeNull();
+  });
+
+  it("marks weakened home bond alerts with the house icon", async () => {
+    jest
+      .mocked(listDashboardAlerts)
+      .mockResolvedValue([
+        makeDashboardAlert({ id: 31, type: "weakened_home_bond" }),
+      ]);
+    renderScreen();
+
+    await waitFor(() =>
+      expect(screen.getByTestId("professional-alert-31")).toBeTruthy(),
+    );
+    expect(screen.getByTestId("alert-icon-weakened_home_bond")).toBeTruthy();
+  });
+
+  it("shows the risk-level legend under the triage cards", async () => {
+    renderScreen();
+
+    await waitFor(() => expect(screen.getByTestId("risk-legend")).toBeTruthy());
+    expect(screen.getByText("Legenda dos níveis de risco")).toBeTruthy();
   });
 
   it("shows the empty state when there are no profiles", async () => {
