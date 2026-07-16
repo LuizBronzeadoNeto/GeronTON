@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import type { Profile } from "../api/profiles";
 import { listCheckIns } from "../api/checkins";
+import { WEEKLY_EVENTS } from "../constants/checkin";
 import { RiskStatusBadge } from "./RiskStatusBadge";
 import { ageInYears } from "../utils/date";
 import { COLORS, FONTS } from "../theme";
@@ -12,6 +13,19 @@ interface Props {
   testIDPrefix: string;
   onOpen: () => void;
   showLastCheckIn?: boolean;
+  criticalEvents?: string[];
+}
+
+/**
+ * Display labels for the critical weekly events flagged on a triage card,
+ * using the check-in wizard's labels; unknown keys fall back to themselves.
+ */
+function criticalEventsSummary(events: string[]): string {
+  return events
+    .map(
+      (key) => WEEKLY_EVENTS.find((event) => event.key === key)?.label ?? key,
+    )
+    .join(", ");
 }
 
 /**
@@ -49,14 +63,17 @@ function LastCheckInLine({ profileId }: { profileId: number }) {
  * Elderly-profile card from the Figma design, shared by the caregiver's "Meus
  * idosos" list and the professional's "Painel de triagem": avatar initial,
  * name with the risk pill, age (plus optionally the last check-in date) and a
- * chevron. Tapping it opens the elder's detail hub, where the per-profile
- * actions live.
+ * chevron. When the latest check-in reported critical weekly events
+ * (`criticalEvents`), a red warning line flags them, per the screening
+ * algorithm's visual-flag requirement. Tapping the card opens the elder's
+ * detail hub, where the per-profile actions live.
  */
 export function ProfileCard({
   profile,
   testIDPrefix,
   onOpen,
   showLastCheckIn = false,
+  criticalEvents = [],
 }: Props) {
   return (
     <Pressable
@@ -81,6 +98,17 @@ export function ProfileCard({
           {ageInYears(profile.birthDate)} anos
         </Text>
         {showLastCheckIn ? <LastCheckInLine profileId={profile.id} /> : null}
+        {criticalEvents.length > 0 ? (
+          <View
+            testID={`${testIDPrefix}-critical-${profile.id}`}
+            style={styles.criticalRow}
+          >
+            <Ionicons name="warning" size={12} color={COLORS.danger} />
+            <Text style={styles.criticalLine} numberOfLines={2}>
+              Evento crítico na semana: {criticalEventsSummary(criticalEvents)}
+            </Text>
+          </View>
+        ) : null}
       </View>
       <Ionicons name="chevron-forward" size={20} color={COLORS.grey400} />
     </Pressable>
@@ -129,5 +157,16 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.semiBold,
     fontSize: 12,
     color: COLORS.grey500,
+  },
+  criticalRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  criticalLine: {
+    flex: 1,
+    fontFamily: FONTS.semiBold,
+    fontSize: 12,
+    color: COLORS.danger,
   },
 });

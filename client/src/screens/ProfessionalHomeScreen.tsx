@@ -135,6 +135,7 @@ export function ProfessionalHomeScreen({ navigation }: Props) {
             profile={item}
             testIDPrefix="professional"
             showLastCheckIn
+            criticalEvents={item.risk.criticalEvents}
             onOpen={() =>
               navigation.navigate("ProfileDetail", { profileId: item.id })
             }
