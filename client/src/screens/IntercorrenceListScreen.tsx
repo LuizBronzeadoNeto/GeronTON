@@ -21,7 +21,7 @@ import { COLORS, FONTS } from "../theme";
 type Props = NativeStackScreenProps<AppStackParamList, "IntercorrenceList">;
 
 /**
- * Full acute-event history of an elderly profile, most recent first — the
+ * Full acute-event history of an elderly profile, most recent first, the
  * complete version of the profile hub's "Histórico recente" card, reached from
  * its "Ver todas" link and from the registration confirmation. Each row shows
  * the event with its severity pill and can be removed after confirmation.

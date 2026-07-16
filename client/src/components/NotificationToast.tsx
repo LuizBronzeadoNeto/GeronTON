@@ -15,7 +15,7 @@ interface Props {
  * card with a circular icon badge, a title/message pair and an X dismiss
  * button. Critical notifications use the danger palette with a warning icon;
  * regular ones use the success palette with a checkmark. Like ErrorToast it
- * only renders the card — the caller (NotificationProvider) decides where it
+ * only renders the card, the caller (NotificationProvider) decides where it
  * floats and controls visibility.
  */
 export function NotificationToast({
