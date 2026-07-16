@@ -2,7 +2,7 @@ import { Router, Request, Response } from "express";
 import { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 import { loadProfile } from "../middleware/loadProfile.js";
-import { missingFields } from "../utils/validation.js";
+import { missingFields, parseId } from "../utils/validation.js";
 
 const router = Router({ mergeParams: true });
 
@@ -52,8 +52,13 @@ router.get("/", async (req: Request, res: Response) => {
  * 404 if it does not belong to the profile.
  */
 router.get("/:medicamentoId", async (req: Request, res: Response) => {
+  const id = parseId(req.params.medicamentoId);
+  if (id === null) {
+    return res.status(400).json({ error: "invalid medication id" });
+  }
+
   const medication = await prisma.medication.findFirst({
-    where: { id: Number(req.params.medicamentoId), profileId: req.profile!.id },
+    where: { id, profileId: req.profile!.id },
   });
 
   if (!medication) {
@@ -68,7 +73,11 @@ router.get("/:medicamentoId", async (req: Request, res: Response) => {
  * Only fields present in the body are changed. 404 if not found on the profile.
  */
 router.put("/:medicamentoId", async (req: Request, res: Response) => {
-  const id = Number(req.params.medicamentoId);
+  const id = parseId(req.params.medicamentoId);
+  if (id === null) {
+    return res.status(400).json({ error: "invalid medication id" });
+  }
+
   const existing = await prisma.medication.findFirst({
     where: { id, profileId: req.profile!.id },
   });
@@ -96,7 +105,11 @@ router.put("/:medicamentoId", async (req: Request, res: Response) => {
  * Responds 204, or 404 if not found on the profile.
  */
 router.delete("/:medicamentoId", async (req: Request, res: Response) => {
-  const id = Number(req.params.medicamentoId);
+  const id = parseId(req.params.medicamentoId);
+  if (id === null) {
+    return res.status(400).json({ error: "invalid medication id" });
+  }
+
   const existing = await prisma.medication.findFirst({
     where: { id, profileId: req.profile!.id },
   });

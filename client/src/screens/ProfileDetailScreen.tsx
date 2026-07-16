@@ -12,18 +12,24 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { AppStackParamList } from "../types/navigation";
-import { getProfile, updateProfile, type Profile } from "../api/profiles";
+import {
+  getProfileDetails,
+  updateProfile,
+  type Profile,
+} from "../api/profiles";
+import type { CheckIn } from "../api/checkins";
 import {
   deleteIntercorrence,
   listIntercorrences,
   type Intercorrence,
 } from "../api/intercorrences";
-import {
-  listProfileAlerts,
-  resolveAlert,
-  type Alert as ClinicalAlert,
-} from "../api/alerts";
+import { resolveAlert, type Alert as ClinicalAlert } from "../api/alerts";
 import { eventTypeLabel } from "../constants/intercorrence";
+import {
+  APPETITE_OPTIONS,
+  WEEKLY_EVENTS,
+  moodLabel,
+} from "../constants/checkin";
 import { useAuth } from "../context/AuthContext";
 import { AlertCard } from "../components/AlertCard";
 import { RiskStatusBadge } from "../components/RiskStatusBadge";
@@ -47,6 +53,28 @@ function hasRecentCriticalEvent(intercorrences: Intercorrence[]): boolean {
 }
 
 /**
+ * Summary line for a check-in's weekly events using the wizard labels, plus
+ * the free-text "other" event; "Nenhum" when the week had none.
+ */
+function weeklyEventsSummary(checkIn: CheckIn): string {
+  const labels = WEEKLY_EVENTS.filter((event) =>
+    checkIn.weeklyEvents.includes(event.key),
+  ).map((event) => event.label);
+  if (checkIn.otherEvent) labels.push(checkIn.otherEvent);
+  return labels.length ? labels.join(", ") : "Nenhum";
+}
+
+/**
+ * Display label for a check-in's predominant appetite.
+ */
+function appetiteLabel(checkIn: CheckIn): string {
+  return (
+    APPETITE_OPTIONS.find((option) => option.value === checkIn.appetite)
+      ?.label ?? checkIn.appetite
+  );
+}
+
+/**
  * Severity pill for a history entry: red "Crítico" for critical intercorrences
  * and orange "Atenção" otherwise, as in the Figma history list.
  */
@@ -65,7 +93,8 @@ function SeverityPill({ isCritical }: { isCritical: boolean }) {
  * elder's header with risk pill and critical-event warning, the open clinical
  * alerts raised by the monitoring system (resolvable by professionals), the
  * per-profile actions (weekly check-in, intercorrence, rotina and medication),
- * the "Linha de base" card, the removable condition chips (pencil opens the
+ * the latest weekly check-in summary (opening the full read-only view), the
+ * "Linha de base" card, the removable condition chips (pencil opens the
  * full edit form) and the recent intercorrence history with severity pills.
  */
 export function ProfileDetailScreen({ navigation, route }: Props) {
@@ -75,6 +104,7 @@ export function ProfileDetailScreen({ navigation, route }: Props) {
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [intercorrences, setIntercorrences] = useState<Intercorrence[]>([]);
+  const [latestCheckIn, setLatestCheckIn] = useState<CheckIn | null>(null);
   const [alerts, setAlerts] = useState<ClinicalAlert[]>([]);
   const [hasRecentCritical, setHasRecentCritical] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -84,16 +114,13 @@ export function ProfileDetailScreen({ navigation, route }: Props) {
     useCallback(() => {
       let active = true;
       setError(null);
-      Promise.all([
-        getProfile(profileId),
-        listIntercorrences(profileId),
-        listProfileAlerts(profileId, true),
-      ])
-        .then(([profileData, intercorrenceData, alertData]) => {
+      Promise.all([getProfileDetails(profileId), listIntercorrences(profileId)])
+        .then(([details, intercorrenceData]) => {
           if (!active) return;
-          setProfile(profileData);
+          setProfile(details.profile);
+          setLatestCheckIn(details.latestCheckIn);
+          setAlerts(details.alerts);
           setIntercorrences(intercorrenceData);
-          setAlerts(alertData);
           setHasRecentCritical(hasRecentCriticalEvent(intercorrenceData));
         })
         .catch(() => {
@@ -263,6 +290,59 @@ export function ProfileDetailScreen({ navigation, route }: Props) {
           ))}
         </View>
       ) : null}
+
+      <View style={styles.card}>
+        <View style={styles.cardHeader}>
+          <Text style={styles.cardTitle}>Último check-in</Text>
+          {latestCheckIn ? (
+            <Pressable
+              testID="detail-last-checkin-open"
+              accessibilityRole="button"
+              accessibilityLabel="Ver check-in completo"
+              onPress={() =>
+                navigation.navigate("CheckInDetail", {
+                  profileId,
+                  checkInId: latestCheckIn.id,
+                })
+              }
+            >
+              <Text style={styles.linkLabel}>Ver completo</Text>
+            </Pressable>
+          ) : null}
+        </View>
+        {latestCheckIn ? (
+          <View testID="detail-last-checkin" style={styles.summaryRows}>
+            <View style={styles.baselineRow}>
+              <Text style={styles.baselineLabel}>Data</Text>
+              <Text style={styles.baselineValue}>
+                {isoToBrDate(latestCheckIn.date)}
+              </Text>
+            </View>
+            <View style={styles.baselineRow}>
+              <Text style={styles.baselineLabel}>Humor predominante</Text>
+              <Text style={styles.baselineValue}>
+                {moodLabel(latestCheckIn.mood)}
+              </Text>
+            </View>
+            <View style={styles.baselineRow}>
+              <Text style={styles.baselineLabel}>Apetite predominante</Text>
+              <Text style={styles.baselineValue}>
+                {appetiteLabel(latestCheckIn)}
+              </Text>
+            </View>
+            <View style={styles.baselineRow}>
+              <Text style={styles.baselineLabel}>Eventos na semana</Text>
+              <Text style={styles.baselineValue}>
+                {weeklyEventsSummary(latestCheckIn)}
+              </Text>
+            </View>
+          </View>
+        ) : (
+          <Text testID="detail-last-checkin-empty" style={styles.emptyLine}>
+            Nenhum check-in registrado.
+          </Text>
+        )}
+      </View>
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Linha de base</Text>
@@ -461,6 +541,14 @@ const styles = StyleSheet.create({
     borderColor: COLORS.warning,
     alignItems: "center",
     justifyContent: "center",
+  },
+  linkLabel: {
+    fontFamily: FONTS.semiBold,
+    fontSize: 13,
+    color: COLORS.primary,
+  },
+  summaryRows: {
+    gap: 10,
   },
   baselineRow: {
     flexDirection: "row",

@@ -71,6 +71,10 @@ export async function detectCheckInOmissions(
   );
 
   const profiles = await prisma.profile.findMany({
+    where: {
+      alerts: { none: { type: "weakened_home_bond", resolvedAt: null } },
+      checkIns: { none: { date: { gte: cutoff } } },
+    },
     select: {
       id: true,
       createdAt: true,
@@ -79,16 +83,10 @@ export async function detectCheckInOmissions(
         orderBy: { date: "desc" },
         take: 1,
       },
-      alerts: {
-        select: { id: true },
-        where: { type: "weakened_home_bond", resolvedAt: null },
-        take: 1,
-      },
     },
   });
 
   const omitted = profiles.filter((profile) => {
-    if (profile.alerts.length > 0) return false;
     const lastContact = profile.checkIns[0]?.date ?? profile.createdAt;
     return lastContact < cutoff;
   });

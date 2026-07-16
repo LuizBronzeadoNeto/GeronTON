@@ -52,6 +52,7 @@ model Profile {
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
 
+  @@index([caregiverId])
   @@map("profiles")
 }
 
@@ -66,6 +67,7 @@ model Medication {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([profileId])
   @@map("medications")
 }
 
@@ -79,6 +81,7 @@ model Routine {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  @@index([profileId])
   @@map("routines")
 }
 
@@ -130,6 +133,7 @@ model CheckIn {
   needsFood         String?
   alerts            Alert[]
 
+  @@index([profileId, date(sort: Desc)])
   @@map("check_ins")
 }
 
@@ -141,6 +145,8 @@ model Intercorrence {
   eventType        EventType
   isCritical       Boolean  @default(false)
   description      String
+
+  @@index([profileId, date(sort: Desc)])
 }
 
 enum AlertType {
@@ -167,5 +173,7 @@ model Alert {
   createdAt  DateTime      @default(now())
   resolvedAt DateTime?
 
+  @@index([profileId, createdAt(sort: Desc)])
+  @@index([checkInId])
   @@map("alerts")
 }

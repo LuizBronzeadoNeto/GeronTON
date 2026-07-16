@@ -1,8 +1,8 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import {
   makeDashboardAlert,
-  makeProfile,
   makeRiskStatus,
+  makeTriageEntry,
   mockNavigationModule,
   mockRiskApi,
 } from "../test-utils";
@@ -15,18 +15,21 @@ import {
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ProfessionalHomeScreen } from "./ProfessionalHomeScreen";
 import type { AppStackParamList } from "../types/navigation";
-import { listProfiles } from "../api/profiles";
+import { listTriage } from "../api/triage";
 import { listCheckIns } from "../api/checkins";
 import { listDashboardAlerts } from "../api/alerts";
-import { getRiskStatus } from "../api/risk";
 
-jest.mock("../api/profiles");
+jest.mock("../api/triage");
 jest.mock("../api/checkins");
 jest.mock("../api/risk");
 jest.mock("../api/alerts");
 jest.mock("@react-navigation/native", () => mockNavigationModule());
 
-const MOCK_PROFILE = makeProfile({ id: 1, caregiverId: 2 });
+const MOCK_ENTRY = makeTriageEntry({
+  id: 1,
+  caregiverId: 2,
+  risk: { status: "high", score: 14, criticalEvents: [] },
+});
 
 type Props = NativeStackScreenProps<AppStackParamList, "Home">;
 
@@ -41,7 +44,7 @@ function renderScreen() {
 
 describe("ProfessionalHomeScreen", () => {
   beforeEach(() => {
-    jest.mocked(listProfiles).mockReset().mockResolvedValue([MOCK_PROFILE]);
+    jest.mocked(listTriage).mockReset().mockResolvedValue([MOCK_ENTRY]);
     jest.mocked(listCheckIns).mockReset().mockResolvedValue([]);
     jest.mocked(listDashboardAlerts).mockReset().mockResolvedValue([]);
     mockRiskApi(makeRiskStatus({ profileId: 1, status: "high", score: 14 }));
@@ -60,19 +63,15 @@ describe("ProfessionalHomeScreen", () => {
     );
   });
 
-  it("orders the triage cards by clinical priority", async () => {
-    jest
-      .mocked(listProfiles)
-      .mockResolvedValue([
-        makeProfile({ id: 1, firstName: "Estável" }),
-        makeProfile({ id: 2, firstName: "Grave" }),
-      ]);
-    jest.mocked(getRiskStatus).mockImplementation(async (profileId: number) =>
-      makeRiskStatus({
-        profileId,
-        status: profileId === 2 ? "high" : "low",
+  it("keeps the backend's clinical-priority ordering", async () => {
+    jest.mocked(listTriage).mockResolvedValue([
+      makeTriageEntry({
+        id: 2,
+        firstName: "Grave",
+        risk: { status: "high", score: 12, criticalEvents: [] },
       }),
-    );
+      makeTriageEntry({ id: 1, firstName: "Estável" }),
+    ]);
     renderScreen();
 
     await waitFor(() =>
@@ -138,7 +137,7 @@ describe("ProfessionalHomeScreen", () => {
   });
 
   it("shows the empty state when there are no profiles", async () => {
-    jest.mocked(listProfiles).mockResolvedValue([]);
+    jest.mocked(listTriage).mockResolvedValue([]);
     renderScreen();
 
     await waitFor(() =>
@@ -161,7 +160,7 @@ describe("ProfessionalHomeScreen", () => {
 
   it("navigates to the registration form from the add button", async () => {
     const { navigation } = renderScreen();
-    await waitFor(() => expect(listProfiles).toHaveBeenCalled());
+    await waitFor(() => expect(listTriage).toHaveBeenCalled());
 
     fireEvent.press(screen.getByTestId("professional-add"));
 

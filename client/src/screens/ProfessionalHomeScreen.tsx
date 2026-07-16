@@ -9,9 +9,8 @@ import {
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { AppStackParamList } from "../types/navigation";
-import { listProfiles, type Profile } from "../api/profiles";
+import { listTriage, type TriageEntry } from "../api/triage";
 import { listDashboardAlerts, type DashboardAlert } from "../api/alerts";
-import { getRiskStatus, type RiskLevel } from "../api/risk";
 import { ProfileCard } from "../components/ProfileCard";
 import { AlertCard } from "../components/AlertCard";
 import { PrimaryButton } from "../components/PrimaryButton";
@@ -19,43 +18,18 @@ import { COLORS, FONTS } from "../theme";
 
 type Props = NativeStackScreenProps<AppStackParamList, "Home">;
 
-const RISK_PRIORITY: Record<RiskLevel, number> = {
-  high: 0,
-  moderate: 1,
-  low: 2,
-  unknown: 3,
-};
-
-/**
- * Orders the triage cards by clinical priority: critical profiles first, then
- * attention, stable and finally the ones without data. Each profile's level
- * comes from the cached risk API (shared with the badges); a failed fetch
- * sorts as "unknown".
- */
-async function sortByRisk(profiles: Profile[]): Promise<Profile[]> {
-  const levels = await Promise.all(
-    profiles.map((profile) =>
-      getRiskStatus(profile.id)
-        .then((risk) => risk.status)
-        .catch((): RiskLevel => "unknown"),
-    ),
-  );
-  return profiles
-    .map((profile, index) => ({ profile, level: levels[index] }))
-    .sort((a, b) => RISK_PRIORITY[a.level] - RISK_PRIORITY[b.level])
-    .map((entry) => entry.profile);
-}
-
 /**
  * "Painel de triagem" — the professional's home from the Figma design: every
  * elderly profile as a card with avatar, name, risk pill, age and last
- * check-in, ordered and colored by clinical priority via the risk engine. The
+ * check-in, ordered by the backend's /triagem endpoint (critical profiles
+ * first, then attention, stable and the ones without data) and colored by
+ * clinical priority via the risk engine. The
  * unresolved alerts raised by the monitoring system (weakened home bond,
  * vital-sign warnings) appear above the cards, each opening the elder's detail
  * hub where it can be resolved. The header action registers a new profile.
  */
 export function ProfessionalHomeScreen({ navigation }: Props) {
-  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [profiles, setProfiles] = useState<TriageEntry[]>([]);
   const [alerts, setAlerts] = useState<DashboardAlert[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -67,8 +41,7 @@ export function ProfessionalHomeScreen({ navigation }: Props) {
       setLoading(true);
       setError(null);
       setAlertsError(null);
-      listProfiles()
-        .then(sortByRisk)
+      listTriage()
         .then((data) => {
           if (active) setProfiles(data);
         })

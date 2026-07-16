@@ -55,6 +55,18 @@ router.post("/", async (req: Request, res: Response) => {
       ? body.caregiverId
       : user.id;
 
+  if (caregiverId !== user.id) {
+    const caregiver = await prisma.user.findUnique({
+      where: { id: caregiverId },
+      select: { id: true },
+    });
+    if (!caregiver) {
+      return res
+        .status(400)
+        .json({ error: "caregiverId does not match an existing user" });
+    }
+  }
+
   const profile = await prisma.profile.create({
     data: {
       firstName: body.firstName,
@@ -96,6 +108,33 @@ router.get("/", async (req: Request, res: Response) => {
 router.get("/:id", loadProfile, (req: Request, res: Response) => {
   return res.json(req.profile);
 });
+
+/**
+ * GET /perfis/:id/detalhes — the elder's detail view in a single call: the
+ * profile, its latest weekly check-in (null when none was recorded yet) and
+ * its open alerts, newest first. Existence and access are enforced by
+ * loadProfile.
+ */
+router.get(
+  "/:id/detalhes",
+  loadProfile,
+  async (req: Request, res: Response) => {
+    const profileId = req.profile!.id;
+
+    const [latestCheckIn, alerts] = await Promise.all([
+      prisma.checkIn.findFirst({
+        where: { profileId },
+        orderBy: { date: "desc" },
+      }),
+      prisma.alert.findMany({
+        where: { profileId, resolvedAt: null },
+        orderBy: { createdAt: "desc" },
+      }),
+    ]);
+
+    return res.json({ profile: req.profile, latestCheckIn, alerts });
+  },
+);
 
 /**
  * PUT /perfis/:id — update a profile's editable fields. Only fields present in
