@@ -10,7 +10,8 @@ import {
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { AppStackParamList } from "../types/navigation";
 import { createIntercorrence } from "../api/intercorrences";
-import { EVENT_TYPE_OPTIONS } from "../constants/intercorrence";
+import { EVENT_TYPE_OPTIONS, eventTypeLabel } from "../constants/intercorrence";
+import { useNotification } from "../context/NotificationContext";
 import { ProfileHeader } from "../components/ProfileHeader";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { SelectField } from "../components/SelectField";
@@ -26,11 +27,13 @@ const SEVERITIES = [
 /**
  * "/intercorrência" form from the Figma design: registers an adverse event for
  * an elderly profile with the event-type select, a severity segmented control
- * and a free-text description of what happened. On success it returns to the
- * previous screen, whose history refetches on focus.
+ * and a free-text description of what happened. On success it raises the
+ * in-app notification and replaces itself with the confirmation screen, so
+ * back returns to the profile hub, whose history refetches on focus.
  */
 export function IntercorrenceFormScreen({ navigation, route }: Props) {
   const { profileId } = route.params;
+  const { notify } = useNotification();
 
   const [eventLabel, setEventLabel] = useState<string | null>(null);
   const [isCritical, setIsCritical] = useState<boolean | null>(null);
@@ -49,12 +52,22 @@ export function IntercorrenceFormScreen({ navigation, route }: Props) {
     setSaving(true);
     setError(null);
     try {
-      await createIntercorrence(profileId, {
+      const intercorrence = await createIntercorrence(profileId, {
         eventType,
         isCritical,
         description: description.trim(),
       });
-      navigation.goBack();
+      notify({
+        title: isCritical
+          ? "Intercorrência crítica registrada"
+          : "Intercorrência registrada",
+        message: `${eventTypeLabel(eventType)} adicionada ao histórico do idoso.`,
+        critical: isCritical,
+      });
+      navigation.replace("IntercorrenceConfirmation", {
+        profileId,
+        intercorrence,
+      });
     } catch {
       setError("Não foi possível registrar a intercorrência.");
       setSaving(false);

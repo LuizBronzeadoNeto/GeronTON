@@ -24,7 +24,6 @@ import {
   type Intercorrence,
 } from "../api/intercorrences";
 import { resolveAlert, type Alert as ClinicalAlert } from "../api/alerts";
-import { eventTypeLabel } from "../constants/intercorrence";
 import {
   APPETITE_OPTIONS,
   WEEKLY_EVENTS,
@@ -32,14 +31,15 @@ import {
 } from "../constants/checkin";
 import { useAuth } from "../context/AuthContext";
 import { AlertCard } from "../components/AlertCard";
+import { IntercorrenceRow } from "../components/IntercorrenceRow";
 import { RiskStatusBadge } from "../components/RiskStatusBadge";
-import { StatusPill } from "../components/StatusPill";
-import { ageInYears, formatTimestamp, isoToBrDate } from "../utils/date";
+import { ageInYears, isoToBrDate } from "../utils/date";
 import { COLORS, FONTS } from "../theme";
 
 type Props = NativeStackScreenProps<AppStackParamList, "ProfileDetail">;
 
 const CRITICAL_WINDOW_DAYS = 14;
+const RECENT_HISTORY_LIMIT = 5;
 
 /**
  * Whether any critical intercorrence happened within the warning window, for
@@ -71,20 +71,6 @@ function appetiteLabel(checkIn: CheckIn): string {
   return (
     APPETITE_OPTIONS.find((option) => option.value === checkIn.appetite)
       ?.label ?? checkIn.appetite
-  );
-}
-
-/**
- * Severity pill for a history entry: red "Crítico" for critical intercorrences
- * and orange "Atenção" otherwise, as in the Figma history list.
- */
-function SeverityPill({ isCritical }: { isCritical: boolean }) {
-  return (
-    <StatusPill
-      label={isCritical ? "Crítico" : "Atenção"}
-      color={isCritical ? COLORS.danger : COLORS.warning}
-      backgroundColor={isCritical ? COLORS.dangerBadgeBg : COLORS.warningBg}
-    />
   );
 }
 
@@ -398,49 +384,36 @@ export function ProfileDetailScreen({ navigation, route }: Props) {
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Histórico recente</Text>
+        <View style={styles.cardHeader}>
+          <Text style={styles.cardTitle}>Histórico recente</Text>
+          {intercorrences.length > 0 ? (
+            <Pressable
+              testID="detail-history-all"
+              accessibilityRole="button"
+              accessibilityLabel="Ver todas as intercorrências"
+              onPress={() =>
+                navigation.navigate("IntercorrenceList", { profileId })
+              }
+            >
+              <Text style={styles.linkLabel}>Ver todas</Text>
+            </Pressable>
+          ) : null}
+        </View>
         {intercorrences.length === 0 ? (
           <Text testID="detail-history-empty" style={styles.emptyLine}>
             Nenhuma intercorrência registrada.
           </Text>
         ) : (
-          intercorrences.map((item) => (
-            <View
-              key={item.id}
-              testID={`detail-intercorrence-${item.id}`}
-              style={styles.historyRow}
-            >
-              <View style={styles.historyInfo}>
-                <Text style={styles.historyTitle}>
-                  {eventTypeLabel(item.eventType)}
-                </Text>
-                {item.description !== "" ? (
-                  <Text style={styles.historyDescription} numberOfLines={2}>
-                    {item.description}
-                  </Text>
-                ) : null}
-              </View>
-              <Pressable
-                testID={`detail-intercorrence-delete-${item.id}`}
-                accessibilityRole="button"
-                accessibilityLabel="Remover intercorrência"
-                style={styles.deleteButton}
-                onPress={() => confirmDeleteIntercorrence(item.id)}
-              >
-                <Ionicons
-                  name="trash-outline"
-                  size={16}
-                  color={COLORS.danger}
-                />
-              </Pressable>
-              <View style={styles.historyMeta}>
-                <SeverityPill isCritical={item.isCritical} />
-                <Text style={styles.historyDate}>
-                  {formatTimestamp(item.date)}
-                </Text>
-              </View>
-            </View>
-          ))
+          intercorrences
+            .slice(0, RECENT_HISTORY_LIMIT)
+            .map((item) => (
+              <IntercorrenceRow
+                key={item.id}
+                intercorrence={item}
+                testIDPrefix="detail"
+                onDelete={() => confirmDeleteIntercorrence(item.id)}
+              />
+            ))
         )}
       </View>
     </ScrollView>
@@ -594,43 +567,6 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.regular,
     fontSize: 13,
     color: COLORS.grey500,
-  },
-  historyRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  historyInfo: {
-    flex: 1,
-    gap: 2,
-  },
-  historyTitle: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 14,
-    color: COLORS.heading,
-  },
-  historyDescription: {
-    fontFamily: FONTS.regular,
-    fontSize: 12,
-    color: COLORS.grey400,
-  },
-  deleteButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: COLORS.danger,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  historyMeta: {
-    alignItems: "flex-end",
-    gap: 4,
-  },
-  historyDate: {
-    fontFamily: FONTS.regular,
-    fontSize: 10,
-    color: COLORS.grey400,
   },
   error: {
     fontFamily: FONTS.semiBold,

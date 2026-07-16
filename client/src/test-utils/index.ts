@@ -1,6 +1,7 @@
 import { jest } from "@jest/globals";
 import type { Alert, DashboardAlert } from "../api/alerts";
 import type { CheckIn } from "../api/checkins";
+import type { Intercorrence } from "../api/intercorrences";
 import type { Profile, ProfileDetails } from "../api/profiles";
 import type { RiskStatus } from "../api/risk";
 import { getRiskStatus, subscribeRiskStatusInvalidation } from "../api/risk";
@@ -130,6 +131,24 @@ export function makeCheckIn(overrides: Partial<CheckIn> = {}): CheckIn {
     needsMedications: null,
     needsHygiene: null,
     needsFood: null,
+    ...overrides,
+  };
+}
+
+/**
+ * Builds an Intercorrence (acute event) fixture; pass overrides for the fields
+ * a test cares about.
+ */
+export function makeIntercorrence(
+  overrides: Partial<Intercorrence> = {},
+): Intercorrence {
+  return {
+    id: 12,
+    profileId: 5,
+    date: "2026-06-16T11:52:21.000Z",
+    eventType: "fall",
+    isCritical: false,
+    description: "Escorregou no banheiro",
     ...overrides,
   };
 }
