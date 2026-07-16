@@ -64,7 +64,7 @@ function LastCheckInLine({ profileId }: { profileId: number }) {
  * idosos" list and the professional's "Painel de triagem": avatar initial,
  * name with the risk pill, age (plus optionally the last check-in date) and a
  * chevron. When the latest check-in reported critical weekly events
- * (`criticalEvents`), a red warning line flags them, per the screening
+ * (criticalEvents), a red warning line flags them, per the screening
  * algorithm's visual-flag requirement. Tapping the card opens the elder's
  * detail hub, where the per-profile actions live.
  */
