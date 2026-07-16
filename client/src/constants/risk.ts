@@ -9,7 +9,7 @@ export interface RiskLevelPresentation {
 }
 
 /**
- * Presentation of each risk level — pill label and colors plus the plain-
+ * Presentation of each risk level, pill label and colors plus the plain-
  * language explanation shown in the interface legend. Shared by
  * RiskStatusBadge and RiskLegend so the pills and the legend never drift.
  */
