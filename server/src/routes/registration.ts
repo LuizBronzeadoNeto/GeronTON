@@ -3,6 +3,8 @@ import { Prisma } from "@prisma/client";
 import { prisma, Role } from "../lib/prisma.js";
 import { authMiddleware } from "../middleware/authenticateUser.js";
 import { requireRole } from "../middleware/requireRole.js";
+import bcrypt from "bcrypt";
+import { SALT_ROUNDS } from "../config/auth.js";
 
 /**
  * Builds a router exposing `POST /` that registers a new user with the given
@@ -12,6 +14,8 @@ import { requireRole } from "../middleware/requireRole.js";
  * Responds with `{ id, email, role }` on success, 409 on a duplicate email, and
  * 400 on a malformed body. Only a healthcare professional may register accounts;
  * the requester is authenticated via the session's bearer token.
+ *
+ * Created passwords are hashed using 12 SALT rounds in order to prevent identification.
  */
 export function buildRegistrationRouter(role: Role): Router {
   const router = Router();
@@ -34,9 +38,10 @@ export function buildRegistrationRouter(role: Role): Router {
           .json({ error: "email and password are required." });
       }
 
+      const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
       try {
         const user = await prisma.user.create({
-          data: { email, password, role },
+          data: { email, password: hashedPassword, role },
           select: { id: true, email: true, role: true },
         });
         return res.status(201).json(user);

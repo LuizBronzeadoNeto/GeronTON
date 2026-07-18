@@ -1,6 +1,7 @@
 import { Router } from "express";
 import jwt from "jsonwebtoken";
 import { prisma } from "../lib/prisma.js";
+import bcrypt from "bcrypt";
 
 const router = Router();
 
@@ -10,9 +11,6 @@ const router = Router();
  * Responds with `{ id, role, token }` on success, 401 on invalid credentials, and 400
  * on a malformed body. The returned token is a 2h JWT carrying `{ id, email, role }`.
  * The password is never included in the response.
- *
- * TODO: passwords are stored in plain text for the MVP. Replace the equality
- * check with `bcrypt.compare(password, user.password)` once hashing is added.
  */
 router.post("/login", async (req, res) => {
   const { email, password } = req.body ?? {};
@@ -23,7 +21,7 @@ router.post("/login", async (req, res) => {
 
   const user = await prisma.user.findUnique({ where: { email } });
 
-  if (!user || user.password !== password) {
+  if (!user || !(await bcrypt.compare(password, user.password))) {
     return res.status(401).json({ error: "invalid credentials" });
   }
 
