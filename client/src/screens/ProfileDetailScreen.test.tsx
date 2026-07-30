@@ -38,6 +38,7 @@ function mockSignedInAs(role: Role) {
   jest.mocked(useAuth).mockReturnValue({
     user: { id: 99, role, token: "test-token" },
     isSigningIn: false,
+    isRestoring: false,
     signIn: jest.fn(async () => {}),
     signOut: jest.fn(),
   });

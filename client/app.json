@@ -1,17 +1,21 @@
 {
   "expo": {
-    "name": "client",
-    "slug": "client",
+    "name": "GeronTON",
+    "slug": "geronton",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
+    "scheme": "geronton",
     "userInterfaceStyle": "light",
+    "primaryColor": "#1A65B5",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.geronton.client"
     },
     "android": {
       "package": "com.geronton.client",
+      "versionCode": 1,
+      "permissions": [],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -21,7 +25,29 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png"
-    }
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./assets/favicon.png",
+      "name": "GeronTON",
+      "shortName": "GeronTON",
+      "lang": "pt-BR",
+      "description": "Acompanhamento de idosos para cuidadores e profissionais de saude",
+      "themeColor": "#1A65B5",
+      "backgroundColor": "#FFFFFF",
+      "display": "standalone",
+      "orientation": "portrait"
+    },
+    "plugins": [
+      "expo-secure-store",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#FFFFFF"
+        }
+      ]
+    ]
   }
 }

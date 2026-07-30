@@ -9,8 +9,12 @@ const router = Router();
  * POST /login — authenticate a user by email and password.
  *
  * Responds with `{ id, role, token }` on success, 401 on invalid credentials, and 400
- * on a malformed body. The returned token is a 2h JWT carrying `{ id, email, role }`.
+ * on a malformed body. The returned token is a 2h JWT carrying `{ id, role }`.
  * The password is never included in the response.
+ *
+ * The email is deliberately left out of the token. A JWT is signed but not
+ * encrypted, so anything in the payload is readable by whoever holds the token
+ * and travels into device storage and logs; nothing downstream needs the claim.
  */
 router.post("/login", async (req, res) => {
   const { email, password } = req.body ?? {};
@@ -26,9 +30,9 @@ router.post("/login", async (req, res) => {
   }
 
   const token = jwt.sign(
-    { id: user.id, email: user.email, role: user.role },
+    { id: user.id, role: user.role },
     process.env.JWT_SECRET!,
-    { expiresIn: "2h" },
+    { expiresIn: "2h", algorithm: "HS256" },
   );
 
   return res.json({ id: user.id, role: user.role, token });

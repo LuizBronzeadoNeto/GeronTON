@@ -22,6 +22,7 @@ function mockRole(role: Role) {
   jest.mocked(useAuth).mockReturnValue({
     user: { id: 1, role, token: "jwt" },
     isSigningIn: false,
+    isRestoring: false,
     signIn: jest.fn<() => Promise<void>>(),
     signOut: jest.fn(),
   });
