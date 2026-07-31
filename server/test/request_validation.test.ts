@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "@jest/globals";
 import request from "supertest";
 import app from "../src/app.js";
+import { makeCpf } from "./helpers.js";
 import { prisma } from "../src/lib/prisma.js";
 
 let caregiverToken: string;
@@ -29,6 +30,7 @@ beforeAll(async () => {
     .post("/perfis")
     .set("Authorization", `Bearer ${caregiverToken}`)
     .send({
+      cpf: makeCpf("100000007"),
       firstName: "Validacao",
       lastName: "Teste",
       birthDate: "1944-04-04",
@@ -39,7 +41,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await prisma.profile.deleteMany({ where: { id: perfilId } });
+  await prisma.profile.deleteMany({ where: { id: perfilId ?? -1 } });
 });
 
 describe("non-numeric sub-resource ids", () => {
@@ -73,6 +75,7 @@ describe("POST /perfis caregiver assignment", () => {
       .post("/perfis")
       .set("Authorization", `Bearer ${professionalToken}`)
       .send({
+        cpf: makeCpf("100000008"),
         firstName: "Sem",
         lastName: "Dono",
         birthDate: "1944-04-04",

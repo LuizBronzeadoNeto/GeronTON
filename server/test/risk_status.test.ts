@@ -8,6 +8,7 @@ import {
 } from "@jest/globals";
 import request from "supertest";
 import app from "../src/app.js";
+import { makeCpf } from "./helpers.js";
 import { prisma } from "../src/lib/prisma.js";
 
 let token: string;
@@ -51,6 +52,7 @@ beforeAll(async () => {
     .post("/perfis")
     .set("Authorization", `Bearer ${token}`)
     .send({
+      cpf: makeCpf("100000009"),
       firstName: "Risco",
       lastName: "Teste",
       birthDate: "1940-05-01",
@@ -67,7 +69,7 @@ afterEach(async () => {
 });
 
 afterAll(async () => {
-  await prisma.profile.deleteMany({ where: { id: perfilId } });
+  await prisma.profile.deleteMany({ where: { id: perfilId ?? -1 } });
 });
 
 async function createCheckIn(overrides: Record<string, unknown> = {}) {

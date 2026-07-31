@@ -9,7 +9,10 @@ export type AppStackParamList = {
   Home: undefined;
   ProfileList: undefined;
   ProfileDetail: { profileId: number };
-  ProfileForm: { profileId?: number } | undefined;
+  ProfileIdentification: undefined;
+  ProfileForm:
+    | { profileId?: number; cpf?: string; birthDate?: string }
+    | undefined;
   IntercorrenceForm: { profileId: number };
   IntercorrenceConfirmation: {
     profileId: number;

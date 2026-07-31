@@ -1,6 +1,7 @@
 import { describe, it, expect, afterAll, beforeAll } from "@jest/globals";
 import request from "supertest";
 import app from "../src/app.js";
+import { makeCpf } from "./helpers.js";
 import { prisma } from "../src/lib/prisma.js";
 
 let caregiverToken: string;
@@ -11,6 +12,8 @@ let profileId: number;
 
 const PROFILE_MARKER = "TestIdoso";
 const OTHER_CAREGIVER_EMAIL = "othercaregiver@test.com";
+const PROFILE_CPF = makeCpf("100000005");
+const PROFILE_BIRTH_DATE = "1950-05-20";
 
 async function login(
   email: string,
@@ -51,9 +54,10 @@ describe("/perfis", () => {
       .post("/perfis")
       .set("Authorization", `Bearer ${caregiverToken}`)
       .send({
+        cpf: PROFILE_CPF,
         firstName: PROFILE_MARKER,
         lastName: "Silva",
-        birthDate: "1950-05-20",
+        birthDate: PROFILE_BIRTH_DATE,
         scholarship: "ensino fundamental",
         medicalConditions: ["hipertensão"],
       });
@@ -93,7 +97,24 @@ describe("/perfis", () => {
     expect(res.body.some((p: { id: number }) => p.id === profileId)).toBe(true);
   });
 
-  it("lets a professional list all profiles", async () => {
+  it("hides a profile from a professional who is not linked to it", async () => {
+    const res = await request(app)
+      .get("/perfis")
+      .set("Authorization", `Bearer ${professionalToken}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.some((p: { id: number }) => p.id === profileId)).toBe(
+      false,
+    );
+  });
+
+  it("lists the profile for a professional once they are linked to it", async () => {
+    const link = await request(app)
+      .post("/perfis/vincular")
+      .set("Authorization", `Bearer ${professionalToken}`)
+      .send({ cpf: PROFILE_CPF, birthDate: PROFILE_BIRTH_DATE });
+    expect(link.status).toBe(201);
+
     const res = await request(app)
       .get("/perfis")
       .set("Authorization", `Bearer ${professionalToken}`);
@@ -111,7 +132,12 @@ describe("/perfis", () => {
     expect(res.body.id).toBe(profileId);
   });
 
-  it("lets a professional fetch any profile", async () => {
+  it("lets a linked professional fetch the profile", async () => {
+    await request(app)
+      .post("/perfis/vincular")
+      .set("Authorization", `Bearer ${professionalToken}`)
+      .send({ cpf: PROFILE_CPF, birthDate: PROFILE_BIRTH_DATE });
+
     const res = await request(app)
       .get(`/perfis/${profileId}`)
       .set("Authorization", `Bearer ${professionalToken}`);

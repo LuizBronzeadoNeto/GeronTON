@@ -8,6 +8,7 @@ import {
 } from "@jest/globals";
 import request from "supertest";
 import app from "../src/app.js";
+import { grantProfileAccess, makeCpf } from "./helpers.js";
 import { prisma } from "../src/lib/prisma.js";
 
 let caregiverToken: string;
@@ -58,32 +59,48 @@ beforeAll(async () => {
   professionalToken = professionalRes.body.token;
 
   [stableId, moderateId, highId, unknownId] = await Promise.all(
-    ["Estavel", "Moderado", "Grave", "SemDados"].map(async (firstName) => {
-      const res = await request(app)
-        .post("/perfis")
-        .set("Authorization", `Bearer ${caregiverToken}`)
-        .send({
-          firstName,
-          lastName: "Triagem",
-          birthDate: "1942-03-15",
-          scholarship: "fundamental",
-        });
-      expect(res.status).toBe(201);
-      return res.body.id as number;
-    }),
+    ["Estavel", "Moderado", "Grave", "SemDados"].map(
+      async (firstName, index) => {
+        const res = await request(app)
+          .post("/perfis")
+          .set("Authorization", `Bearer ${caregiverToken}`)
+          .send({
+            cpf: makeCpf(`10000001${index}`),
+            firstName,
+            lastName: "Triagem",
+            birthDate: "1942-03-15",
+            scholarship: "fundamental",
+          });
+        expect(res.status).toBe(201);
+
+        const id = res.body.id as number;
+        await grantProfileAccess(id, "profissional@demo.com");
+        return id;
+      },
+    ),
   );
 });
 
+/**
+ * Ids of the fixture profiles that were actually created. Filtering is not
+ * cosmetic: when beforeAll fails these stay undefined, and Prisma reads an
+ * undefined filter value as "no filter at all", which turns a targeted cleanup
+ * into a delete of every row in the table.
+ */
+function fixtureIds(): number[] {
+  return [stableId, moderateId, highId, unknownId].filter(
+    (id): id is number => typeof id === "number",
+  );
+}
+
 afterEach(async () => {
-  const ids = [stableId, moderateId, highId, unknownId];
+  const ids = fixtureIds();
   await prisma.checkIn.deleteMany({ where: { profileId: { in: ids } } });
   await prisma.intercorrence.deleteMany({ where: { profileId: { in: ids } } });
 });
 
 afterAll(async () => {
-  await prisma.profile.deleteMany({
-    where: { id: { in: [stableId, moderateId, highId, unknownId] } },
-  });
+  await prisma.profile.deleteMany({ where: { id: { in: fixtureIds() } } });
 });
 
 async function createCheckIn(

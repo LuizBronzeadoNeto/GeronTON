@@ -70,7 +70,7 @@ describe("RedirectScreen", () => {
     await waitFor(() => expect(navigation.reset).toHaveBeenCalled());
     expect(navigation.reset).toHaveBeenCalledWith({
       index: 1,
-      routes: [{ name: "Home" }, { name: "ProfileForm" }],
+      routes: [{ name: "Home" }, { name: "ProfileIdentification" }],
     });
   });
 

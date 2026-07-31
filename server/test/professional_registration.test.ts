@@ -35,7 +35,11 @@ describe("POST /profissionais", () => {
     const res = await request(app)
       .post("/profissionais")
       .set("Authorization", `Bearer ${professionalToken}`)
-      .send({ email: "newprofessional@demo.com", password: "pass123" });
+      .send({
+        email: "newprofessional@demo.com",
+        password: "pass123",
+        crm: "54321-PB",
+      });
 
     expect(res.status).toBe(201);
     expect(res.body.id).toEqual(expect.any(Number));
@@ -50,7 +54,11 @@ describe("POST /profissionais", () => {
     const res = await request(app)
       .post("/profissionais")
       .set("Authorization", `Bearer ${professionalToken}`)
-      .send({ email: "newprofessional@demo.com", password: "pass123" });
+      .send({
+        email: "newprofessional@demo.com",
+        password: "pass123",
+        crm: "99999-PB",
+      });
 
     expect(res.status).toBe(409);
   });
@@ -59,7 +67,11 @@ describe("POST /profissionais", () => {
     const res = await request(app)
       .post("/profissionais")
       .set("Authorization", `Bearer ${caregiverToken}`)
-      .send({ email: "deniedprofessional@demo.com", password: "pass123" });
+      .send({
+        email: "deniedprofessional@demo.com",
+        password: "pass123",
+        crm: "11111-PB",
+      });
 
     expect(res.status).toBe(403);
   });
@@ -77,7 +89,25 @@ describe("POST /profissionais", () => {
     const res = await request(app)
       .post("/profissionais")
       .set("Authorization", `Bearer ${professionalToken}`)
-      .send({ password: "pass123" });
+      .send({ password: "pass123", crm: "22222-PB" });
+
+    expect(res.status).toBe(400);
+  });
+
+  it("Denies the creation of a professional without a CRM, returns 400", async () => {
+    const res = await request(app)
+      .post("/profissionais")
+      .set("Authorization", `Bearer ${professionalToken}`)
+      .send({ email: "nocrm@demo.com", password: "pass123" });
+
+    expect(res.status).toBe(400);
+  });
+
+  it("Denies the creation of a professional with a malformed CRM, returns 400", async () => {
+    const res = await request(app)
+      .post("/profissionais")
+      .set("Authorization", `Bearer ${professionalToken}`)
+      .send({ email: "badcrm@demo.com", password: "pass123", crm: "12345-XX" });
 
     expect(res.status).toBe(400);
   });

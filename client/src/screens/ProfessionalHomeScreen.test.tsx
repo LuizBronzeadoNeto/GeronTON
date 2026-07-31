@@ -217,6 +217,6 @@ describe("ProfessionalHomeScreen", () => {
 
     fireEvent.press(screen.getByTestId("professional-add"));
 
-    expect(navigation.navigate).toHaveBeenCalledWith("ProfileForm");
+    expect(navigation.navigate).toHaveBeenCalledWith("ProfileIdentification");
   });
 });

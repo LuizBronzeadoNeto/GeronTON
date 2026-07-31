@@ -8,6 +8,7 @@ import {
 } from "@jest/globals";
 import request from "supertest";
 import app from "../src/app.js";
+import { grantProfileAccess, makeCpf } from "./helpers.js";
 import { prisma } from "../src/lib/prisma.js";
 import { detectCheckInOmissions } from "../src/services/alerts.js";
 
@@ -59,6 +60,7 @@ beforeAll(async () => {
     .post("/perfis")
     .set("Authorization", `Bearer ${caregiverToken}`)
     .send({
+      cpf: makeCpf("100000001"),
       firstName: "Alerta",
       lastName: "Teste",
       birthDate: "1938-02-10",
@@ -66,6 +68,7 @@ beforeAll(async () => {
     });
   expect(profileRes.status).toBe(201);
   perfilId = profileRes.body.id;
+  await grantProfileAccess(perfilId, "profissional@demo.com");
 });
 
 afterEach(async () => {
@@ -78,7 +81,7 @@ afterEach(async () => {
 });
 
 afterAll(async () => {
-  await prisma.profile.deleteMany({ where: { id: perfilId } });
+  await prisma.profile.deleteMany({ where: { id: perfilId ?? -1 } });
 });
 
 async function createCheckIn(overrides: Record<string, unknown> = {}) {
@@ -280,6 +283,7 @@ describe("alert routes", () => {
       .post("/perfis")
       .set("Authorization", `Bearer ${caregiverToken}`)
       .send({
+        cpf: makeCpf("100000002"),
         firstName: "Outro",
         lastName: "Perfil",
         birthDate: "1941-01-01",
@@ -287,6 +291,7 @@ describe("alert routes", () => {
       });
     expect(otherProfileRes.status).toBe(201);
     const otherId = otherProfileRes.body.id;
+    await grantProfileAccess(otherId, "profissional@demo.com");
 
     const res = await request(app)
       .put(`/perfis/${otherId}/alertas/${alertId}`)

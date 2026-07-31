@@ -21,6 +21,7 @@ import { RiskStatusBadge } from "../components/RiskStatusBadge";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { SelectField } from "../components/SelectField";
 import { brDateToIso, isoToBrDate, maskBrDate } from "../utils/date";
+import { maskCpf } from "../utils/cpf";
 import { COLORS, FONTS } from "../theme";
 
 type Props = NativeStackScreenProps<AppStackParamList, "ProfileForm">;
@@ -62,8 +63,11 @@ export function ProfileFormScreen({ navigation, route }: Props) {
   const profileId = route.params?.profileId;
   const isEditing = profileId != null;
 
+  const [cpf, setCpf] = useState(route.params?.cpf ?? "");
   const [fullName, setFullName] = useState("");
-  const [birthDate, setBirthDate] = useState("");
+  const [birthDate, setBirthDate] = useState(
+    route.params?.birthDate ? isoToBrDate(route.params.birthDate) : "",
+  );
   const [sex, setSex] = useState<string | null>(null);
   const [scholarship, setScholarship] = useState<string | null>(null);
   const [conditions, setConditions] = useState<string[]>([]);
@@ -82,6 +86,7 @@ export function ProfileFormScreen({ navigation, route }: Props) {
     getProfile(profileId)
       .then((profile) => {
         if (!active) return;
+        setCpf(profile.cpf ?? "");
         setFullName(`${profile.firstName} ${profile.lastName}`.trim());
         setBirthDate(isoToBrDate(profile.birthDate));
         setSex(profile.sex);
@@ -129,6 +134,7 @@ export function ProfileFormScreen({ navigation, route }: Props) {
 
     const [firstName, ...rest] = nameParts;
     const input: ProfileInput = {
+      cpf,
       firstName,
       lastName: rest.join(" "),
       birthDate: brDateToIso(birthDate) ?? "",
@@ -177,6 +183,11 @@ export function ProfileFormScreen({ navigation, route }: Props) {
         </Text>
         {isEditing ? <RiskStatusBadge profileId={profileId} /> : null}
       </View>
+
+      <Text style={styles.label}>CPF</Text>
+      <Text testID="profile-cpf" style={[styles.input, styles.readOnlyInput]}>
+        {cpf ? maskCpf(cpf) : "—"}
+      </Text>
 
       <Text style={styles.label}>Nome completo</Text>
       <TextInput
@@ -341,6 +352,11 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.semiBold,
     fontSize: 14,
     color: COLORS.heading,
+  },
+  readOnlyInput: {
+    backgroundColor: COLORS.chipBg,
+    color: COLORS.grey500,
+    lineHeight: 50,
   },
   dateRow: {
     flexDirection: "row",

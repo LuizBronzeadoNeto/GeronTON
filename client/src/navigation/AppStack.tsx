@@ -10,6 +10,7 @@ import { ProfessionalHomeScreen } from "../screens/ProfessionalHomeScreen";
 import { ProfileListScreen } from "../screens/ProfileListScreen";
 import { ProfileDetailScreen } from "../screens/ProfileDetailScreen";
 import { ProfileFormScreen } from "../screens/ProfileFormScreen";
+import { ProfileIdentificationScreen } from "../screens/ProfileIdentificationScreen";
 import { IntercorrenceFormScreen } from "../screens/IntercorrenceFormScreen";
 import { IntercorrenceConfirmationScreen } from "../screens/IntercorrenceConfirmationScreen";
 import { IntercorrenceListScreen } from "../screens/IntercorrenceListScreen";
@@ -105,6 +106,11 @@ export function AppStack({ role }: { role: Role }) {
         options={{
           title: role === "cuidador" ? "Meus idosos" : "Painel de triagem",
         }}
+      />
+      <Stack.Screen
+        name="ProfileIdentification"
+        component={ProfileIdentificationScreen}
+        options={{ title: "Cadastrar idoso" }}
       />
       <Stack.Screen
         name="ProfileForm"

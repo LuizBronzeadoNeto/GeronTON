@@ -1,6 +1,7 @@
 import { describe, it, expect, afterAll, beforeAll } from "@jest/globals";
 import request from "supertest";
 import app from "../src/app.js";
+import { grantProfileAccess, makeCpf } from "./helpers.js";
 import { prisma } from "../src/lib/prisma.js";
 
 let caregiverToken: string;
@@ -61,12 +62,14 @@ beforeAll(async () => {
     .post("/perfis")
     .set("Authorization", `Bearer ${caregiverToken}`)
     .send({
+      cpf: makeCpf("100000003"),
       firstName: PROFILE_MARKER,
       lastName: "Souza",
       birthDate: "1948-03-10",
       scholarship: "ensino médio",
     });
   profileId = profileRes.body.id;
+  await grantProfileAccess(profileId, "profissional@demo.com");
 });
 
 afterAll(async () => {

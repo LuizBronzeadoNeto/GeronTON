@@ -36,6 +36,7 @@ export function mockNavigationModule() {
 export function makeProfile(overrides: Partial<Profile> = {}): Profile {
   return {
     id: 5,
+    cpf: "11144477735",
     firstName: "Ozilene",
     lastName: "Leite",
     birthDate: "1947-11-05",

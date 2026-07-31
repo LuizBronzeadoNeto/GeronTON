@@ -75,9 +75,12 @@ alertsDashboardRouter.get(
   "/",
   authMiddleware,
   requireRole("profissional"),
-  async (_req: Request, res: Response) => {
+  async (req: Request, res: Response) => {
     const alerts = await prisma.alert.findMany({
-      where: { resolvedAt: null },
+      where: {
+        resolvedAt: null,
+        profile: { access: { some: { userId: req.user!.id } } },
+      },
       orderBy: [{ severity: "desc" }, { createdAt: "desc" }],
       include: {
         profile: { select: { id: true, firstName: true, lastName: true } },
