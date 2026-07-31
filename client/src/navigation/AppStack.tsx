@@ -1,5 +1,5 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { Pressable, StyleSheet, Text } from "react-native";
+import { Platform, Pressable, StyleSheet, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import type { AppStackParamList } from "../types/navigation";
 import type { Role } from "../types/auth";
@@ -25,6 +25,10 @@ const Stack = createNativeStackNavigator<AppStackParamList>();
 /**
  * "Sair" header action from the Figma design — a logout icon plus label at the
  * right edge of every signed-in screen's header.
+ *
+ * The right padding is web-only: the native headers inset their right action
+ * themselves, but react-native-web's fallback header does not, which left the
+ * label flush against the screen edge with its last glyph reading as cut off.
  */
 function SignOutButton() {
   const { signOut } = useAuth();
@@ -48,6 +52,13 @@ function SignOutButton() {
  * distinct home screen, and both reach the shared elderly-profile screens.
  * Headers follow the Figma design: centered Nunito Sans title, no shadow and a
  * "Sair" action on the right.
+ *
+ * Only a cuidador starts at Redirect. Their landing screen depends on how many
+ * profiles they have, so it can only be decided after a fetch; a profissional
+ * always lands on Home, so routing them through Redirect would mean dispatching
+ * a reset from the initial screen's first effect, before the navigator is ready
+ * to receive it. That reset is silently dropped and the app sits on Redirect's
+ * spinner forever. Starting them on Home removes the hop entirely.
  */
 export function AppStack({ role }: { role: Role }) {
   const HomeScreen =
@@ -55,7 +66,7 @@ export function AppStack({ role }: { role: Role }) {
 
   return (
     <Stack.Navigator
-      initialRouteName="Redirect"
+      initialRouteName={role === "cuidador" ? "Redirect" : "Home"}
       screenOptions={{
         headerTitleAlign: "center",
         headerShadowVisible: false,
@@ -149,6 +160,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
+    ...Platform.select({ web: { paddingRight: 16 }, default: {} }),
   },
   signOutLabel: {
     fontFamily: FONTS.semiBold,
