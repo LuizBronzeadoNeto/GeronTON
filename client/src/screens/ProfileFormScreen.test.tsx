@@ -29,7 +29,11 @@ function renderForm(params?: {
   cpf?: string;
   birthDate?: string;
 }) {
-  const navigation = { goBack: jest.fn(), navigate: jest.fn() };
+  const navigation = {
+    goBack: jest.fn(),
+    navigate: jest.fn(),
+    reset: jest.fn(),
+  };
   const props = { navigation, route: { params } } as unknown as Props;
   return { navigation, ...render(<ProfileFormScreen {...props} />) };
 }
@@ -48,7 +52,7 @@ describe("ProfileFormScreen", () => {
     jest
       .mocked(createProfile)
       .mockReset()
-      .mockResolvedValue({} as never);
+      .mockResolvedValue({ id: 42 } as never);
     jest
       .mocked(updateProfile)
       .mockReset()
@@ -136,7 +140,14 @@ describe("ProfileFormScreen", () => {
       medicalConditions: ["Diabetes", "Sarcopenia"],
       notes: "Obs geral",
     });
-    await waitFor(() => expect(navigation.goBack).toHaveBeenCalled());
+    await waitFor(() => expect(navigation.reset).toHaveBeenCalled());
+    expect(navigation.reset).toHaveBeenCalledWith({
+      index: 1,
+      routes: [
+        { name: "Home" },
+        { name: "ProfileDetail", params: { profileId: 42 } },
+      ],
+    });
   });
 
   it("removes a custom condition when its chip is pressed", () => {

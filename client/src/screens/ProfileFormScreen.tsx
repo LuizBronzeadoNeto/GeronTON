@@ -58,6 +58,12 @@ const PRESET_CONDITIONS = [
  * optional observation. When the route carries a `profileId` it loads that
  * profile and behaves as an edit screen, otherwise it registers a new one. The
  * full name is split into first/last name for the API.
+ *
+ * Registering resets the stack onto the new elder's detail screen rather than
+ * going back: the previous screen is the CPF identification step, which still
+ * holds the values just submitted, so returning to it looked like the start of
+ * a second registration. Editing still goes back, since that returns to the
+ * elder the user came from.
  */
 export function ProfileFormScreen({ navigation, route }: Props) {
   const profileId = route.params?.profileId;
@@ -147,10 +153,17 @@ export function ProfileFormScreen({ navigation, route }: Props) {
     try {
       if (isEditing) {
         await updateProfile(profileId, input);
+        navigation.goBack();
       } else {
-        await createProfile(input);
+        const created = await createProfile(input);
+        navigation.reset({
+          index: 1,
+          routes: [
+            { name: "Home" },
+            { name: "ProfileDetail", params: { profileId: created.id } },
+          ],
+        });
       }
-      navigation.goBack();
     } catch {
       setError("Não foi possível salvar o perfil.");
     } finally {
