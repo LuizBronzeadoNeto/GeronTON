@@ -1,6 +1,7 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { render, screen, waitFor } from "@testing-library/react-native";
 import { NavigationContainer } from "@react-navigation/native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AppStack } from "./AppStack";
 import { useAuth } from "../context/AuthContext";
 import { listProfiles } from "../api/profiles";
@@ -31,11 +32,23 @@ jest.mock("../context/AuthContext");
  * away from an initial screen at all. Verifying the race itself requires
  * driving a real browser build.
  */
+/**
+ * Mirrors App.tsx: the navigator reads the bottom safe-area inset, so it needs a
+ * provider. The metrics stand in for a device with a three-button navigation
+ * bar, which is the case the inset padding exists for.
+ */
+const INITIAL_METRICS = {
+  frame: { x: 0, y: 0, width: 390, height: 844 },
+  insets: { top: 0, left: 0, right: 0, bottom: 48 },
+};
+
 function renderStack(role: Role) {
   return render(
-    <NavigationContainer>
-      <AppStack role={role} />
-    </NavigationContainer>,
+    <SafeAreaProvider initialMetrics={INITIAL_METRICS}>
+      <NavigationContainer>
+        <AppStack role={role} />
+      </NavigationContainer>
+    </SafeAreaProvider>,
   );
 }
 
