@@ -62,11 +62,14 @@ function SignOutButton() {
  * to receive it. That reset is silently dropped and the app sits on Redirect's
  * spinner forever. Starting them on Home removes the hop entirely.
  *
- * Every screen carries the bottom safe-area inset as padding, so content is not
- * hidden behind Android's three-button navigation bar or the iPhone home
- * indicator. Applying it to the navigator's contentStyle covers all fifteen
- * scrollable screens at once, and it is dynamic by construction: with gesture
- * navigation the inset is zero and nothing shifts.
+ * On native, every screen carries the bottom safe-area inset as padding so
+ * content is not hidden behind Android's three-button navigation bar. Applying
+ * it to the navigator's contentStyle covers all fifteen scrollable screens at
+ * once, and it is dynamic by construction: with gesture navigation the inset is
+ * zero and nothing shifts.
+ *
+ * The web build is excluded: the browser already reserves room for its own
+ * chrome, so adding the inset there produced a gap rather than fixing one.
  */
 export function AppStack({ role }: { role: Role }) {
   const insets = useSafeAreaInsets();
@@ -90,7 +93,7 @@ export function AppStack({ role }: { role: Role }) {
         headerRight: () => <SignOutButton />,
         contentStyle: {
           backgroundColor: COLORS.white,
-          paddingBottom: insets.bottom,
+          paddingBottom: Platform.OS === "web" ? 0 : insets.bottom,
         },
       }}
     >
