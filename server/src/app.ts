@@ -12,8 +12,10 @@ import { alertsDashboardRouter } from "./routes/alerts.js";
 import { triageRouter } from "./routes/triage.js";
 
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
+const REGISTRATION_WINDOW_MS = 60 * 60 * 1000;
 const GLOBAL_REQUEST_LIMIT = 300;
 const LOGIN_ATTEMPT_LIMIT = 10;
+const REGISTRATION_LIMIT = 5;
 const MAX_BODY_SIZE = "100kb";
 
 /**
@@ -57,6 +59,20 @@ const loginLimiter = rateLimit({
   skip: skipInTests,
 });
 
+/**
+ * Account creation is open to the public, so unlike the login guard this counts
+ * successful requests too: the risk here is bulk account creation rather than
+ * guessing. A handful an hour per address is far above what a real person needs
+ * and far below what makes automated sign-up worthwhile.
+ */
+const registrationLimiter = rateLimit({
+  windowMs: REGISTRATION_WINDOW_MS,
+  limit: REGISTRATION_LIMIT,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  skip: skipInTests,
+});
+
 const app = express();
 
 /**
@@ -75,6 +91,8 @@ app.use(healthRouter);
 
 app.use(globalLimiter);
 app.use("/login", loginLimiter);
+app.use("/cuidadores", registrationLimiter);
+app.use("/profissionais", registrationLimiter);
 
 app.use(loginRouter);
 app.use("/cuidadores", caregiversRouter);

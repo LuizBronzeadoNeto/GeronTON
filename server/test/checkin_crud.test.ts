@@ -54,8 +54,8 @@ beforeAll(async () => {
   await request(app)
     .post("/cuidadores")
     .set("Authorization", `Bearer ${professionalToken}`)
-    .send({ email: OTHER_CAREGIVER_EMAIL, password: "pass123" });
-  otherCaregiverToken = (await login(OTHER_CAREGIVER_EMAIL, "pass123")).body
+    .send({ email: OTHER_CAREGIVER_EMAIL, password: "pass1234" });
+  otherCaregiverToken = (await login(OTHER_CAREGIVER_EMAIL, "pass1234")).body
     .token;
 
   const profileRes = await request(app)

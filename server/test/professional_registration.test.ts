@@ -3,15 +3,9 @@ import request from "supertest";
 import app from "../src/app.js";
 import { prisma } from "../src/lib/prisma.js";
 
-let caregiverToken: string;
 let professionalToken: string;
 
 beforeAll(async () => {
-  const caregiverRes = await request(app)
-    .post("/login")
-    .send({ email: "cuidador@demo.com", password: "senha123" });
-  caregiverToken = caregiverRes.body.token;
-
   const professionalRes = await request(app)
     .post("/login")
     .send({ email: "profissional@demo.com", password: "senha123" });
@@ -20,7 +14,11 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await prisma.user.deleteMany({
-    where: { email: "newprofessional@demo.com" },
+    where: {
+      email: {
+        in: ["newprofessional@demo.com", "selfsignup.pro@demo.com"],
+      },
+    },
   });
   await prisma.$disconnect();
 });
@@ -37,7 +35,7 @@ describe("POST /profissionais", () => {
       .set("Authorization", `Bearer ${professionalToken}`)
       .send({
         email: "newprofessional@demo.com",
-        password: "pass123",
+        password: "pass1234",
         crm: "54321-PB",
       });
 
@@ -56,24 +54,32 @@ describe("POST /profissionais", () => {
       .set("Authorization", `Bearer ${professionalToken}`)
       .send({
         email: "newprofessional@demo.com",
-        password: "pass123",
+        password: "pass1234",
         crm: "99999-PB",
       });
 
     expect(res.status).toBe(409);
   });
 
-  it("Denies the creation of a professional by a caregiver, returns 403 forbidden", async () => {
-    const res = await request(app)
-      .post("/profissionais")
-      .set("Authorization", `Bearer ${caregiverToken}`)
-      .send({
-        email: "deniedprofessional@demo.com",
-        password: "pass123",
-        crm: "11111-PB",
-      });
+  it("Allows an unauthenticated visitor to sign up", async () => {
+    const res = await request(app).post("/profissionais").send({
+      email: "selfsignup.pro@demo.com",
+      password: "pass1234",
+      crm: "33333-PB",
+    });
 
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(201);
+    expect(res.body).toMatchObject({ role: "profissional" });
+  });
+
+  it("Rejects a password shorter than the minimum, returns 400", async () => {
+    const res = await request(app).post("/profissionais").send({
+      email: "shortpass.pro@demo.com",
+      password: "curta12",
+      crm: "44444-PB",
+    });
+
+    expect(res.status).toBe(400);
   });
 
   it("Denies the creation of a professional without providing a password, returns 400", async () => {
@@ -89,7 +95,7 @@ describe("POST /profissionais", () => {
     const res = await request(app)
       .post("/profissionais")
       .set("Authorization", `Bearer ${professionalToken}`)
-      .send({ password: "pass123", crm: "22222-PB" });
+      .send({ password: "pass1234", crm: "22222-PB" });
 
     expect(res.status).toBe(400);
   });
@@ -98,7 +104,7 @@ describe("POST /profissionais", () => {
     const res = await request(app)
       .post("/profissionais")
       .set("Authorization", `Bearer ${professionalToken}`)
-      .send({ email: "nocrm@demo.com", password: "pass123" });
+      .send({ email: "nocrm@demo.com", password: "pass1234" });
 
     expect(res.status).toBe(400);
   });
@@ -107,7 +113,11 @@ describe("POST /profissionais", () => {
     const res = await request(app)
       .post("/profissionais")
       .set("Authorization", `Bearer ${professionalToken}`)
-      .send({ email: "badcrm@demo.com", password: "pass123", crm: "12345-XX" });
+      .send({
+        email: "badcrm@demo.com",
+        password: "pass1234",
+        crm: "12345-XX",
+      });
 
     expect(res.status).toBe(400);
   });
@@ -115,7 +125,7 @@ describe("POST /profissionais", () => {
   it("Allows a newly created professional to log in", async () => {
     const res = await request(app)
       .post("/login")
-      .send({ email: "newprofessional@demo.com", password: "pass123" });
+      .send({ email: "newprofessional@demo.com", password: "pass1234" });
 
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ role: "profissional" });

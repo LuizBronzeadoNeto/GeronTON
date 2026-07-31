@@ -43,13 +43,13 @@ beforeAll(async () => {
     .set("Authorization", `Bearer ${professionalToken}`)
     .send({
       email: OUTSIDER_EMAIL,
-      password: "pass123",
+      password: "pass1234",
       crm: OUTSIDER_CRM,
     });
 
   const outsiderRes = await request(app)
     .post("/login")
-    .send({ email: OUTSIDER_EMAIL, password: "pass123" });
+    .send({ email: OUTSIDER_EMAIL, password: "pass1234" });
   expect(outsiderRes.status).toBe(200);
   outsiderToken = outsiderRes.body.token;
 
