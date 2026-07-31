@@ -1,12 +1,28 @@
-import { describe, it, expect, beforeAll, afterEach } from "@jest/globals";
+import {
+  describe,
+  it,
+  expect,
+  beforeAll,
+  afterAll,
+  afterEach,
+} from "@jest/globals";
 import request from "supertest";
 import app from "../src/app.js";
+import { makeCpf } from "./helpers.js";
 import { prisma } from "../src/lib/prisma.js";
 
 let token: string;
 let perfilId: number;
 const createdIds: number[] = [];
 
+const PROFILE_MARKER = "TestIntercorrencia";
+
+/**
+ * Creates its own profile rather than reusing whichever one happens to be in
+ * the shared dev database: depending on ambient data made this suite fail
+ * outright once the table was empty, and left it asserting against a record
+ * another suite could delete mid-run.
+ */
 beforeAll(async () => {
   const loginRes = await request(app)
     .post("/login")
@@ -15,16 +31,24 @@ beforeAll(async () => {
   expect(loginRes.status).toBe(200);
   token = loginRes.body.token;
 
-  const user = await prisma.user.findUnique({
-    where: { email: "cuidador@demo.com" },
-  });
-  const profile = await prisma.profile.findFirst({
-    where: { caregiverId: user!.id },
-  });
-  if (!profile) {
-    throw new Error();
-  }
-  perfilId = profile.id;
+  const profileRes = await request(app)
+    .post("/perfis")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      cpf: makeCpf("100000020"),
+      firstName: PROFILE_MARKER,
+      lastName: "Teste",
+      birthDate: "1945-06-12",
+      scholarship: "fundamental",
+    });
+
+  expect(profileRes.status).toBe(201);
+  perfilId = profileRes.body.id;
+});
+
+afterAll(async () => {
+  await prisma.profile.deleteMany({ where: { id: perfilId ?? -1 } });
+  await prisma.$disconnect();
 });
 
 afterEach(async () => {

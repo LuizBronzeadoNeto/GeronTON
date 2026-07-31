@@ -57,7 +57,7 @@ export function ProfileListScreen({ navigation }: Props) {
         testID="profile-add"
         title="+ Novo idoso"
         size="small"
-        onPress={() => navigation.navigate("ProfileForm")}
+        onPress={() => navigation.navigate("ProfileIdentification")}
       />
 
       {loading ? (

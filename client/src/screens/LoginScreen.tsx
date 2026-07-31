@@ -10,19 +10,23 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import type { AuthStackParamList } from "../types/navigation";
 import { useAuth } from "../context/AuthContext";
 import { ErrorToast } from "../components/ErrorToast";
 import { COLORS, FONTS } from "../theme";
+
+type Props = NativeStackScreenProps<AuthStackParamList, "Login">;
 
 /**
  * Email + password form styled after the GeronTON Figma design: branded logo,
  * labeled inputs with a password visibility toggle, primary "Entrar" button and
  * a sign-up footer. On success the AuthProvider stores the user, which flips
  * RootNavigator to the app stack; on failure a dismissible error toast floats
- * over the top of the form. The "Esqueceu a senha?" and "Cadastre-se agora!"
- * links are visual-only for now — those flows do not exist yet.
+ * over the top of the form. "Cadastre-se agora!" opens the sign-up screen;
+ * "Esqueceu a senha?" is still visual-only, as no reset flow exists.
  */
-export function LoginScreen() {
+export function LoginScreen({ navigation }: Props) {
   const { signIn, isSigningIn } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -112,10 +116,16 @@ export function LoginScreen() {
           )}
         </Pressable>
 
-        <Text style={styles.footer}>
-          <Text style={styles.footerText}>Ainda não possui uma conta? </Text>
-          <Text style={styles.footerLink}>Cadastre-se agora!</Text>
-        </Text>
+        <Pressable
+          testID="login-register"
+          accessibilityRole="button"
+          onPress={() => navigation.navigate("Register")}
+        >
+          <Text style={styles.footer}>
+            <Text style={styles.footerText}>Ainda não possui uma conta? </Text>
+            <Text style={styles.footerLink}>Cadastre-se agora!</Text>
+          </Text>
+        </Pressable>
       </ScrollView>
 
       {error ? (

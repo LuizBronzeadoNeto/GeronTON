@@ -1,0 +1,16 @@
+node_modules
+dist
+coverage
+test
+.env
+.env.*
+!.env.example
+!.env.production.example
+.git
+.gitignore
+docker-compose.yml
+Dockerfile
+.dockerignore
+eslint.config.js
+jest.config.cjs
+babel.config.cjs

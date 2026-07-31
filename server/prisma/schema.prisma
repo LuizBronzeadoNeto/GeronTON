@@ -24,17 +24,37 @@ enum EventType {
 }
 
 model User {
-  id       Int       @id @default(autoincrement())
-  email    String    @unique
+  id       Int             @id @default(autoincrement())
+  email    String          @unique
   password String
   role     Role
-  profiles Profile[] @relation("CaregiverProfiles")
+  crm      String?         @unique
+  profiles Profile[]       @relation("CaregiverProfiles")
+  access   ProfileAccess[]
 
   @@map("users")
 }
 
+/// Grants a user access to an elderly profile. This is the sole source of
+/// authorization: a user may read or write a profile only when a row links
+/// them to it, regardless of role. Profile.caregiverId records who first
+/// registered the elder and is not consulted for access decisions.
+model ProfileAccess {
+  id        Int      @id @default(autoincrement())
+  profileId Int
+  userId    Int
+  createdAt DateTime @default(now())
+  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, userId])
+  @@index([userId])
+  @@map("profile_access")
+}
+
 model Profile {
   id                Int          @id @default(autoincrement())
+  cpf               String?      @unique
   firstName         String
   lastName          String
   birthDate         DateTime     @db.Date
@@ -49,6 +69,7 @@ model Profile {
   checkIns          CheckIn[]
   intercorrences    Intercorrence[]
   alerts            Alert[]
+  access            ProfileAccess[]
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
 

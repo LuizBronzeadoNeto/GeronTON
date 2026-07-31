@@ -3,15 +3,9 @@ import request from "supertest";
 import app from "../src/app.js";
 import { prisma } from "../src/lib/prisma.js";
 
-let caregiverToken: string;
 let professionalToken: string;
 
 beforeAll(async () => {
-  const caregiverRes = await request(app)
-    .post("/login")
-    .send({ email: "cuidador@demo.com", password: "senha123" });
-  caregiverToken = caregiverRes.body.token;
-
   const professionalRes = await request(app)
     .post("/login")
     .send({ email: "profissional@demo.com", password: "senha123" });
@@ -19,7 +13,17 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await prisma.user.deleteMany({ where: { email: "newcaregiver@demo.com" } });
+  await prisma.user.deleteMany({
+    where: {
+      email: {
+        in: [
+          "newcaregiver@demo.com",
+          "selfsignup.care@demo.com",
+          "crmignored.care@demo.com",
+        ],
+      },
+    },
+  });
   await prisma.$disconnect();
 });
 
@@ -33,7 +37,7 @@ describe("POST /cuidadores", () => {
     const res = await request(app)
       .post("/cuidadores")
       .set("Authorization", `Bearer ${professionalToken}`)
-      .send({ email: "newcaregiver@demo.com", password: "pass123" });
+      .send({ email: "newcaregiver@demo.com", password: "pass1234" });
 
     expect(res.status).toBe(201);
     expect(res.body.id).toEqual(expect.any(Number));
@@ -48,18 +52,37 @@ describe("POST /cuidadores", () => {
     const res = await request(app)
       .post("/cuidadores")
       .set("Authorization", `Bearer ${professionalToken}`)
-      .send({ email: "newcaregiver@demo.com", password: "pass123" });
+      .send({ email: "newcaregiver@demo.com", password: "pass1234" });
 
     expect(res.status).toBe(409);
   });
 
-  it("Denies the creation of a caregiver by another caregiver, returns 403 forbidden", async () => {
+  it("Allows an unauthenticated visitor to sign up", async () => {
     const res = await request(app)
       .post("/cuidadores")
-      .set("Authorization", `Bearer ${caregiverToken}`)
-      .send({ email: "anothercaregiver@demo.com", password: "pass123" });
+      .send({ email: "selfsignup.care@demo.com", password: "pass1234" });
 
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(201);
+    expect(res.body).toMatchObject({ role: "cuidador" });
+  });
+
+  it("Rejects a password shorter than the minimum, returns 400", async () => {
+    const res = await request(app)
+      .post("/cuidadores")
+      .send({ email: "shortpass.care@demo.com", password: "curta12" });
+
+    expect(res.status).toBe(400);
+  });
+
+  it("Ignores a CRM sent for a caregiver", async () => {
+    const res = await request(app).post("/cuidadores").send({
+      email: "crmignored.care@demo.com",
+      password: "pass1234",
+      crm: "55555-PB",
+    });
+
+    expect(res.status).toBe(201);
+    expect(res.body.crm).toBeNull();
   });
 
   it("Denies the creation of a caregiver without providing a password, returns 400", async () => {
@@ -75,7 +98,7 @@ describe("POST /cuidadores", () => {
     const res = await request(app)
       .post("/cuidadores")
       .set("Authorization", `Bearer ${professionalToken}`)
-      .send({ password: "pass123" });
+      .send({ password: "pass1234" });
 
     expect(res.status).toBe(400);
   });
@@ -83,7 +106,7 @@ describe("POST /cuidadores", () => {
   it("Allows a newly created caregiver to log in", async () => {
     const res = await request(app)
       .post("/login")
-      .send({ email: "newcaregiver@demo.com", password: "pass123" });
+      .send({ email: "newcaregiver@demo.com", password: "pass1234" });
 
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ role: "cuidador" });

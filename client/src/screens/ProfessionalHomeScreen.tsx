@@ -101,7 +101,7 @@ export function ProfessionalHomeScreen({ navigation }: Props) {
         testID="professional-add"
         title="+ Cadastrar idoso"
         size="small"
-        onPress={() => navigation.navigate("ProfileForm")}
+        onPress={() => navigation.navigate("ProfileIdentification")}
       />
 
       {loading ? (

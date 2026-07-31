@@ -21,6 +21,7 @@ import { RiskStatusBadge } from "../components/RiskStatusBadge";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { SelectField } from "../components/SelectField";
 import { brDateToIso, isoToBrDate, maskBrDate } from "../utils/date";
+import { maskCpf } from "../utils/cpf";
 import { COLORS, FONTS } from "../theme";
 
 type Props = NativeStackScreenProps<AppStackParamList, "ProfileForm">;
@@ -57,13 +58,22 @@ const PRESET_CONDITIONS = [
  * optional observation. When the route carries a `profileId` it loads that
  * profile and behaves as an edit screen, otherwise it registers a new one. The
  * full name is split into first/last name for the API.
+ *
+ * Registering resets the stack onto the new elder's detail screen rather than
+ * going back: the previous screen is the CPF identification step, which still
+ * holds the values just submitted, so returning to it looked like the start of
+ * a second registration. Editing still goes back, since that returns to the
+ * elder the user came from.
  */
 export function ProfileFormScreen({ navigation, route }: Props) {
   const profileId = route.params?.profileId;
   const isEditing = profileId != null;
 
+  const [cpf, setCpf] = useState(route.params?.cpf ?? "");
   const [fullName, setFullName] = useState("");
-  const [birthDate, setBirthDate] = useState("");
+  const [birthDate, setBirthDate] = useState(
+    route.params?.birthDate ? isoToBrDate(route.params.birthDate) : "",
+  );
   const [sex, setSex] = useState<string | null>(null);
   const [scholarship, setScholarship] = useState<string | null>(null);
   const [conditions, setConditions] = useState<string[]>([]);
@@ -82,6 +92,7 @@ export function ProfileFormScreen({ navigation, route }: Props) {
     getProfile(profileId)
       .then((profile) => {
         if (!active) return;
+        setCpf(profile.cpf ?? "");
         setFullName(`${profile.firstName} ${profile.lastName}`.trim());
         setBirthDate(isoToBrDate(profile.birthDate));
         setSex(profile.sex);
@@ -129,6 +140,7 @@ export function ProfileFormScreen({ navigation, route }: Props) {
 
     const [firstName, ...rest] = nameParts;
     const input: ProfileInput = {
+      cpf,
       firstName,
       lastName: rest.join(" "),
       birthDate: brDateToIso(birthDate) ?? "",
@@ -141,10 +153,17 @@ export function ProfileFormScreen({ navigation, route }: Props) {
     try {
       if (isEditing) {
         await updateProfile(profileId, input);
+        navigation.goBack();
       } else {
-        await createProfile(input);
+        const created = await createProfile(input);
+        navigation.reset({
+          index: 1,
+          routes: [
+            { name: "Home" },
+            { name: "ProfileDetail", params: { profileId: created.id } },
+          ],
+        });
       }
-      navigation.goBack();
     } catch {
       setError("Não foi possível salvar o perfil.");
     } finally {
@@ -177,6 +196,11 @@ export function ProfileFormScreen({ navigation, route }: Props) {
         </Text>
         {isEditing ? <RiskStatusBadge profileId={profileId} /> : null}
       </View>
+
+      <Text style={styles.label}>CPF</Text>
+      <Text testID="profile-cpf" style={[styles.input, styles.readOnlyInput]}>
+        {cpf ? maskCpf(cpf) : "—"}
+      </Text>
 
       <Text style={styles.label}>Nome completo</Text>
       <TextInput
@@ -341,6 +365,11 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.semiBold,
     fontSize: 14,
     color: COLORS.heading,
+  },
+  readOnlyInput: {
+    backgroundColor: COLORS.chipBg,
+    color: COLORS.grey500,
+    lineHeight: 50,
   },
   dateRow: {
     flexDirection: "row",

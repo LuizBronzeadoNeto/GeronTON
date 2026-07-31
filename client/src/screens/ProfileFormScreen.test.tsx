@@ -24,8 +24,16 @@ const MOCK_PROFILE = makeProfile({
 
 type Props = NativeStackScreenProps<AppStackParamList, "ProfileForm">;
 
-function renderForm(params?: { profileId?: number }) {
-  const navigation = { goBack: jest.fn(), navigate: jest.fn() };
+function renderForm(params?: {
+  profileId?: number;
+  cpf?: string;
+  birthDate?: string;
+}) {
+  const navigation = {
+    goBack: jest.fn(),
+    navigate: jest.fn(),
+    reset: jest.fn(),
+  };
   const props = { navigation, route: { params } } as unknown as Props;
   return { navigation, ...render(<ProfileFormScreen {...props} />) };
 }
@@ -44,7 +52,7 @@ describe("ProfileFormScreen", () => {
     jest
       .mocked(createProfile)
       .mockReset()
-      .mockResolvedValue({} as never);
+      .mockResolvedValue({ id: 42 } as never);
     jest
       .mocked(updateProfile)
       .mockReset()
@@ -106,7 +114,7 @@ describe("ProfileFormScreen", () => {
   });
 
   it("creates a profile splitting the full name and converting the date", async () => {
-    const { navigation } = renderForm();
+    const { navigation } = renderForm({ cpf: "11144477735" });
 
     fillRequiredFields();
     fireEvent.press(screen.getByTestId("profile-sex"));
@@ -123,6 +131,7 @@ describe("ProfileFormScreen", () => {
 
     await waitFor(() => expect(createProfile).toHaveBeenCalled());
     expect(createProfile).toHaveBeenCalledWith({
+      cpf: "11144477735",
       firstName: "João",
       lastName: "da Silva",
       birthDate: "1950-05-20",
@@ -131,7 +140,14 @@ describe("ProfileFormScreen", () => {
       medicalConditions: ["Diabetes", "Sarcopenia"],
       notes: "Obs geral",
     });
-    await waitFor(() => expect(navigation.goBack).toHaveBeenCalled());
+    await waitFor(() => expect(navigation.reset).toHaveBeenCalled());
+    expect(navigation.reset).toHaveBeenCalledWith({
+      index: 1,
+      routes: [
+        { name: "Home" },
+        { name: "ProfileDetail", params: { profileId: 42 } },
+      ],
+    });
   });
 
   it("removes a custom condition when its chip is pressed", () => {
@@ -182,6 +198,7 @@ describe("ProfileFormScreen", () => {
 
     await waitFor(() => expect(updateProfile).toHaveBeenCalled());
     expect(updateProfile).toHaveBeenCalledWith(7, {
+      cpf: "11144477735",
       firstName: "Ozilene",
       lastName: "Leite da Silva",
       birthDate: "1947-11-05",

@@ -39,7 +39,7 @@ export function RedirectScreen({ navigation }: Props) {
         if (profiles.length === 0) {
           navigation.reset({
             index: 1,
-            routes: [{ name: "Home" }, { name: "ProfileForm" }],
+            routes: [{ name: "Home" }, { name: "ProfileIdentification" }],
           });
         } else if (profiles.length === 1) {
           navigation.reset({

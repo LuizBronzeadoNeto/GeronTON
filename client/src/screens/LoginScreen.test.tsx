@@ -18,10 +18,15 @@ const INITIAL_METRICS = {
 };
 
 function renderLogin() {
+  const navigation = { navigate: jest.fn(), goBack: jest.fn() };
+  const props = {
+    navigation,
+    route: { params: undefined },
+  } as unknown as Parameters<typeof LoginScreen>[0];
   return render(
     <SafeAreaProvider initialMetrics={INITIAL_METRICS}>
       <AuthProvider>
-        <LoginScreen />
+        <LoginScreen {...props} />
       </AuthProvider>
     </SafeAreaProvider>,
   );

@@ -22,6 +22,7 @@ function mockRole(role: Role) {
   jest.mocked(useAuth).mockReturnValue({
     user: { id: 1, role, token: "jwt" },
     isSigningIn: false,
+    isRestoring: false,
     signIn: jest.fn<() => Promise<void>>(),
     signOut: jest.fn(),
   });
@@ -69,7 +70,7 @@ describe("RedirectScreen", () => {
     await waitFor(() => expect(navigation.reset).toHaveBeenCalled());
     expect(navigation.reset).toHaveBeenCalledWith({
       index: 1,
-      routes: [{ name: "Home" }, { name: "ProfileForm" }],
+      routes: [{ name: "Home" }, { name: "ProfileIdentification" }],
     });
   });
 

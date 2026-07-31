@@ -48,4 +48,27 @@ describe("POST /login", () => {
     const res = await request(app).post("/login").send({});
     expect(res.status).toBe(400);
   });
+
+  it("stores the password as a bcrypt hash, never as plain text", async () => {
+    const user = await prisma.user.findUnique({
+      where: { email: "cuidador@demo.com" },
+    });
+
+    expect(user).not.toBeNull();
+    expect(user?.password).not.toBe("senha123");
+    expect(user?.password).toMatch(/^\$2[aby]\$\d{2}\$/);
+  });
+
+  it("omits the email from the issued token", async () => {
+    const res = await request(app)
+      .post("/login")
+      .send({ email: "cuidador@demo.com", password: "senha123" });
+
+    const payload = JSON.parse(
+      Buffer.from(res.body.token.split(".")[1], "base64").toString(),
+    );
+
+    expect(payload).toMatchObject({ role: "cuidador" });
+    expect(payload.email).toBeUndefined();
+  });
 });

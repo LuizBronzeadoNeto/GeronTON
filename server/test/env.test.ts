@@ -32,4 +32,30 @@ describe("assertEnv", () => {
   it("accepts a short secret outside production", () => {
     expect(() => assertEnv({ ...VALID, JWT_SECRET: "dev" })).not.toThrow();
   });
+
+  it("rejects an unrecognised NODE_ENV", () => {
+    expect(() => assertEnv({ ...VALID, NODE_ENV: "prodution" })).toThrow(
+      'NODE_ENV must be one of development, test, production when set, got "prodution"',
+    );
+  });
+
+  it("accepts each recognised NODE_ENV", () => {
+    for (const nodeEnv of ["development", "test", "production"]) {
+      expect(() => assertEnv({ ...VALID, NODE_ENV: nodeEnv })).not.toThrow();
+    }
+  });
+
+  it("rejects a published example secret in production", () => {
+    expect(() =>
+      assertEnv({
+        ...VALID,
+        NODE_ENV: "production",
+        JWT_SECRET: "replace-with-a-random-string-of-at-least-32-characters",
+      }),
+    ).toThrow("JWT_SECRET is one of the published example values");
+  });
+
+  it("accepts a published example secret outside production", () => {
+    expect(() => assertEnv({ ...VALID, JWT_SECRET: "resenha" })).not.toThrow();
+  });
 });

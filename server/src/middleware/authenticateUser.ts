@@ -2,8 +2,6 @@ import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { Role } from "../lib/prisma.js";
 
-const JWT_SECRET = process.env.JWT_SECRET!;
-
 export interface AuthPayload {
   id: number;
   role: Role;
@@ -17,6 +15,15 @@ declare global {
   }
 }
 
+/**
+ * Validates the bearer token and populates `req.user`. Responds 401 on a
+ * missing, malformed, expired or unverifiable token.
+ *
+ * The accepted algorithm is pinned to HS256, the one POST /login signs with, so
+ * a token cannot be presented under a different algorithm than the one intended.
+ * The secret is read per request rather than captured at import time, so
+ * assertEnv() is guaranteed to have run first regardless of module load order.
+ */
 export function authMiddleware(
   req: Request,
   res: Response,
@@ -33,7 +40,9 @@ export function authMiddleware(
   const token = header.slice(7);
 
   try {
-    const payload = jwt.verify(token, JWT_SECRET) as unknown as AuthPayload;
+    const payload = jwt.verify(token, process.env.JWT_SECRET as string, {
+      algorithms: ["HS256"],
+    }) as unknown as AuthPayload;
     if (!payload.id || !payload.role)
       return res.status(401).json({ error: "Invalid token payload." });
 

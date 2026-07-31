@@ -27,12 +27,16 @@ interface TriageEntry extends Profile {
 }
 
 /**
- * Evaluates every profile in bulk: one query for the latest check-in per
- * profile (distinct on profileId after ordering by date) and one for the
- * 30-day intercorrence window, then the pure risk engine per profile.
+ * Evaluates the profiles the given user is linked to, in bulk: one query for
+ * the latest check-in per profile (distinct on profileId after ordering by
+ * date) and one for the 30-day intercorrence window, then the pure risk engine
+ * per profile.
  */
-async function evaluateAllProfiles(): Promise<TriageEntry[]> {
-  const profiles = await prisma.profile.findMany({ orderBy: { id: "asc" } });
+async function evaluateLinkedProfiles(userId: number): Promise<TriageEntry[]> {
+  const profiles = await prisma.profile.findMany({
+    where: { access: { some: { userId } } },
+    orderBy: { id: "asc" },
+  });
   const windowStart = new Date(
     Date.now() - INTERCORRENCE_WINDOW_DAYS * 24 * 60 * 60 * 1000,
   );
@@ -78,11 +82,13 @@ async function evaluateAllProfiles(): Promise<TriageEntry[]> {
 }
 
 /**
- * GET /triagem — the professional triage dashboard: every elderly profile with
- * its computed risk status, ordered by clinical priority (high, moderate, low,
- * unknown), by functional score within the same level and by id as the final
- * tiebreaker. Professional-only, since the panel spans every caregiver's
- * profiles.
+ * GET /triagem — the professional triage dashboard: the elderly profiles the
+ * requesting professional is linked to, each with its computed risk status,
+ * ordered by clinical priority (high, moderate, low, unknown), by functional
+ * score within the same level and by id as the final tiebreaker.
+ *
+ * The panel spans several caregivers' profiles, but only those the professional
+ * has been granted access to — it is no longer a view of the whole system.
  */
 export const triageRouter = Router();
 
@@ -90,8 +96,8 @@ triageRouter.get(
   "/",
   authMiddleware,
   requireRole("profissional"),
-  async (_req: Request, res: Response) => {
-    const entries = await evaluateAllProfiles();
+  async (req: Request, res: Response) => {
+    const entries = await evaluateLinkedProfiles(req.user!.id);
 
     entries.sort(
       (a, b) =>
