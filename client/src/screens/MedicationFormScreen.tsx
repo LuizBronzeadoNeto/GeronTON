@@ -140,6 +140,7 @@ export function MedicationFormScreen({ route, navigation }: Props) {
           testID="medication-form-name"
           style={styles.input}
           placeholder="Ex: Losartana"
+          placeholderTextColor={COLORS.grey400}
           value={form.name}
           onChangeText={(text) => setForm({ ...form, name: text })}
         />
@@ -149,6 +150,7 @@ export function MedicationFormScreen({ route, navigation }: Props) {
           testID="medication-form-dosage"
           style={styles.input}
           placeholder="Ex: 50mg"
+          placeholderTextColor={COLORS.grey400}
           value={form.dosage}
           onChangeText={(text) => setForm({ ...form, dosage: text })}
         />
@@ -158,6 +160,7 @@ export function MedicationFormScreen({ route, navigation }: Props) {
           testID="medication-form-frequency"
           style={styles.input}
           placeholder="Ex: 1x ao dia"
+          placeholderTextColor={COLORS.grey400}
           value={form.frequency}
           onChangeText={(text) => setForm({ ...form, frequency: text })}
         />
@@ -167,6 +170,7 @@ export function MedicationFormScreen({ route, navigation }: Props) {
           testID="medication-form-notes"
           style={[styles.input, styles.textArea]}
           placeholder="Ex: tomar pela manhã"
+          placeholderTextColor={COLORS.grey400}
           value={form.notes ?? ""}
           onChangeText={(text) => setForm({ ...form, notes: text })}
           multiline
