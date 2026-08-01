@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1032642679880",
+    "project_id": "geronton-2966f",
+    "storage_bucket": "geronton-2966f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1032642679880:android:af9994b82d9205c418b47d",
+        "android_client_info": {
+          "package_name": "com.geronton.client"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCNfT3oTBT6X1GtQ3qa35gqvjuMWLlnzGg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
