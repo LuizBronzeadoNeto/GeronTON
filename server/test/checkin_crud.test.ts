@@ -34,7 +34,7 @@ const VALID_CHECKIN = {
   dailyBath: true,
   oralHygiene: true,
   groomedNails: true,
-  needsMedications: "Losartana 50mg",
+  needsMedications: ["Losartana 50mg"],
 };
 
 async function login(
@@ -95,6 +95,38 @@ describe("/perfis/:perfilId/avaliacoes", () => {
     expect(res.body.profileId).toBe(profileId);
     expect(res.body.date).toBeTruthy();
     checkInId = res.body.id;
+  });
+
+  /**
+   * The logistics answers used to be prose and are now lists, so a plain string
+   * is the shape an out-of-date client would send.
+   */
+  it("rejects a logistics field sent as prose, 400", async () => {
+    const res = await request(app)
+      .post(`/perfis/${profileId}/avaliacoes`)
+      .set("Authorization", `Bearer ${caregiverToken}`)
+      .send({ ...VALID_CHECKIN, needsMedications: "Losartana 50mg" });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toContain("needsMedications");
+  });
+
+  it("stores the logistics lists, trimmed and without blanks", async () => {
+    const res = await request(app)
+      .post(`/perfis/${profileId}/avaliacoes`)
+      .set("Authorization", `Bearer ${caregiverToken}`)
+      .send({
+        ...VALID_CHECKIN,
+        needsMedications: ["  Losartana  ", "", "   ", "Metformina"],
+        needsFood: ["Suplemento"],
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.needsMedications).toEqual(["Losartana", "Metformina"]);
+    expect(res.body.needsFood).toEqual(["Suplemento"]);
+    expect(res.body.needsHygiene).toEqual([]);
+
+    await prisma.checkIn.deleteMany({ where: { id: res.body.id } });
   });
 
   it("rejects a check-in with a missing field, 400", async () => {

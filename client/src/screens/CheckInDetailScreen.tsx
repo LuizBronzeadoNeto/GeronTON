@@ -209,12 +209,12 @@ export function CheckInDetailScreen({ navigation, route }: Props) {
       <View style={styles.card}>
         <Text style={styles.cardTitle}>{STEPS[4].title}</Text>
         {LOGISTICS.map((section) => {
-          const value = checkIn[section.key as keyof CheckIn] as string | null;
+          const items = checkIn[section.key as keyof CheckIn] as string[];
           return (
             <DetailRow
               key={section.key}
               label={section.label}
-              value={value ?? "—"}
+              value={items.length > 0 ? items.join(", ") : "—"}
             />
           );
         })}

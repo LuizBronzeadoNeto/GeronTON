@@ -19,6 +19,7 @@ import {
   type CheckInInput,
   type Mood,
 } from "../api/checkins";
+import { listMedications } from "../api/medications";
 import {
   APPETITE_OPTIONS,
   LOGISTICS,
@@ -30,6 +31,7 @@ import {
 import { ProfileHeader } from "../components/ProfileHeader";
 import { StepIndicator } from "../components/StepIndicator";
 import { PrimaryButton } from "../components/PrimaryButton";
+import { TagListInput } from "../components/TagListInput";
 import { checkinStyles } from "../components/checkin/common";
 import { YesNoRow, type Answer } from "../components/checkin/YesNoRow";
 import { EventToggleRow } from "../components/checkin/EventToggleRow";
@@ -78,10 +80,13 @@ export function WeeklyCheckInScreen({ navigation, route }: Props) {
     glycemia: "",
     calfCircumference: "",
     chokingFrequency: "",
-    needsMedications: "",
-    needsHygiene: "",
-    needsFood: "",
   });
+  const [lists, setLists] = useState<Record<string, string[]>>({
+    needsMedications: [],
+    needsHygiene: [],
+    needsFood: [],
+  });
+  const [medicationNames, setMedicationNames] = useState<string[]>([]);
   const [appetite, setAppetite] = useState<Appetite | null>(null);
   const [mood, setMood] = useState<Mood | null>(null);
   const [stressLevel, setStressLevel] = useState(0);
@@ -104,6 +109,19 @@ export function WeeklyCheckInScreen({ navigation, route }: Props) {
         .finally(() => {
           if (active) setLoading(false);
         });
+
+      /**
+       * The elder's registered medications, offered as one-tap suggestions in
+       * the logistics step. A failure is swallowed: this only saves typing, and
+       * an inventory that will not load should not surface an error in a form
+       * that works perfectly well without it.
+       */
+      listMedications(profileId)
+        .then((medications) => {
+          if (active) setMedicationNames(medications.map((item) => item.name));
+        })
+        .catch(() => {});
+
       return () => {
         active = false;
       };
@@ -116,6 +134,10 @@ export function WeeklyCheckInScreen({ navigation, route }: Props) {
 
   function setText(field: string, value: string) {
     setTexts((current) => ({ ...current, [field]: value }));
+  }
+
+  function setList(field: string, value: string[]) {
+    setLists((current) => ({ ...current, [field]: value }));
   }
 
   function toggleEvent(key: string) {
@@ -203,9 +225,9 @@ export function WeeklyCheckInScreen({ navigation, route }: Props) {
       dailyBath: yesNo.dailyBath === true,
       oralHygiene: yesNo.oralHygiene === true,
       groomedNails: yesNo.groomedNails === true,
-      needsMedications: optional(texts.needsMedications),
-      needsHygiene: optional(texts.needsHygiene),
-      needsFood: optional(texts.needsFood),
+      needsMedications: lists.needsMedications,
+      needsHygiene: lists.needsHygiene,
+      needsFood: lists.needsFood,
     };
 
     try {
@@ -383,13 +405,15 @@ export function WeeklyCheckInScreen({ navigation, route }: Props) {
           {LOGISTICS.map((section) => (
             <View key={section.key} style={styles.blockField}>
               <Text style={checkinStyles.questionLabel}>{section.label}</Text>
-              <TextInput
-                testID={`checkin-${section.key}`}
-                style={[checkinStyles.input, styles.textArea]}
-                placeholderTextColor={COLORS.grey400}
-                value={texts[section.key]}
-                onChangeText={(value) => setText(section.key, value)}
-                multiline
+              <TagListInput
+                testIDPrefix={`checkin-${section.key}`}
+                value={lists[section.key]}
+                onChange={(value) => setList(section.key, value)}
+                suggestions={
+                  section.key === "needsMedications" ? medicationNames : []
+                }
+                placeholder={section.placeholder}
+                addAccessibilityLabel={`Adicionar em ${section.label}`}
               />
             </View>
           ))}

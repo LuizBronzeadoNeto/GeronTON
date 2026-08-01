@@ -15,9 +15,9 @@
     "android": {
       "package": "com.geronton.client",
       "versionCode": 1,
-      "permissions": [],
+      "permissions": ["android.permission.POST_NOTIFICATIONS"],
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#1A65B5",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -40,6 +40,12 @@
     "plugins": [
       "expo-secure-store",
       [
+        "expo-notifications",
+        {
+          "color": "#1A65B5"
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "image": "./assets/splash-icon.png",
@@ -48,6 +54,12 @@
           "backgroundColor": "#FFFFFF"
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "e2321642-6c84-4d65-bfd8-48c103513634"
+      }
+    },
+    "owner": "mikaelbfaa"
   }
 }

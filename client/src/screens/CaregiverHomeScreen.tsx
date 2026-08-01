@@ -3,6 +3,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useAuth } from "../context/AuthContext";
 import type { AppStackParamList } from "../types/navigation";
 import { PrimaryButton } from "../components/PrimaryButton";
+import { EnableNotificationsCard } from "../components/EnableNotificationsCard";
 import { COLORS, FONTS } from "../theme";
 
 type Props = NativeStackScreenProps<AppStackParamList, "Home">;
@@ -23,6 +24,7 @@ export function CaregiverHomeScreen({ navigation }: Props) {
         Acompanhe os idosos sob seu cuidado: cadastro, check-ins semanais,
         medicações e rotinas.
       </Text>
+      <EnableNotificationsCard />
       <PrimaryButton
         testID="manage-profiles"
         title="Gerenciar idosos"

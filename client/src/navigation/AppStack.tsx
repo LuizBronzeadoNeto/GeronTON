@@ -1,5 +1,6 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Platform, Pressable, StyleSheet, Text } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import type { AppStackParamList } from "../types/navigation";
 import type { Role } from "../types/auth";
@@ -60,8 +61,18 @@ function SignOutButton() {
  * a reset from the initial screen's first effect, before the navigator is ready
  * to receive it. That reset is silently dropped and the app sits on Redirect's
  * spinner forever. Starting them on Home removes the hop entirely.
+ *
+ * On native, every screen carries the bottom safe-area inset as padding so
+ * content is not hidden behind Android's three-button navigation bar. Applying
+ * it to the navigator's contentStyle covers all fifteen scrollable screens at
+ * once, and it is dynamic by construction: with gesture navigation the inset is
+ * zero and nothing shifts.
+ *
+ * The web build is excluded: the browser already reserves room for its own
+ * chrome, so adding the inset there produced a gap rather than fixing one.
  */
 export function AppStack({ role }: { role: Role }) {
+  const insets = useSafeAreaInsets();
   const HomeScreen =
     role === "cuidador" ? CaregiverHomeScreen : ProfessionalHomeScreen;
 
@@ -80,7 +91,10 @@ export function AppStack({ role }: { role: Role }) {
         },
         headerBackButtonDisplayMode: "minimal",
         headerRight: () => <SignOutButton />,
-        contentStyle: { backgroundColor: COLORS.white },
+        contentStyle: {
+          backgroundColor: COLORS.white,
+          paddingBottom: Platform.OS === "web" ? 0 : insets.bottom,
+        },
       }}
     >
       <Stack.Screen

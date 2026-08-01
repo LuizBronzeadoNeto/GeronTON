@@ -12,8 +12,10 @@ import {
   fireEvent,
   waitFor,
 } from "@testing-library/react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ProfessionalHomeScreen } from "./ProfessionalHomeScreen";
+import { NotificationProvider } from "../context/NotificationContext";
 import type { AppStackParamList } from "../types/navigation";
 import { listTriage } from "../api/triage";
 import { listCheckIns } from "../api/checkins";
@@ -33,13 +35,32 @@ const MOCK_ENTRY = makeTriageEntry({
 
 type Props = NativeStackScreenProps<AppStackParamList, "Home">;
 
+const INITIAL_METRICS = {
+  frame: { x: 0, y: 0, width: 390, height: 844 },
+  insets: { top: 0, left: 0, right: 0, bottom: 0 },
+};
+
+/**
+ * Wrapped in the providers App.tsx puts above every screen. The screen reaches
+ * NotificationProvider through the enable-notifications card, and useNotification
+ * throws outside one, so omitting it would fail the harness rather than the code.
+ */
 function renderScreen() {
   const navigation = { goBack: jest.fn(), navigate: jest.fn() };
   const props = {
     navigation,
     route: { params: undefined },
   } as unknown as Props;
-  return { navigation, ...render(<ProfessionalHomeScreen {...props} />) };
+  return {
+    navigation,
+    ...render(
+      <SafeAreaProvider initialMetrics={INITIAL_METRICS}>
+        <NotificationProvider>
+          <ProfessionalHomeScreen {...props} />
+        </NotificationProvider>
+      </SafeAreaProvider>,
+    ),
+  };
 }
 
 describe("ProfessionalHomeScreen", () => {
