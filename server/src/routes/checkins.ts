@@ -37,10 +37,14 @@ const OPTIONAL_STRING_FIELDS = [
   "glycemia",
   "calfCircumference",
   "chokingFrequency",
-  "needsMedications",
-  "needsHygiene",
-  "needsFood",
 ] as const;
+
+/**
+ * The logistics answers, held as lists of items rather than one block of prose.
+ * Unlike weeklyEvents these are free-form: the caregiver types what has to be
+ * bought, so there is nothing to validate against.
+ */
+const LIST_FIELDS = ["needsMedications", "needsHygiene", "needsFood"] as const;
 
 const APPETITE_VALUES = Object.values(Appetite);
 const MOOD_VALUES = Object.values(Mood);
@@ -49,9 +53,10 @@ const MOOD_VALUES = Object.values(Mood);
  * Returns the names of the weekly check-in fields that are missing or of the
  * wrong type for a create. The yes/no answers must be booleans, `appetite` and
  * `mood` must match their enums, `stressLevel` must be an integer from 0 to 5,
- * `weeklyEvents` must be an array of known event keys and the optional fields
- * must be strings when present. Unlike the shared missingFields helper this
- * rejects wrong types, which matters here because `false` is a valid answer.
+ * `weeklyEvents` must be an array of known event keys, the optional fields must
+ * be strings when present and the logistics fields arrays of strings. Unlike the
+ * shared missingFields helper this rejects wrong types, which matters here
+ * because `false` is a valid answer.
  */
 function invalidCheckInFields(body: Record<string, unknown>): string[] {
   const invalid: string[] = [];
@@ -95,7 +100,38 @@ function invalidCheckInFields(body: Record<string, unknown>): string[] {
     }
   }
 
+  for (const field of LIST_FIELDS) {
+    const value = body[field];
+    if (value === undefined || value === null) continue;
+    if (
+      !Array.isArray(value) ||
+      value.some((item) => typeof item !== "string")
+    ) {
+      invalid.push(field);
+    }
+  }
+
   return invalid;
+}
+
+/**
+ * Trims the items of a logistics list and drops the blanks, so a stray tap on
+ * the add button cannot store an empty entry.
+ */
+function normalizeList(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.map((item) => String(item).trim()).filter((item) => item !== "");
+}
+
+/** Builds the persistable logistics lists, defaulting absent fields to empty. */
+function listFields(
+  body: Record<string, unknown>,
+): Record<(typeof LIST_FIELDS)[number], string[]> {
+  const result = {} as Record<(typeof LIST_FIELDS)[number], string[]>;
+  for (const field of LIST_FIELDS) {
+    result[field] = normalizeList(body[field]);
+  }
+  return result;
 }
 
 /**
@@ -146,6 +182,7 @@ router.post("/", async (req: Request, res: Response) => {
       profileId: req.profile!.id,
       ...booleans,
       ...optionalStrings(body),
+      ...listFields(body),
       appetite: body.appetite as Appetite,
       mood: body.mood as Mood,
       stressLevel: body.stressLevel as number,
@@ -234,6 +271,9 @@ router.put("/:avaliacaoId", async (req: Request, res: Response) => {
       data[field] =
         typeof value === "string" && value.trim() !== "" ? value : null;
     }
+  }
+  for (const field of LIST_FIELDS) {
+    if (body[field] !== undefined) data[field] = normalizeList(body[field]);
   }
   if (body.appetite !== undefined) data.appetite = body.appetite as Appetite;
   if (body.mood !== undefined) data.mood = body.mood as Mood;

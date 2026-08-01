@@ -1,14 +1,12 @@
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { AppStackParamList } from "../types/navigation";
 import {
@@ -20,6 +18,7 @@ import {
 import { RiskStatusBadge } from "../components/RiskStatusBadge";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { SelectField } from "../components/SelectField";
+import { TagListInput } from "../components/TagListInput";
 import { brDateToIso, isoToBrDate, maskBrDate } from "../utils/date";
 import { maskCpf } from "../utils/cpf";
 import { COLORS, FONTS } from "../theme";
@@ -77,7 +76,6 @@ export function ProfileFormScreen({ navigation, route }: Props) {
   const [sex, setSex] = useState<string | null>(null);
   const [scholarship, setScholarship] = useState<string | null>(null);
   const [conditions, setConditions] = useState<string[]>([]);
-  const [customCondition, setCustomCondition] = useState("");
   const [notes, setNotes] = useState("");
 
   const [loading, setLoading] = useState(isEditing);
@@ -110,21 +108,6 @@ export function ProfileFormScreen({ navigation, route }: Props) {
       active = false;
     };
   }, [profileId]);
-
-  function toggleCondition(condition: string) {
-    setConditions((current) =>
-      current.includes(condition)
-        ? current.filter((item) => item !== condition)
-        : [...current, condition],
-    );
-  }
-
-  function addCustomCondition() {
-    const condition = customCondition.trim();
-    if (condition === "" || conditions.includes(condition)) return;
-    setConditions((current) => [...current, condition]);
-    setCustomCondition("");
-  }
 
   const nameParts = fullName.trim().split(/\s+/);
   const canSubmit =
@@ -180,10 +163,6 @@ export function ProfileFormScreen({ navigation, route }: Props) {
       />
     );
   }
-
-  const customConditions = conditions.filter(
-    (condition) => !PRESET_CONDITIONS.includes(condition),
-  );
 
   return (
     <ScrollView
@@ -246,61 +225,14 @@ export function ProfileFormScreen({ navigation, route }: Props) {
       />
 
       <Text style={styles.label}>Condições pré-existentes</Text>
-      <View style={styles.chipGrid}>
-        {PRESET_CONDITIONS.map((condition) => {
-          const selected = conditions.includes(condition);
-          return (
-            <Pressable
-              key={condition}
-              testID={`profile-condition-${condition}`}
-              accessibilityRole="button"
-              style={[styles.chip, selected && styles.chipSelected]}
-              onPress={() => toggleCondition(condition)}
-            >
-              <Text
-                style={[styles.chipLabel, selected && styles.chipLabelSelected]}
-              >
-                {condition}
-              </Text>
-            </Pressable>
-          );
-        })}
-        {customConditions.map((condition) => (
-          <Pressable
-            key={condition}
-            testID={`profile-condition-remove-${condition}`}
-            accessibilityRole="button"
-            accessibilityLabel={`Remover ${condition}`}
-            style={[styles.chip, styles.chipSelected]}
-            onPress={() => toggleCondition(condition)}
-          >
-            <Text style={[styles.chipLabel, styles.chipLabelSelected]}>
-              {condition} <Text style={styles.chipRemove}>×</Text>
-            </Text>
-          </Pressable>
-        ))}
-      </View>
-
-      <View style={styles.customRow}>
-        <TextInput
-          testID="profile-condition-input"
-          style={[styles.input, styles.customInput]}
-          placeholder="Outra condição"
-          placeholderTextColor={COLORS.grey400}
-          value={customCondition}
-          onChangeText={setCustomCondition}
-          onSubmitEditing={addCustomCondition}
-        />
-        <Pressable
-          testID="profile-condition-add"
-          accessibilityRole="button"
-          accessibilityLabel="Adicionar condição"
-          style={styles.addButton}
-          onPress={addCustomCondition}
-        >
-          <Ionicons name="add" size={24} color={COLORS.primary} />
-        </Pressable>
-      </View>
+      <TagListInput
+        testIDPrefix="profile-condition"
+        value={conditions}
+        onChange={setConditions}
+        suggestions={PRESET_CONDITIONS}
+        placeholder="Outra condição"
+        addAccessibilityLabel="Adicionar condição"
+      />
 
       <Text style={styles.label}>Observação (opcional)</Text>
       <TextInput
@@ -381,53 +313,6 @@ const styles = StyleSheet.create({
   },
   sexField: {
     flex: 1,
-  },
-  chipGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-    marginTop: 4,
-  },
-  chip: {
-    borderWidth: 1,
-    borderColor: COLORS.heading,
-    borderRadius: 19,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    backgroundColor: COLORS.white,
-  },
-  chipSelected: {
-    borderColor: COLORS.primary,
-    backgroundColor: COLORS.chipBg,
-  },
-  chipLabel: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 13,
-    color: COLORS.heading,
-  },
-  chipLabelSelected: {
-    color: COLORS.primary,
-  },
-  chipRemove: {
-    fontSize: 13,
-    color: COLORS.grey500,
-  },
-  customRow: {
-    flexDirection: "row",
-    gap: 12,
-    marginTop: 4,
-  },
-  customInput: {
-    flex: 1,
-  },
-  addButton: {
-    width: 60,
-    height: 50,
-    borderWidth: 1,
-    borderColor: COLORS.primary,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
   },
   textArea: {
     height: undefined,

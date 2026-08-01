@@ -42,9 +42,9 @@ const EXISTING: CheckIn = {
   dailyBath: true,
   oralHygiene: false,
   groomedNails: true,
-  needsMedications: "Fraldas G",
-  needsHygiene: null,
-  needsFood: null,
+  needsMedications: ["Fraldas G", "Losartana"],
+  needsHygiene: [],
+  needsFood: [],
 };
 
 type Props = NativeStackScreenProps<AppStackParamList, "CheckInDetail">;
@@ -74,7 +74,19 @@ describe("CheckInDetailScreen", () => {
     expect(screen.getByText("130/85")).toBeTruthy();
     expect(screen.getByText("Triste")).toBeTruthy();
     expect(screen.getByText("2x na semana")).toBeTruthy();
-    expect(screen.getByText("Fraldas G")).toBeTruthy();
+  });
+
+  /**
+   * The logistics answers are lists now. Rendered without joining them they
+   * would come out run together, which is invisible in a passing render test
+   * unless the separator is asserted.
+   */
+  it("renders the logistics lists comma-separated, and a dash when empty", async () => {
+    renderScreen();
+
+    await waitFor(() => expect(getCheckIn).toHaveBeenCalled());
+    expect(screen.getByText("Fraldas G, Losartana")).toBeTruthy();
+    expect(screen.getAllByText("—").length).toBeGreaterThan(0);
   });
 
   it("deletes the check-in and goes back", async () => {

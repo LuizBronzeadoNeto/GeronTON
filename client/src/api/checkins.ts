@@ -32,9 +32,9 @@ export interface CheckIn {
   dailyBath: boolean;
   oralHygiene: boolean;
   groomedNails: boolean;
-  needsMedications: string | null;
-  needsHygiene: string | null;
-  needsFood: string | null;
+  needsMedications: string[];
+  needsHygiene: string[];
+  needsFood: string[];
 }
 
 export type CheckInInput = Omit<CheckIn, "id" | "profileId" | "date">;

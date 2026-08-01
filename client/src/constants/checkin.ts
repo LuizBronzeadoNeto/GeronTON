@@ -101,11 +101,24 @@ export const VITALS: { key: string; label: string; placeholder: string }[] = [
   },
 ];
 
-export const LOGISTICS: { key: string; label: string }[] = [
-  { key: "needsMedications", label: "Medicamentos" },
-  { key: "needsHygiene", label: "Higiene (fraldas, pomadas, lenços)" },
-  { key: "needsFood", label: "Alimentação / Suplementos" },
-];
+export const LOGISTICS: { key: string; label: string; placeholder: string }[] =
+  [
+    {
+      key: "needsMedications",
+      label: "Medicamentos",
+      placeholder: "Adicionar medicamento",
+    },
+    {
+      key: "needsHygiene",
+      label: "Higiene (fraldas, pomadas, lenços)",
+      placeholder: "Adicionar item de higiene",
+    },
+    {
+      key: "needsFood",
+      label: "Alimentação / Suplementos",
+      placeholder: "Adicionar alimento ou suplemento",
+    },
+  ];
 
 export const STEPS: { title: string; subtitle: string }[] = [
   { title: "Domínio saúde", subtitle: "Saúde e sinais vitais" },

@@ -129,9 +129,9 @@ export function makeCheckIn(overrides: Partial<CheckIn> = {}): CheckIn {
     dailyBath: true,
     oralHygiene: true,
     groomedNails: true,
-    needsMedications: null,
-    needsHygiene: null,
-    needsFood: null,
+    needsMedications: [],
+    needsHygiene: [],
+    needsFood: [],
     ...overrides,
   };
 }

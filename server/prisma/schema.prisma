@@ -150,9 +150,9 @@ model CheckIn {
   dailyBath         Boolean
   oralHygiene       Boolean
   groomedNails      Boolean
-  needsMedications  String?
-  needsHygiene      String?
-  needsFood         String?
+  needsMedications  String[]
+  needsHygiene      String[]
+  needsFood         String[]
   alerts            Alert[]
 
   @@index([profileId, date(sort: Desc)])

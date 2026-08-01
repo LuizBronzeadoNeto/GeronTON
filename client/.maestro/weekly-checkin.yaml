@@ -62,11 +62,15 @@ appId: com.geronton.client
     id: "checkin-groomedNails-yes"
 - tapOn:
     id: "checkin-next"
-# step 5 — stock & logistics
+# step 5 — stock & logistics, one item at a time
 - tapOn:
-    id: "checkin-needsMedications"
+    id: "checkin-needsMedications-input"
 - inputText: "Losartana"
 - hideKeyboard
+- tapOn:
+    id: "checkin-needsMedications-add"
+- assertVisible:
+    id: "checkin-needsMedications-remove-Losartana"
 - tapOn:
     id: "checkin-submit"
 # submitting returns to the elder's detail screen

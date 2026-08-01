@@ -11,11 +11,27 @@ import { WeeklyCheckInScreen } from "./WeeklyCheckInScreen";
 import type { AppStackParamList } from "../types/navigation";
 import { createCheckIn, listCheckIns, type CheckIn } from "../api/checkins";
 import { getProfile } from "../api/profiles";
+import { listMedications, type Medication } from "../api/medications";
 
 jest.mock("../api/checkins");
 jest.mock("../api/profiles");
+jest.mock("../api/medications");
 jest.mock("../api/risk");
+
 jest.mock("@react-navigation/native", () => mockNavigationModule());
+
+function makeMedication(name: string): Medication {
+  return {
+    id: name.length,
+    profileId: 5,
+    name,
+    dosage: "50mg",
+    frequency: "1x ao dia",
+    notes: null,
+    createdAt: "2026-06-01T00:00:00.000Z",
+    updatedAt: "2026-06-01T00:00:00.000Z",
+  };
+}
 
 const MOCK_PROFILE = makeProfile();
 
@@ -47,9 +63,9 @@ const MOCK_CHECKIN: CheckIn = {
   dailyBath: true,
   oralHygiene: true,
   groomedNails: true,
-  needsMedications: null,
-  needsHygiene: null,
-  needsFood: null,
+  needsMedications: [],
+  needsHygiene: [],
+  needsFood: [],
 };
 
 type Props = NativeStackScreenProps<AppStackParamList, "WeeklyCheckIn">;
@@ -96,6 +112,7 @@ function completeWizardUntilLastStep() {
 describe("WeeklyCheckInScreen", () => {
   beforeEach(() => {
     jest.mocked(listCheckIns).mockReset().mockResolvedValue([]);
+    jest.mocked(listMedications).mockReset().mockResolvedValue([]);
     jest
       .mocked(createCheckIn)
       .mockReset()
@@ -135,9 +152,10 @@ describe("WeeklyCheckInScreen", () => {
 
     expect(screen.getByText("Estoque e Logística")).toBeTruthy();
     fireEvent.changeText(
-      screen.getByTestId("checkin-needsMedications"),
+      screen.getByTestId("checkin-needsMedications-input"),
       "Losartana",
     );
+    fireEvent.press(screen.getByTestId("checkin-needsMedications-add"));
     fireEvent.press(screen.getByTestId("checkin-submit"));
 
     await waitFor(() => expect(createCheckIn).toHaveBeenCalled());
@@ -166,12 +184,58 @@ describe("WeeklyCheckInScreen", () => {
       dailyBath: true,
       oralHygiene: true,
       groomedNails: true,
-      needsMedications: "Losartana",
-      needsHygiene: null,
-      needsFood: null,
+      needsMedications: ["Losartana"],
+      needsHygiene: [],
+      needsFood: [],
     });
 
     await waitFor(() => expect(navigation.goBack).toHaveBeenCalled());
+  });
+
+  it("offers the elder's registered medications as one-tap suggestions", async () => {
+    jest
+      .mocked(listMedications)
+      .mockResolvedValue([
+        makeMedication("Losartana"),
+        makeMedication("Enalapril"),
+      ]);
+
+    renderScreen(9);
+    await waitFor(() => expect(listMedications).toHaveBeenCalledWith(9));
+
+    completeWizardUntilLastStep();
+    fireEvent.press(screen.getByTestId("checkin-needsMedications-Losartana"));
+    fireEvent.press(screen.getByTestId("checkin-submit"));
+
+    await waitFor(() => expect(createCheckIn).toHaveBeenCalled());
+    expect(createCheckIn).toHaveBeenCalledWith(
+      9,
+      expect.objectContaining({ needsMedications: ["Losartana"] }),
+    );
+  });
+
+  /**
+   * The suggestions only save typing, so an inventory that fails to load must
+   * leave the step working rather than surface an error.
+   */
+  it("keeps the step usable when the medication inventory fails to load", async () => {
+    jest.mocked(listMedications).mockRejectedValue(new Error("offline"));
+
+    renderScreen(9);
+    await waitFor(() => expect(listCheckIns).toHaveBeenCalled());
+
+    completeWizardUntilLastStep();
+
+    expect(screen.queryByTestId("checkin-error")).toBeNull();
+    fireEvent.changeText(
+      screen.getByTestId("checkin-needsMedications-input"),
+      "Dipirona",
+    );
+    fireEvent.press(screen.getByTestId("checkin-needsMedications-add"));
+
+    expect(
+      screen.getByTestId("checkin-needsMedications-remove-Dipirona"),
+    ).toBeTruthy();
   });
 
   it("reveals the choking sub-questions when the radio is toggled on", async () => {
