@@ -17,6 +17,13 @@ module.exports = defineConfig([
     },
   },
   {
+    /** Build-time config, evaluated by node rather than bundled into the app. */
+    files: ["app.config.js"],
+    languageOptions: {
+      globals: { __dirname: "readonly", process: "readonly" },
+    },
+  },
+  {
     ignores: ["dist/**", ".expo/**"],
   },
 ]);

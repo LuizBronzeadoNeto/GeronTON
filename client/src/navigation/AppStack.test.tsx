@@ -3,6 +3,7 @@ import { render, screen, waitFor } from "@testing-library/react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AppStack } from "./AppStack";
+import { NotificationProvider } from "../context/NotificationContext";
 import { useAuth } from "../context/AuthContext";
 import { listProfiles } from "../api/profiles";
 import { listTriage } from "../api/triage";
@@ -42,12 +43,20 @@ const INITIAL_METRICS = {
   insets: { top: 0, left: 0, right: 0, bottom: 48 },
 };
 
+/**
+ * Mirrors App.tsx's provider order. The NotificationProvider is not incidental:
+ * screens reach it through useNotification, which throws outside a provider, so
+ * leaving it out here would make the harness fail on a screen that works fine
+ * in the app.
+ */
 function renderStack(role: Role) {
   return render(
     <SafeAreaProvider initialMetrics={INITIAL_METRICS}>
-      <NavigationContainer>
-        <AppStack role={role} />
-      </NavigationContainer>
+      <NotificationProvider>
+        <NavigationContainer>
+          <AppStack role={role} />
+        </NavigationContainer>
+      </NotificationProvider>
     </SafeAreaProvider>,
   );
 }

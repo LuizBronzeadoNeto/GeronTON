@@ -8,7 +8,7 @@ import {
 } from "@jest/globals";
 import request from "supertest";
 import app from "../src/app.js";
-import { makeCpf } from "./helpers.js";
+import { grantProfileAccess, makeCpf } from "./helpers.js";
 import { prisma } from "../src/lib/prisma.js";
 
 let token: string;
@@ -195,5 +195,78 @@ describe("DELETE /perfis/:perfilId/intercorrencias/:id", () => {
       .set("Authorization", `Bearer ${token}`);
 
     expect(res.status).toBe(404);
+  });
+});
+
+/**
+ * A critical intercorrence now notifies the rest of the care team. The contract
+ * this suite protects is that recording the event never depends on that
+ * succeeding: the profile is linked to a professional whose only registered
+ * device has deliberately invalid encryption keys, so the send fails, and the
+ * caregiver's response must be exactly what it was before push existed.
+ */
+describe("push dispatch on a critical intercorrence", () => {
+  const PUSH_ENDPOINT = "https://test.example/intercorrence/pro";
+
+  beforeAll(async () => {
+    await grantProfileAccess(perfilId, "profissional@demo.com");
+
+    const professional = await prisma.user.findUnique({
+      where: { email: "profissional@demo.com" },
+    });
+
+    await prisma.pushSubscription.create({
+      data: {
+        userId: professional!.id,
+        transport: "webpush",
+        endpoint: PUSH_ENDPOINT,
+        p256dh: "not-a-real-key",
+        auth: "not-a-real-auth",
+      },
+    });
+  });
+
+  afterAll(async () => {
+    await prisma.pushSubscription.deleteMany({
+      where: { endpoint: PUSH_ENDPOINT },
+    });
+  });
+
+  it("still answers 201 with the created intercorrence when the send fails", async () => {
+    const res = await request(app)
+      .post(`/perfis/${perfilId}/intercorrencias`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        eventType: "bleeding",
+        isCritical: true,
+        description: "sangramento no braço",
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body).toMatchObject({
+      profileId: perfilId,
+      eventType: "bleeding",
+      isCritical: true,
+      description: "sangramento no braço",
+    });
+
+    createdIds.push(res.body.id);
+  });
+
+  it("keeps a failed delivery from pruning a subscription that is merely unreachable", async () => {
+    const res = await request(app)
+      .post(`/perfis/${perfilId}/intercorrencias`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ eventType: "fall", isCritical: true });
+
+    expect(res.status).toBe(201);
+    createdIds.push(res.body.id);
+
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
+    const survived = await prisma.pushSubscription.count({
+      where: { endpoint: PUSH_ENDPOINT },
+    });
+    expect(survived).toBe(1);
   });
 });

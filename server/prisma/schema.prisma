@@ -24,13 +24,14 @@ enum EventType {
 }
 
 model User {
-  id       Int             @id @default(autoincrement())
-  email    String          @unique
-  password String
-  role     Role
-  crm      String?         @unique
-  profiles Profile[]       @relation("CaregiverProfiles")
-  access   ProfileAccess[]
+  id                Int                @id @default(autoincrement())
+  email             String             @unique
+  password          String
+  role              Role
+  crm               String?            @unique
+  profiles          Profile[]          @relation("CaregiverProfiles")
+  access            ProfileAccess[]
+  pushSubscriptions PushSubscription[]
 
   @@map("users")
 }
@@ -197,4 +198,31 @@ model Alert {
   @@index([profileId, createdAt(sort: Desc)])
   @@index([checkInId])
   @@map("alerts")
+}
+
+enum PushTransport {
+  expo
+  webpush
+}
+
+/// A device that can receive push notifications. Both transports share one
+/// table because dispatch resolves a whole profile audience at once.
+///
+/// endpoint holds the Expo push token or the web push endpoint URL, and is
+/// unique without userId on purpose: a device belongs to whoever signed in
+/// last, so re-registering after a different sign-in moves the row instead of
+/// adding one. p256dh/auth are web push encryption keys, null for expo.
+model PushSubscription {
+  id        Int           @id @default(autoincrement())
+  userId    Int
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transport PushTransport
+  endpoint  String        @unique
+  p256dh    String?
+  auth      String?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([userId])
+  @@map("push_subscriptions")
 }

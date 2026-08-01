@@ -10,6 +10,7 @@ import professionalRouter from "./routes/professionals.js";
 import profilesRouter from "./routes/profiles.js";
 import { alertsDashboardRouter } from "./routes/alerts.js";
 import { triageRouter } from "./routes/triage.js";
+import notificationsRouter from "./routes/notifications.js";
 
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
 const REGISTRATION_WINDOW_MS = 60 * 60 * 1000;
@@ -99,6 +100,7 @@ app.use("/cuidadores", caregiversRouter);
 app.use("/profissionais", professionalRouter);
 app.use("/perfis", profilesRouter);
 app.use("/alertas", alertsDashboardRouter);
+app.use("/notificacoes", notificationsRouter);
 app.use("/triagem", triageRouter);
 
 /**

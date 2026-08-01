@@ -14,6 +14,7 @@ import { listDashboardAlerts, type DashboardAlert } from "../api/alerts";
 import { ProfileCard } from "../components/ProfileCard";
 import { AlertCard } from "../components/AlertCard";
 import { PrimaryButton } from "../components/PrimaryButton";
+import { EnableNotificationsCard } from "../components/EnableNotificationsCard";
 import { RiskLegend } from "../components/RiskLegend";
 import { COLORS, FONTS } from "../theme";
 
@@ -96,6 +97,10 @@ export function ProfessionalHomeScreen({ navigation }: Props) {
         Idosos sob seu acompanhamento, ordenados por nível de risco. Cores
         indicam prioridade clínica.
       </Text>
+
+      {/* Outside the FlatList's header: inside it the card would scroll away
+          with the list, and it is a one-time action, not list content. */}
+      <EnableNotificationsCard />
 
       <PrimaryButton
         testID="professional-add"

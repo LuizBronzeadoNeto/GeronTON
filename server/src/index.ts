@@ -3,6 +3,7 @@ import { assertEnv } from "./lib/env.js";
 import app from "./app.js";
 import { prisma } from "./lib/prisma.js";
 import { startOmissionMonitor } from "./jobs/omissionMonitor.js";
+import { logPushConfig } from "./services/push.js";
 
 const SHUTDOWN_TIMEOUT_MS = 10_000;
 
@@ -15,6 +16,7 @@ const server = app.listen(PORT, () => {
 });
 
 startOmissionMonitor();
+logPushConfig();
 
 /**
  * Stops accepting new connections, lets in-flight requests finish, then closes

@@ -10,6 +10,7 @@ import {
 import { login as loginRequest } from "../api/auth";
 import { setAuthToken, setOnUnauthorized } from "../api/http";
 import { clearSession, loadSession, saveSession } from "../api/session";
+import { unregister as unregisterPush } from "../push";
 import type { User } from "../types/auth";
 
 interface AuthContextValue {
@@ -21,6 +22,30 @@ interface AuthContextValue {
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+
+/**
+ * The asynchronous half of signing out, ordered so each step can still see what
+ * it needs. The stored session is read before it is cleared, and its token is
+ * handed to the unregister call explicitly: signOut has already dropped the
+ * token from the API client by the time this runs, so the request would
+ * otherwise go out unauthenticated, get a 401, and drive the interceptor into
+ * calling signOut again.
+ *
+ * A failed unregister is swallowed. The device keeps receiving notifications
+ * until the subscription is replaced or pruned, which is worth less than
+ * letting a network problem block someone from signing out.
+ */
+async function endSession(): Promise<void> {
+  const stored = await loadSession();
+
+  try {
+    await unregisterPush(stored?.token);
+  } catch {
+    // Nothing to do: sign-out proceeds regardless.
+  }
+
+  await clearSession();
+}
 
 /**
  * Holds the authenticated user for the whole app. signIn stores the
@@ -40,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(() => {
     setAuthToken(null);
     setUser(null);
-    void clearSession();
+    void endSession();
   }, []);
 
   useEffect(() => {

@@ -1,6 +1,7 @@
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { useAuth } from "../context/AuthContext";
+import { usePushSync } from "../push/usePushSync";
 import { COLORS } from "../theme";
 import { AuthStack } from "./AuthStack";
 import { AppStack } from "./AppStack";
@@ -13,9 +14,16 @@ import { AppStack } from "./AppStack";
  * While the stored session is being read, a spinner stands in for both stacks:
  * mounting the login screen first would make a returning user watch it flash
  * away as soon as the session resolves.
+ *
+ * This is also where push registration lives: it is the only place that sees
+ * both a fresh sign-in and a session restored from storage, and it sits inside
+ * NotificationProvider, so a push arriving with the app open can be handed to
+ * the same toast the rest of the app uses.
  */
 export function RootNavigator() {
   const { user, isRestoring } = useAuth();
+
+  usePushSync();
 
   if (isRestoring) {
     return (
