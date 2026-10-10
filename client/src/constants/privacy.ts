@@ -66,6 +66,7 @@ export const PRIVACY_POLICY: PolicySection[] = [
     paragraphs: [
       "Pelo Art. 18 da LGPD você pode, a qualquer momento: confirmar se tratamos seus dados, ter acesso a eles, corrigir dados incompletos ou errados, pedir a anonimização, o bloqueio ou a eliminação de dados desnecessários, pedir a portabilidade, saber com quem compartilhamos, e revogar este consentimento.",
       "Você pode não aceitar este termo. Nesse caso não é possível usar o aplicativo, porque ele depende desses dados para funcionar. Revogar o consentimento depois também é possível e não afeta o que foi feito antes da revogação.",
+      "Você mesmo pode excluir sua conta a qualquer momento, no botão de privacidade no topo do aplicativo. Idosos que só você acompanha são apagados junto. Se outra pessoa também acompanha o idoso, o cadastro dele continua com ela.",
       `Para exercer qualquer um desses direitos ou tirar dúvidas, escreva para ${PRIVACY_CONTACT}.`,
     ],
   },

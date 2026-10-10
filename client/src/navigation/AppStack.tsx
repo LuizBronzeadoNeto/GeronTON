@@ -1,5 +1,9 @@
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { Platform, Pressable, StyleSheet, Text } from "react-native";
+import {
+  createNativeStackNavigator,
+  type NativeStackNavigationProp,
+} from "@react-navigation/native-stack";
+import { useNavigation } from "@react-navigation/native";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import type { AppStackParamList } from "../types/navigation";
@@ -52,6 +56,34 @@ function SignOutButton() {
 }
 
 /**
+ * Header actions on every signed-in screen: a shield that opens the privacy
+ * policy (where the account can be deleted) and the "Sair" button.
+ */
+function HeaderActions() {
+  const navigation =
+    useNavigation<NativeStackNavigationProp<AppStackParamList>>();
+
+  return (
+    <View style={styles.headerActions}>
+      <Pressable
+        testID="header-privacy"
+        accessibilityRole="button"
+        accessibilityLabel="Privacidade e dados"
+        hitSlop={8}
+        onPress={() => navigation.navigate("PrivacyPolicy")}
+      >
+        <Ionicons
+          name="shield-checkmark-outline"
+          size={20}
+          color={COLORS.heading}
+        />
+      </Pressable>
+      <SignOutButton />
+    </View>
+  );
+}
+
+/**
  * Navigation shown once a user is signed in. The Home screen is chosen by role:
  * caregivers (cuidador) and healthcare professionals (profissional) each get a
  * distinct home screen, and both reach the shared elderly-profile screens.
@@ -93,7 +125,7 @@ export function AppStack({ role }: { role: Role }) {
           color: COLORS.heading,
         },
         headerBackButtonDisplayMode: "minimal",
-        headerRight: () => <SignOutButton />,
+        headerRight: () => <HeaderActions />,
         contentStyle: {
           backgroundColor: COLORS.white,
           paddingBottom: Platform.OS === "web" ? 0 : insets.bottom,
@@ -194,6 +226,11 @@ export function AppStack({ role }: { role: Role }) {
 }
 
 const styles = StyleSheet.create({
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+  },
   signOut: {
     flexDirection: "row",
     alignItems: "center",

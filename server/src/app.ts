@@ -18,6 +18,7 @@ import { triageRouter } from "./routes/triage.js";
 import notificationsRouter from "./routes/notifications.js";
 import { reportsRouter } from "./routes/reports.js";
 import consentRouter from "./routes/consent.js";
+import accountRouter from "./routes/account.js";
 
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
 const REGISTRATION_WINDOW_MS = 60 * 60 * 1000;
@@ -162,6 +163,7 @@ app.use("/notificacoes", notificationsRouter);
 app.use("/triagem", triageRouter);
 app.use("/relatorios", reportsRouter);
 app.use("/consentimento", consentRouter);
+app.use("/conta", accountRouter);
 
 /**
  * Any other GET (or HEAD) from a browser gets the web app's index.html, so

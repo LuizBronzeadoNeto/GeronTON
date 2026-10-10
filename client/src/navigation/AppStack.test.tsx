@@ -1,5 +1,10 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
-import { render, screen, waitFor } from "@testing-library/react-native";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AppStack } from "./AppStack";
@@ -122,6 +127,19 @@ describe("AppStack landing screen", () => {
 
     await waitFor(() =>
       expect(screen.getByTestId("profile-identification")).toBeTruthy(),
+    );
+  });
+
+  it("opens the privacy screen from the header", async () => {
+    renderStack("profissional");
+
+    await waitFor(() =>
+      expect(screen.getByTestId("professional-home")).toBeTruthy(),
+    );
+    fireEvent.press(screen.getByTestId("header-privacy"));
+
+    await waitFor(() =>
+      expect(screen.getByTestId("delete-account")).toBeTruthy(),
     );
   });
 });

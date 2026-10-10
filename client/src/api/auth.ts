@@ -70,3 +70,18 @@ export async function register({
 export async function acceptConsent(version: string): Promise<void> {
   await http.post("/consentimento", { version });
 }
+
+/**
+ * Deletes the signed-in user's account (DELETE /conta) after checking the
+ * password. Rejects with an Error whose message is ready to show.
+ */
+export async function deleteAccount(password: string): Promise<void> {
+  try {
+    await http.delete("/conta", { data: { password } });
+  } catch (err) {
+    if (isAxiosError(err) && err.response?.status === 403) {
+      throw new Error("Senha incorreta.");
+    }
+    throw new Error("Não foi possível excluir a conta. Tente de novo.");
+  }
+}
