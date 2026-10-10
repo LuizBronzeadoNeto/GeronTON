@@ -25,4 +25,5 @@ export type AppStackParamList = {
   MedicationInventory: { profileId: number };
   MedicationForm: { profileId: number; medicationId?: number };
   RoutineRegistration: { profileId: number };
+  MissedSignalForm: { profileId: number };
 };

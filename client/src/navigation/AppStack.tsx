@@ -21,6 +21,7 @@ import { RedirectScreen } from "../screens/RedirectScreen";
 import { MedicationInventoryScreen } from "../screens/MedicationInventoryScreen";
 import { MedicationFormScreen } from "../screens/MedicationFormScreen";
 import { RoutineRegistrationScreen } from "../screens/RoutineRegistrationScreen";
+import { MissedSignalFormScreen } from "../screens/MissedSignalFormScreen";
 
 const Stack = createNativeStackNavigator<AppStackParamList>();
 
@@ -170,6 +171,11 @@ export function AppStack({ role }: { role: Role }) {
         name="RoutineRegistration"
         component={RoutineRegistrationScreen}
         options={{ title: "Rotina" }}
+      />
+      <Stack.Screen
+        name="MissedSignalForm"
+        component={MissedSignalFormScreen}
+        options={{ title: "Sinal não detectado" }}
       />
     </Stack.Navigator>
   );

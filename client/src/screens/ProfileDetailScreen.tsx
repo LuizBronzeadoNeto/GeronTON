@@ -25,6 +25,11 @@ import {
 } from "../api/intercorrences";
 import { resolveAlert, type Alert as ClinicalAlert } from "../api/alerts";
 import {
+  deleteMissedSignal,
+  listMissedSignals,
+  type MissedSignal,
+} from "../api/missedSignals";
+import {
   APPETITE_OPTIONS,
   WEEKLY_EVENTS,
   moodLabel,
@@ -33,6 +38,7 @@ import { useAuth } from "../context/AuthContext";
 import { AlertCard } from "../components/AlertCard";
 import { IntercorrenceRow } from "../components/IntercorrenceRow";
 import { RiskStatusBadge } from "../components/RiskStatusBadge";
+import { SeverityPill } from "../components/SeverityPill";
 import { ageInYears, isoToBrDate } from "../utils/date";
 import { COLORS, FONTS } from "../theme";
 
@@ -82,6 +88,9 @@ function appetiteLabel(checkIn: CheckIn): string {
  * the latest weekly check-in summary (opening the full read-only view), the
  * "Linha de base" card, the removable condition chips (pencil opens the
  * full edit form) and the recent intercorrence history with severity pills.
+ *
+ * Professionals also get the "Sinais não detectados" card, where they record
+ * what happened to the elder without the system flagging it.
  */
 export function ProfileDetailScreen({ navigation, route }: Props) {
   const { profileId } = route.params;
@@ -92,6 +101,7 @@ export function ProfileDetailScreen({ navigation, route }: Props) {
   const [intercorrences, setIntercorrences] = useState<Intercorrence[]>([]);
   const [latestCheckIn, setLatestCheckIn] = useState<CheckIn | null>(null);
   const [alerts, setAlerts] = useState<ClinicalAlert[]>([]);
+  const [missedSignals, setMissedSignals] = useState<MissedSignal[]>([]);
   const [hasRecentCritical, setHasRecentCritical] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -115,10 +125,19 @@ export function ProfileDetailScreen({ navigation, route }: Props) {
         .finally(() => {
           if (active) setLoading(false);
         });
+      // Kept apart from the main load: if this fails the rest of the screen
+      // is still useful.
+      if (isProfessional) {
+        listMissedSignals(profileId)
+          .then((data) => {
+            if (active) setMissedSignals(data);
+          })
+          .catch(() => {});
+      }
       return () => {
         active = false;
       };
-    }, [profileId]),
+    }, [profileId, isProfessional]),
   );
 
   async function handleResolveAlert(alertId: number, signalConfirmed: boolean) {
@@ -145,6 +164,30 @@ export function ProfileDetailScreen({ navigation, route }: Props) {
       setProfile(previous);
       setError("Não foi possível remover a condição.");
     }
+  }
+
+  function confirmDeleteMissedSignal(id: number) {
+    Alert.alert(
+      "Remover registro",
+      "Tem certeza que deseja remover este sinal não detectado?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Remover",
+          style: "destructive",
+          onPress: async () => {
+            const previous = missedSignals;
+            setMissedSignals((old) => old.filter((item) => item.id !== id));
+            try {
+              await deleteMissedSignal(profileId, id);
+            } catch {
+              setMissedSignals(previous);
+              setError("Não foi possível remover o registro.");
+            }
+          },
+        },
+      ],
+    );
   }
 
   function confirmDeleteIntercorrence(id: number) {
@@ -277,6 +320,60 @@ export function ProfileDetailScreen({ navigation, route }: Props) {
               }
             />
           ))}
+        </View>
+      ) : null}
+
+      {isProfessional ? (
+        <View testID="detail-missed" style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardTitle}>Sinais não detectados</Text>
+            <Pressable
+              testID="detail-missed-add"
+              accessibilityRole="button"
+              accessibilityLabel="Registrar sinal não detectado"
+              onPress={() =>
+                navigation.navigate("MissedSignalForm", { profileId })
+              }
+            >
+              <Text style={styles.linkLabel}>+ Registrar</Text>
+            </Pressable>
+          </View>
+          {missedSignals.length === 0 ? (
+            <Text testID="detail-missed-empty" style={styles.emptyLine}>
+              Algo aconteceu e o sistema não avisou? Registre aqui.
+            </Text>
+          ) : (
+            missedSignals.map((item) => (
+              <View
+                key={item.id}
+                testID={`detail-missed-${item.id}`}
+                style={styles.missedRow}
+              >
+                <View style={styles.missedHeader}>
+                  <Text style={styles.baselineValue}>
+                    {isoToBrDate(item.occurredAt)}
+                  </Text>
+                  <SeverityPill isCritical={item.severity === "critical"} />
+                  {item.reportedById === user?.id ? (
+                    <Pressable
+                      testID={`detail-missed-delete-${item.id}`}
+                      accessibilityRole="button"
+                      accessibilityLabel="Remover registro"
+                      style={styles.missedDelete}
+                      onPress={() => confirmDeleteMissedSignal(item.id)}
+                    >
+                      <Ionicons
+                        name="trash-outline"
+                        size={16}
+                        color={COLORS.grey500}
+                      />
+                    </Pressable>
+                  ) : null}
+                </View>
+                <Text style={styles.missedDescription}>{item.description}</Text>
+              </View>
+            ))
+          )}
         </View>
       ) : null}
 
@@ -565,6 +662,26 @@ const styles = StyleSheet.create({
   chipRemove: {
     fontSize: 12,
     color: COLORS.grey500,
+  },
+  missedRow: {
+    gap: 4,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.grey300,
+    paddingTop: 8,
+  },
+  missedHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  missedDelete: {
+    marginLeft: "auto",
+    padding: 4,
+  },
+  missedDescription: {
+    fontFamily: FONTS.regular,
+    fontSize: 13,
+    color: COLORS.heading,
   },
   emptyLine: {
     fontFamily: FONTS.regular,

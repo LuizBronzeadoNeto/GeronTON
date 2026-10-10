@@ -1,3 +1,5 @@
+import request from "supertest";
+import app from "../src/app.js";
 import { prisma } from "../src/lib/prisma.js";
 
 /**
@@ -52,4 +54,21 @@ export function makeCpf(base: string): string {
   const first = checkDigit(nine, 9);
   const second = checkDigit(`${nine}${first}`, 10);
   return `${nine}${first}${second}`;
+}
+
+/**
+ * Creates a professional account and returns its token. For suites that need
+ * a professional linked to nothing but their own fixtures, so results don't
+ * pick up profiles other suites linked to the seeded profissional@demo.com.
+ * Remove the account in afterAll.
+ */
+export async function signUpProfessional(
+  email: string,
+  crm: string,
+): Promise<string> {
+  const password = "senha12345";
+  await request(app).post("/profissionais").send({ email, password, crm });
+  const res = await request(app).post("/login").send({ email, password });
+  if (res.status !== 200) throw new Error(`Could not sign in as ${email}`);
+  return res.body.token;
 }

@@ -33,6 +33,7 @@ model User {
   access            ProfileAccess[]
   pushSubscriptions PushSubscription[]
   resolvedAlerts    Alert[]            @relation("AlertResolver")
+  missedSignals     MissedSignal[]
 
   @@map("users")
 }
@@ -55,25 +56,26 @@ model ProfileAccess {
 }
 
 model Profile {
-  id                Int          @id @default(autoincrement())
-  cpf               String?      @unique
+  id                Int             @id @default(autoincrement())
+  cpf               String?         @unique
   firstName         String
   lastName          String
-  birthDate         DateTime     @db.Date
+  birthDate         DateTime        @db.Date
   sex               String?
   scholarship       String
   medicalConditions String[]
   notes             String?
   caregiverId       Int
-  caregiver         User         @relation("CaregiverProfiles", fields: [caregiverId], references: [id], onDelete: Cascade)
+  caregiver         User            @relation("CaregiverProfiles", fields: [caregiverId], references: [id], onDelete: Cascade)
   medications       Medication[]
   routines          Routine[]
   checkIns          CheckIn[]
   intercorrences    Intercorrence[]
   alerts            Alert[]
+  missedSignals     MissedSignal[]
   access            ProfileAccess[]
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
 
   @@index([caregiverId])
   @@map("profiles")
@@ -206,6 +208,24 @@ model Alert {
   @@index([profileId, createdAt(sort: Desc)])
   @@index([checkInId])
   @@map("alerts")
+}
+
+/// Something that happened to the elder which the system should have flagged
+/// but did not (a false negative). Recorded by a professional so the heuristic
+/// can be checked against what actually happened.
+model MissedSignal {
+  id           Int           @id @default(autoincrement())
+  profileId    Int
+  profile      Profile       @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  reportedById Int?
+  reportedBy   User?         @relation(fields: [reportedById], references: [id], onDelete: SetNull)
+  occurredAt   DateTime      @db.Date
+  severity     AlertSeverity
+  description  String
+  createdAt    DateTime      @default(now())
+
+  @@index([profileId, occurredAt(sort: Desc)])
+  @@map("missed_signals")
 }
 
 enum PushTransport {

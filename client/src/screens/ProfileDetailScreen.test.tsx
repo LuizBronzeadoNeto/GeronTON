@@ -22,6 +22,12 @@ import { useAuth } from "../context/AuthContext";
 import { getProfileDetails, updateProfile } from "../api/profiles";
 import { resolveAlert } from "../api/alerts";
 import {
+  deleteMissedSignal,
+  listMissedSignals,
+  type MissedSignal,
+} from "../api/missedSignals";
+import { Alert } from "react-native";
+import {
   deleteIntercorrence,
   listIntercorrences,
   type Intercorrence,
@@ -31,6 +37,7 @@ jest.mock("../api/profiles");
 jest.mock("../api/intercorrences");
 jest.mock("../api/risk");
 jest.mock("../api/alerts");
+jest.mock("../api/missedSignals");
 jest.mock("../context/AuthContext");
 jest.mock("@react-navigation/native", () => mockNavigationModule());
 
@@ -111,6 +118,8 @@ describe("ProfileDetailScreen", () => {
       .mocked(resolveAlert)
       .mockReset()
       .mockResolvedValue(makeAlert({ resolvedAt: new Date().toISOString() }));
+    jest.mocked(listMissedSignals).mockReset().mockResolvedValue([]);
+    jest.mocked(deleteMissedSignal).mockReset().mockResolvedValue(undefined);
     mockSignedInAs("profissional");
     mockRiskApi(makeRiskStatus({ profileId: 7, status: "high", score: 14 }));
   });
@@ -315,5 +324,93 @@ describe("ProfileDetailScreen", () => {
       expect(screen.getByTestId("detail-alert-31")).toBeTruthy(),
     );
     expect(screen.getByTestId("profile-detail-error")).toBeTruthy();
+  });
+
+  describe("missed signals", () => {
+    const MISSED: MissedSignal = {
+      id: 3,
+      profileId: 7,
+      occurredAt: "2026-09-30T00:00:00.000Z",
+      severity: "critical",
+      description: "Internada por pneumonia",
+      createdAt: "2026-10-01T10:00:00.000Z",
+      reportedById: 99,
+      reportedBy: { id: 99, email: "pro@demo.com" },
+    };
+
+    it("lists the missed signals for professionals", async () => {
+      jest.mocked(listMissedSignals).mockResolvedValue([MISSED]);
+      renderScreen();
+
+      await waitFor(() =>
+        expect(screen.getByTestId("detail-missed-3")).toBeTruthy(),
+      );
+      expect(screen.getByText("Internada por pneumonia")).toBeTruthy();
+      expect(screen.getByText("30/09/2026")).toBeTruthy();
+      expect(listMissedSignals).toHaveBeenCalledWith(7);
+    });
+
+    it("hides the card from caregivers and does not load it", async () => {
+      mockSignedInAs("cuidador");
+      renderScreen();
+
+      await waitFor(() =>
+        expect(screen.getByTestId("profile-detail")).toBeTruthy(),
+      );
+      expect(screen.queryByTestId("detail-missed")).toBeNull();
+      expect(listMissedSignals).not.toHaveBeenCalled();
+    });
+
+    it("opens the form from the add link", async () => {
+      const { navigation } = renderScreen();
+
+      await waitFor(() =>
+        expect(screen.getByTestId("detail-missed-add")).toBeTruthy(),
+      );
+      fireEvent.press(screen.getByTestId("detail-missed-add"));
+
+      expect(navigation.navigate).toHaveBeenCalledWith("MissedSignalForm", {
+        profileId: 7,
+      });
+    });
+
+    it("only offers delete on the professional's own records", async () => {
+      jest
+        .mocked(listMissedSignals)
+        .mockResolvedValue([
+          MISSED,
+          { ...MISSED, id: 4, reportedById: 1, reportedBy: null },
+        ]);
+      renderScreen();
+
+      await waitFor(() =>
+        expect(screen.getByTestId("detail-missed-4")).toBeTruthy(),
+      );
+      expect(screen.getByTestId("detail-missed-delete-3")).toBeTruthy();
+      expect(screen.queryByTestId("detail-missed-delete-4")).toBeNull();
+    });
+
+    it("deletes a record after confirmation", async () => {
+      jest.mocked(listMissedSignals).mockResolvedValue([MISSED]);
+      const alertSpy = jest
+        .spyOn(Alert, "alert")
+        .mockImplementation((_title, _message, buttons) => {
+          buttons
+            ?.find((button) => button.style === "destructive")
+            ?.onPress?.();
+        });
+      renderScreen();
+
+      await waitFor(() =>
+        expect(screen.getByTestId("detail-missed-delete-3")).toBeTruthy(),
+      );
+      fireEvent.press(screen.getByTestId("detail-missed-delete-3"));
+
+      await waitFor(() =>
+        expect(deleteMissedSignal).toHaveBeenCalledWith(7, 3),
+      );
+      expect(screen.queryByTestId("detail-missed-3")).toBeNull();
+      alertSpy.mockRestore();
+    });
   });
 });
