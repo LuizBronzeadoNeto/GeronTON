@@ -200,13 +200,93 @@ export async function signalsByMonth(
   });
 }
 
+export interface Retention {
+  /** People in the group old enough to have had a 4th week. */
+  coorte: number;
+  /** Of those, how many were active in their 4th week (days 21 to 27). */
+  retidos: number;
+  /** retidos / coorte, null while the group is empty. */
+  taxa: number | null;
+}
+
+function retention(coorte: number, retidos: number): Retention {
+  return { coorte, retidos, taxa: coorte > 0 ? retidos / coorte : null };
+}
+
+/**
+ * 4-week retention of accounts: of the accounts whose first day of use was at
+ * least 28 days ago, the share that used the app again between day 21 and 27
+ * after it. Uses access_logs, so it only has data from when that table
+ * started filling.
+ */
+export async function userRetention(now = new Date()): Promise<Retention> {
+  const today = localDay(now);
+  const [row] = await prisma.$queryRaw<{ coorte: number; retidos: number }[]>`
+    WITH first_day AS (
+      SELECT "userId", MIN("day") AS d0
+      FROM "access_logs"
+      WHERE "userId" IS NOT NULL
+      GROUP BY 1
+    )
+    SELECT COUNT(*)::int AS coorte,
+           COUNT(*) FILTER (WHERE EXISTS (
+             SELECT 1 FROM "access_logs" a
+             WHERE a."userId" = f."userId"
+               AND a."day" >= f.d0 + 21
+               AND a."day" < f.d0 + 28
+           ))::int AS retidos
+    FROM first_day f
+    WHERE f.d0 <= ${today}::date - 28
+  `;
+  return retention(row.coorte, row.retidos);
+}
+
+/**
+ * 4-week retention of elders, from check-ins: of the elders registered at
+ * least 28 days ago, the share with a check-in between day 21 and 27 after
+ * registration. Works on the whole history, not only since access_logs.
+ */
+export async function elderRetention(now = new Date()): Promise<Retention> {
+  const cutoff = new Date(now.getTime() - 28 * DAY_MS);
+  const [row] = await prisma.$queryRaw<{ coorte: number; retidos: number }[]>`
+    SELECT COUNT(*)::int AS coorte,
+           COUNT(*) FILTER (WHERE EXISTS (
+             SELECT 1 FROM "check_ins" c
+             WHERE c."profileId" = p."id"
+               AND c."date" >= p."createdAt" + interval '21 days'
+               AND c."date" < p."createdAt" + interval '28 days'
+           ))::int AS retidos
+    FROM "profiles" p
+    WHERE p."createdAt" <= ${cutoff}
+  `;
+  return retention(row.coorte, row.retidos);
+}
+
+export interface Activation {
+  /** Caregivers linked to an elder that already got at least one check-in. */
+  cuidadores: number;
+  /** Professionals linked to at least one elder. */
+  profissionais: number;
+  /** Activated accounts over all accounts, null with no accounts. */
+  taxa: number | null;
+}
+
 export interface Snapshot {
   cuidadores: number;
   profissionais: number;
+  usuariosCadastrados: number;
+  /** Distinct accounts that used the app in the last 7 and 30 days. */
+  ativos7Dias: number;
+  ativos30Dias: number;
+  ativacao: Activation;
+  retencao4Semanas: Retention;
+  retencaoIdosos4Semanas: Retention;
   idosos: number;
   checkinsUltimos7Dias: number;
   idososComCheckinUltimos7Dias: number;
   sinaisAbertos: number;
+  /** Signals that held up over all signals judged, null while none was judged. */
+  precisaoSinais: number | null;
   /** Mean share of the last 8 weeks with a check-in, from 0 to 1. Null with no elders. */
   adesaoMedia: number | null;
   geradoEm: string;
@@ -249,10 +329,65 @@ export async function snapshot(now = new Date()): Promise<Snapshot> {
 
   const countRole = (role: Role) =>
     roles.find((row) => row.role === role)?._count._all ?? 0;
+  const registered = countRole("cuidador") + countRole("profissional");
+
+  const daysBack = (days: number) =>
+    new Date(
+      `${localDay(new Date(now.getTime() - days * DAY_MS))}T00:00:00.000Z`,
+    );
+
+  const [
+    active7,
+    active30,
+    activeCaregivers,
+    activeProfessionals,
+    judged,
+    confirmed,
+    usersKept,
+    eldersKept,
+  ] = await Promise.all([
+    prisma.accessLog.findMany({
+      where: { day: { gte: daysBack(6) }, userId: { not: null } },
+      distinct: ["userId"],
+      select: { userId: true },
+    }),
+    prisma.accessLog.findMany({
+      where: { day: { gte: daysBack(29) }, userId: { not: null } },
+      distinct: ["userId"],
+      select: { userId: true },
+    }),
+    prisma.user.count({
+      where: {
+        role: "cuidador",
+        access: { some: { profile: { checkIns: { some: {} } } } },
+      },
+    }),
+    prisma.user.count({
+      where: { role: "profissional", access: { some: {} } },
+    }),
+    prisma.alert.count({ where: { signalConfirmed: { not: null } } }),
+    prisma.alert.count({ where: { signalConfirmed: true } }),
+    userRetention(now),
+    elderRetention(now),
+  ]);
 
   return {
     cuidadores: countRole("cuidador"),
     profissionais: countRole("profissional"),
+    usuariosCadastrados: registered,
+    ativos7Dias: active7.length,
+    ativos30Dias: active30.length,
+    ativacao: {
+      cuidadores: activeCaregivers,
+      profissionais: activeProfessionals,
+      taxa:
+        registered > 0
+          ? (activeCaregivers + activeProfessionals) / registered
+          : null,
+    },
+    retencao4Semanas: usersKept,
+    retencaoIdosos4Semanas: eldersKept,
+    precisaoSinais: judged > 0 ? confirmed / judged : null,
     idosos: profiles.length,
     checkinsUltimos7Dias: recent.length,
     idososComCheckinUltimos7Dias: new Set(recent.map((row) => row.profileId))

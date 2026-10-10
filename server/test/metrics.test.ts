@@ -10,7 +10,12 @@ import request from "supertest";
 import app from "../src/app.js";
 import { prisma } from "../src/lib/prisma.js";
 import { makeCpf } from "./helpers.js";
-import { checkInsByWeek, signalsByMonth } from "../src/services/metrics.js";
+import {
+  checkInsByWeek,
+  elderRetention,
+  signalsByMonth,
+  userRetention,
+} from "../src/services/metrics.js";
 
 const TOKEN = "metricas-token-de-teste-com-tamanho-suficiente";
 
@@ -157,6 +162,17 @@ describe("metrics endpoints", () => {
       geradoEm: expect.any(String),
     });
     expect(res.body.idosos).toBeGreaterThanOrEqual(1);
+    expect(res.body).toMatchObject({
+      usuariosCadastrados: expect.any(Number),
+      ativos7Dias: expect.any(Number),
+      ativos30Dias: expect.any(Number),
+      ativacao: {
+        cuidadores: expect.any(Number),
+        profissionais: expect.any(Number),
+      },
+      retencao4Semanas: { coorte: expect.any(Number) },
+      retencaoIdosos4Semanas: { coorte: expect.any(Number) },
+    });
   });
 
   it("serves each series with the requested length", async () => {
@@ -219,5 +235,98 @@ describe("signalsByMonth", () => {
         naoDetectados: 0,
       },
     ]);
+  });
+});
+
+describe("4-week retention", () => {
+  const EMAILS = ["retencao.a@test.com", "retencao.b@test.com"];
+  const elderIds: number[] = [];
+
+  beforeAll(async () => {
+    const [kept, gone] = await Promise.all(
+      EMAILS.map((email) =>
+        prisma.user.create({
+          data: { email, password: "x", role: "cuidador" },
+        }),
+      ),
+    );
+    // Account A first used the app on 2018-01-01 and came back on day 24.
+    // Account B used it once on 2018-01-05 and never again.
+    await prisma.accessLog.createMany({
+      data: [
+        { userId: kept.id, role: "cuidador", day: new Date("2018-01-01") },
+        { userId: kept.id, role: "cuidador", day: new Date("2018-01-25") },
+        { userId: gone.id, role: "cuidador", day: new Date("2018-01-05") },
+      ],
+    });
+
+    // Two elders registered on 2018-01-01, only the first with a check-in in
+    // its 4th week.
+    for (const [base, checkIn] of [
+      ["150000001", "2018-01-24T15:00:00.000Z"],
+      ["150000002", null],
+    ] as const) {
+      const profile = await prisma.profile.create({
+        data: {
+          cpf: makeCpf(base),
+          firstName: "Retencao",
+          lastName: "Teste",
+          birthDate: new Date("1940-01-01"),
+          scholarship: "fundamental",
+          caregiverId: kept.id,
+          createdAt: new Date("2018-01-01T12:00:00.000Z"),
+        },
+      });
+      elderIds.push(profile.id);
+      if (checkIn) {
+        await prisma.checkIn.create({
+          data: {
+            profileId: profile.id,
+            date: new Date(checkIn),
+            skinIssues: false,
+            bowelRegular: true,
+            sleepWell: true,
+            unstableGait: false,
+            weeklyEvents: [],
+            appetite: "good",
+            chokingIncident: false,
+            breathShortness: false,
+            hydrationGoal: true,
+            medsOnTime: true,
+            mood: "happy",
+            stressLevel: 0,
+            sunExposure: true,
+            selfExpression: true,
+            stimulation: true,
+          },
+        });
+      }
+    }
+  });
+
+  afterAll(async () => {
+    await prisma.profile.deleteMany({ where: { id: { in: elderIds } } });
+    await prisma.accessLog.deleteMany({
+      where: { day: { lt: new Date("2019-01-01") } },
+    });
+    await prisma.user.deleteMany({ where: { email: { in: EMAILS } } });
+  });
+
+  it("counts accounts that came back in their 4th week", async () => {
+    const result = await userRetention(new Date("2018-03-01T15:00:00.000Z"));
+
+    expect(result).toEqual({ coorte: 2, retidos: 1, taxa: 0.5 });
+  });
+
+  it("leaves out accounts too new to have had a 4th week", async () => {
+    const result = await userRetention(new Date("2018-01-20T15:00:00.000Z"));
+
+    expect(result).toEqual({ coorte: 0, retidos: 0, taxa: null });
+  });
+
+  it("counts elders with a check-in in their 4th week", async () => {
+    const result = await elderRetention(new Date("2018-03-01T15:00:00.000Z"));
+
+    expect(result).toEqual({ coorte: 2, retidos: 1, taxa: 0.5 });
   });
 });

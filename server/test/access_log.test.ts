@@ -13,8 +13,14 @@ let caregiverId: number;
 let professionalId: number;
 let professionalToken: string;
 
-/** Rows dated before 2021 belong to this suite only; nothing else writes there. */
-const OLD_DAYS = { lt: new Date("2021-01-01T00:00:00.000Z") };
+/**
+ * Rows dated in 2019 and 2020 belong to this suite only. The metrics suite
+ * uses 2018, so the two can run side by side.
+ */
+const OLD_DAYS = {
+  gte: new Date("2019-01-01T00:00:00.000Z"),
+  lt: new Date("2021-01-01T00:00:00.000Z"),
+};
 
 beforeAll(async () => {
   await request(app)
