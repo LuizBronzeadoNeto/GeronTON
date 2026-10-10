@@ -214,7 +214,7 @@ export function AppStack({ role }: { role: Role }) {
       <Stack.Screen
         name="SignalReport"
         component={SignalReportScreen}
-        options={{ title: "Relatórios" }}
+        options={{ title: "Relatório de sinais" }}
       />
       <Stack.Screen
         name="PrivacyPolicy"

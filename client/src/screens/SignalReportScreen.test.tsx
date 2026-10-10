@@ -9,11 +9,7 @@ import {
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { SignalReportScreen } from "./SignalReportScreen";
 import type { AppStackParamList } from "../types/navigation";
-import {
-  getSignalReport,
-  getSignalReportCsv,
-  getUsageReport,
-} from "../api/reports";
+import { getSignalReport, getSignalReportCsv } from "../api/reports";
 import { shareTextFile } from "../utils/shareFile";
 
 jest.mock("../api/reports");
@@ -50,7 +46,6 @@ describe("SignalReportScreen", () => {
       .mockReset()
       .mockResolvedValue("classificacao;perfil_id\r\n");
     jest.mocked(shareTextFile).mockReset().mockResolvedValue(undefined);
-    jest.mocked(getUsageReport).mockReset().mockResolvedValue({ meses: [] });
   });
 
   it("shows the counts and the share of signals that held up", async () => {
@@ -96,15 +91,6 @@ describe("SignalReportScreen", () => {
     const [fileName, content] = jest.mocked(shareTextFile).mock.calls[0];
     expect(fileName).toMatch(/^relatorio-sinais-\d{4}-\d{2}-\d{2}\.csv$/);
     expect(content).toBe("classificacao;perfil_id\r\n");
-  });
-
-  it("shows the app usage section below the signals", async () => {
-    renderScreen();
-
-    await waitFor(() =>
-      expect(screen.getByTestId("usage-report")).toBeTruthy(),
-    );
-    expect(getUsageReport).toHaveBeenCalled();
   });
 
   it("shows an error when the report does not load", async () => {

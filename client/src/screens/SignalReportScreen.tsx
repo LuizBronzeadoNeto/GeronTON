@@ -15,7 +15,6 @@ import {
   type SignalReportSummary,
 } from "../api/reports";
 import { PrimaryButton } from "../components/PrimaryButton";
-import { UsageReport } from "../components/UsageReport";
 import { shareTextFile } from "../utils/shareFile";
 import { COLORS, FONTS } from "../theme";
 
@@ -43,7 +42,6 @@ function Tile({ testID, label, value, hint }: TileProps) {
  * contact (true positives), how many didn't (false positives) and how many
  * events the system missed (false negatives), across the elders they follow.
  * The export button hands over the full list as a CSV for the research team.
- * Below it, the monthly usage of the app.
  */
 export function SignalReportScreen(_props: Props) {
   const [summary, setSummary] = useState<SignalReportSummary | null>(null);
@@ -156,8 +154,6 @@ export function SignalReportScreen(_props: Props) {
       <Text style={styles.note}>
         A planilha identifica os idosos só pelo número do cadastro, sem nome.
       </Text>
-
-      <UsageReport />
     </ScrollView>
   );
 }

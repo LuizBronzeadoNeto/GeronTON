@@ -29,7 +29,7 @@ export const PRIVACY_POLICY: PolicySection[] = [
     title: "Quais dados coletamos",
     paragraphs: [
       "Da sua conta: e-mail, senha (guardada de forma criptografada, nunca em texto puro), o tipo de perfil (cuidador ou profissional) e, para profissionais, o CRM informado.",
-      "Do uso do aplicativo: os dias em que cada conta usou o app, para acompanhar a adesão durante o estudo. Os relatórios mostram só totais por mês, sem identificar ninguém.",
+      "Do uso do aplicativo: os dias em que cada conta usou o app, para acompanhar a adesão durante o estudo. A equipe acompanha esses números em um painel de monitoramento, só como totais por mês, sem identificar ninguém.",
       "Do idoso: nome, CPF, data de nascimento, sexo, escolaridade, condições de saúde, medicamentos, rotinas, respostas do check-in semanal (sono, alimentação, humor, sinais vitais e outras) e intercorrências registradas.",
       "Informações de saúde são dados pessoais sensíveis pela LGPD (Art. 5º, II). Por isso pedimos o seu consentimento de forma específica e destacada, só para as finalidades descritas aqui (Art. 11, I).",
     ],
