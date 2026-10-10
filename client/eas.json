@@ -14,7 +14,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://geronton.duckdns.org/api"
+        "EXPO_PUBLIC_API_URL": "https://geronton-12596b9b8c0d.herokuapp.com/api"
       }
     },
     "production": {
@@ -24,7 +24,7 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://geronton.duckdns.org/api"
+        "EXPO_PUBLIC_API_URL": "https://geronton-12596b9b8c0d.herokuapp.com/api"
       }
     }
   },
