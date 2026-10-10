@@ -241,6 +241,39 @@ describe("ProfessionalHomeScreen", () => {
     expect(navigation.navigate).toHaveBeenCalledWith("ProfileIdentification");
   });
 
+  it("shows each elder's adherence and the summary", async () => {
+    jest.mocked(listTriage).mockResolvedValue([
+      makeTriageEntry({
+        id: 1,
+        adherence: {
+          weeksWithCheckIn: 6,
+          weeksObserved: 8,
+          checkedInThisWeek: true,
+        },
+      }),
+      makeTriageEntry({
+        id: 2,
+        adherence: {
+          weeksWithCheckIn: 1,
+          weeksObserved: 4,
+          checkedInThisWeek: false,
+        },
+      }),
+    ]);
+    renderScreen();
+
+    await waitFor(() =>
+      expect(screen.getByTestId("adherence-summary")).toBeTruthy(),
+    );
+    expect(screen.getByTestId("professional-adherence-1")).toHaveTextContent(
+      "Check-in em 6 de 8 semanas",
+    );
+    expect(screen.getByTestId("adherence-this-week")).toHaveTextContent(
+      "1 de 2",
+    );
+    expect(screen.getByTestId("adherence-average")).toHaveTextContent("50%");
+  });
+
   it("opens the signal report", async () => {
     const { navigation } = renderScreen();
     await waitFor(() => expect(listTriage).toHaveBeenCalled());

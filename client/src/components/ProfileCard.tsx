@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import type { Profile } from "../api/profiles";
+import type { WeeklyAdherence } from "../api/triage";
 import { listCheckIns } from "../api/checkins";
 import { WEEKLY_EVENTS } from "../constants/checkin";
 import { RiskStatusBadge } from "./RiskStatusBadge";
@@ -14,6 +15,7 @@ interface Props {
   onOpen: () => void;
   showLastCheckIn?: boolean;
   criticalEvents?: string[];
+  adherence?: WeeklyAdherence;
 }
 
 /**
@@ -74,6 +76,7 @@ export function ProfileCard({
   onOpen,
   showLastCheckIn = false,
   criticalEvents = [],
+  adherence,
 }: Props) {
   return (
     <Pressable
@@ -98,6 +101,16 @@ export function ProfileCard({
           {ageInYears(profile.birthDate)} anos
         </Text>
         {showLastCheckIn ? <LastCheckInLine profileId={profile.id} /> : null}
+        {adherence ? (
+          <Text
+            testID={`${testIDPrefix}-adherence-${profile.id}`}
+            style={styles.cardLine}
+          >
+            Check-in em {adherence.weeksWithCheckIn} de{" "}
+            {adherence.weeksObserved}{" "}
+            {adherence.weeksObserved === 1 ? "semana" : "semanas"}
+          </Text>
+        ) : null}
         {criticalEvents.length > 0 ? (
           <View
             testID={`${testIDPrefix}-critical-${profile.id}`}

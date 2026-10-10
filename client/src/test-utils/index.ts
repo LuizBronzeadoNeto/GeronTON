@@ -77,6 +77,11 @@ export function makeTriageEntry(
   return {
     ...makeProfile(),
     risk: { status: "low", score: 0, criticalEvents: [] },
+    adherence: {
+      weeksWithCheckIn: 0,
+      weeksObserved: 1,
+      checkedInThisWeek: false,
+    },
     ...overrides,
   };
 }

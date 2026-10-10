@@ -16,6 +16,7 @@ import { AlertCard } from "../components/AlertCard";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { EnableNotificationsCard } from "../components/EnableNotificationsCard";
 import { RiskLegend } from "../components/RiskLegend";
+import { AdherenceSummary } from "../components/AdherenceSummary";
 import { COLORS, FONTS } from "../theme";
 
 type Props = NativeStackScreenProps<AppStackParamList, "Home">;
@@ -29,6 +30,10 @@ type Props = NativeStackScreenProps<AppStackParamList, "Home">;
  * unresolved alerts raised by the monitoring system (weakened home bond,
  * vital-sign warnings) appear above the cards, each opening the elder's detail
  * hub where it can be resolved. The header action registers a new profile.
+ *
+ * Above the list sits the weekly adherence summary (how many elders had a
+ * check-in in the last 7 days, and the average over 8 weeks), plus the link
+ * to the false positive / false negative report.
  */
 export function ProfessionalHomeScreen({ navigation }: Props) {
   const [profiles, setProfiles] = useState<TriageEntry[]>([]);
@@ -134,7 +139,14 @@ export function ProfessionalHomeScreen({ navigation }: Props) {
         data={profiles}
         keyExtractor={(item) => String(item.id)}
         contentContainerStyle={styles.listContent}
-        ListHeaderComponent={alertsPanel}
+        ListHeaderComponent={
+          <>
+            {loading || profiles.length === 0 ? null : (
+              <AdherenceSummary entries={profiles} />
+            )}
+            {alertsPanel}
+          </>
+        }
         ListFooterComponent={loading ? null : <RiskLegend />}
         ListFooterComponentStyle={styles.legendFooter}
         ListEmptyComponent={
@@ -150,6 +162,7 @@ export function ProfessionalHomeScreen({ navigation }: Props) {
             testIDPrefix="professional"
             showLastCheckIn
             criticalEvents={item.risk.criticalEvents}
+            adherence={item.adherence}
             onOpen={() =>
               navigation.navigate("ProfileDetail", { profileId: item.id })
             }
