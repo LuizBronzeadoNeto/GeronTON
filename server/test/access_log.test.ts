@@ -3,7 +3,7 @@ import request from "supertest";
 import app from "../src/app.js";
 import { prisma } from "../src/lib/prisma.js";
 import { localDay, recordAccess } from "../src/services/accessLog.js";
-import { buildUsageReport } from "../src/routes/reports.js";
+import { usageByMonth } from "../src/services/metrics.js";
 
 const CAREGIVER = "uso.cuidador@test.com";
 const PROFESSIONAL = "uso.profissional@test.com";
@@ -11,7 +11,6 @@ const PASSWORD = "senha12345";
 
 let caregiverId: number;
 let professionalId: number;
-let caregiverToken: string;
 let professionalToken: string;
 
 /** Rows dated before 2021 belong to this suite only; nothing else writes there. */
@@ -24,11 +23,6 @@ beforeAll(async () => {
   await request(app)
     .post("/profissionais")
     .send({ email: PROFESSIONAL, password: PASSWORD, crm: "77003-PB" });
-  caregiverToken = (
-    await request(app)
-      .post("/login")
-      .send({ email: CAREGIVER, password: PASSWORD })
-  ).body.token;
   professionalToken = (
     await request(app)
       .post("/login")
@@ -96,7 +90,7 @@ describe("recordAccess", () => {
   });
 });
 
-describe("buildUsageReport", () => {
+describe("usageByMonth", () => {
   beforeAll(async () => {
     await prisma.accessLog.createMany({
       data: [
@@ -126,10 +120,7 @@ describe("buildUsageReport", () => {
   });
 
   it("totals each month, oldest first, with empty months as zeros", async () => {
-    const usage = await buildUsageReport(
-      3,
-      new Date("2020-02-10T15:00:00.000Z"),
-    );
+    const usage = await usageByMonth(3, new Date("2020-02-10T15:00:00.000Z"));
 
     expect(usage).toEqual([
       {
@@ -154,48 +145,5 @@ describe("buildUsageReport", () => {
         profissionais: 0,
       },
     ]);
-  });
-});
-
-describe("GET /relatorios/acessos", () => {
-  it("returns the last 6 months by default", async () => {
-    const res = await request(app)
-      .get("/relatorios/acessos")
-      .set("Authorization", `Bearer ${professionalToken}`);
-
-    expect(res.status).toBe(200);
-    expect(res.body.meses).toHaveLength(6);
-    expect(res.body.meses[5].mes).toBe(localDay(new Date()).slice(0, 7));
-  });
-
-  it("downloads a CSV", async () => {
-    const res = await request(app)
-      .get("/relatorios/acessos?meses=2&formato=csv")
-      .set("Authorization", `Bearer ${professionalToken}`);
-
-    expect(res.status).toBe(200);
-    expect(res.headers["content-type"]).toContain("text/csv");
-    const lines = res.text
-      .replace(/^\uFEFF/, "")
-      .trim()
-      .split("\r\n");
-    expect(lines[0]).toBe("mes;acessos;usuarios;cuidadores;profissionais");
-    expect(lines).toHaveLength(3);
-  });
-
-  it("rejects an invalid number of months", async () => {
-    const res = await request(app)
-      .get("/relatorios/acessos?meses=0")
-      .set("Authorization", `Bearer ${professionalToken}`);
-
-    expect(res.status).toBe(400);
-  });
-
-  it("is off limits to caregivers", async () => {
-    const res = await request(app)
-      .get("/relatorios/acessos")
-      .set("Authorization", `Bearer ${caregiverToken}`);
-
-    expect(res.status).toBe(403);
   });
 });
