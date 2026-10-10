@@ -5,12 +5,12 @@
  * bump both whenever the text changes in a way people need to agree to again.
  * Everyone with an older version is asked to accept the new one at sign-in.
  *
- * The contact below is a placeholder until the team names who answers for the
- * data (the "encarregado" in Art. 41 of the LGPD).
+ * PRIVACY_CONTACT is who answers for the data (the "encarregado" in Art. 41
+ * of the LGPD).
  */
 export const CONSENT_VERSION = "2026-10-10";
 
-export const PRIVACY_CONTACT = "[e-mail do encarregado pelos dados]";
+export const PRIVACY_CONTACT = "mikael.amaral@ccc.ufcg.edu.br";
 
 export interface PolicySection {
   title: string;
