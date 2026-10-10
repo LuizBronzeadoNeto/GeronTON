@@ -107,8 +107,25 @@ const stripApiPrefix: RequestHandler = (req, _res, next) => {
   next();
 };
 
+/**
+ * Sends plain HTTP requests to HTTPS in production. Heroku answers on both
+ * and only tells the app through X-Forwarded-Proto, so without this a first
+ * visit typed as http:// would send the login unencrypted. On the VPS Caddy
+ * already redirects, and requests that don't come through a proxy (like the
+ * container health check) carry no header and pass through.
+ */
+const forceHttps: RequestHandler = (req, res, next) => {
+  const proto = req.headers["x-forwarded-proto"];
+  if (process.env.NODE_ENV === "production" && proto === "http") {
+    res.redirect(308, `https://${req.headers.host}${req.originalUrl}`);
+    return;
+  }
+  next();
+};
+
 const app = express();
 
+app.use(forceHttps);
 app.use(stripApiPrefix);
 
 /**
