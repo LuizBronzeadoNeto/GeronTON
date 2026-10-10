@@ -1,5 +1,10 @@
 import "dotenv/config";
-import express, { type ErrorRequestHandler } from "express";
+import fs from "node:fs";
+import path from "node:path";
+import express, {
+  type ErrorRequestHandler,
+  type RequestHandler,
+} from "express";
 import helmet from "helmet";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
@@ -76,7 +81,35 @@ const registrationLimiter = rateLimit({
   skip: skipInTests,
 });
 
+/**
+ * Folder with the web build (expo export output), served by this same process
+ * when set. On the VPS Caddy serves the web build and this stays unset; on
+ * Heroku there is no Caddy, so the API serves it and both live on one origin.
+ */
+const webDir = process.env.WEB_DIR
+  ? path.resolve(process.env.WEB_DIR)
+  : undefined;
+const webIndex = webDir ? path.join(webDir, "index.html") : undefined;
+const servesWeb = webIndex !== undefined && fs.existsSync(webIndex);
+
+/**
+ * The clients call the API under /api. Caddy strips that prefix before
+ * proxying, but nothing does on Heroku, so it is dropped here as well. Routes
+ * keep their paths either way, and a request that already lost the prefix
+ * passes through untouched.
+ */
+const stripApiPrefix: RequestHandler = (req, _res, next) => {
+  if (req.url === "/api" || req.url.startsWith("/api/")) {
+    req.url = req.url.slice(4) || "/";
+  } else if (req.url.startsWith("/api?")) {
+    req.url = `/${req.url.slice(4)}`;
+  }
+  next();
+};
+
 const app = express();
+
+app.use(stripApiPrefix);
 
 /**
  * The API runs behind a TLS-terminating reverse proxy in production, so Express
@@ -92,6 +125,12 @@ app.use(express.json({ limit: MAX_BODY_SIZE }));
 
 app.use(healthRouter);
 
+// Static files go before the rate limiter: loading the web app fetches a
+// dozen assets, which would eat into the API budget for no reason.
+if (servesWeb) {
+  app.use(express.static(webDir!, { index: false }));
+}
+
 app.use(globalLimiter);
 app.use("/login", loginLimiter);
 app.use("/cuidadores", registrationLimiter);
@@ -106,6 +145,19 @@ app.use("/notificacoes", notificationsRouter);
 app.use("/triagem", triageRouter);
 app.use("/relatorios", reportsRouter);
 app.use("/consentimento", consentRouter);
+
+/**
+ * Any other GET (or HEAD) from a browser gets the web app's index.html, so
+ * reloading the page works. Requests that don't accept HTML (the API clients)
+ * still get the plain 404.
+ */
+if (servesWeb) {
+  app.use((req, res, next) => {
+    const isRead = req.method === "GET" || req.method === "HEAD";
+    if (!isRead || !req.accepts("html")) return next();
+    res.sendFile(webIndex!);
+  });
+}
 
 /**
  * Status a rejected request carries when the failure is the client's fault.
