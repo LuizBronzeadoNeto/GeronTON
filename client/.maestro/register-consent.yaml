@@ -1,0 +1,41 @@
+appId: com.geronton.client
+---
+# Sign-up can't go through without ticking the consent box, and the full term
+# opens from the link next to it.
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "login-register"
+- assertVisible:
+    id: "register"
+- tapOn:
+    id: "register-role"
+- tapOn:
+    id: "register-role-option-Cuidador"
+- tapOn:
+    id: "register-email"
+- inputRandomEmail
+- tapOn:
+    id: "register-password"
+- inputText: "senha12345"
+- hideKeyboard
+- assertVisible:
+    id: "register-submit"
+    enabled: false
+- tapOn:
+    id: "register-policy"
+- assertVisible:
+    id: "privacy-policy"
+- assertVisible:
+    text: "Seus direitos"
+- back
+- tapOn:
+    id: "register-terms"
+- assertVisible:
+    id: "register-submit"
+    enabled: true
+- tapOn:
+    id: "register-submit"
+# a brand new caregiver has no elders yet
+- assertVisible:
+    id: "profile-identification"

@@ -1,0 +1,53 @@
+appId: com.geronton.client
+---
+# A professional records an event the system missed, then removes it.
+# Needs at least one elder linked to profissional@demo.com.
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "login-email"
+- inputText: "profissional@demo.com"
+- tapOn:
+    id: "login-password"
+- inputText: "senha123"
+- hideKeyboard
+- tapOn:
+    id: "login-submit"
+- assertVisible:
+    id: "professional-home"
+- tapOn:
+    id: "professional-item-.*"
+- assertVisible:
+    id: "profile-detail"
+- scrollUntilVisible:
+    element:
+      id: "detail-missed-add"
+    direction: DOWN
+- tapOn:
+    id: "detail-missed-add"
+- assertVisible:
+    id: "missed-form"
+- tapOn:
+    id: "missed-date"
+- inputText: "01102026"
+- hideKeyboard
+- tapOn:
+    id: "missed-severity-critical"
+- tapOn:
+    id: "missed-description"
+- inputText: "Teste E2E internacao sem sinal"
+- hideKeyboard
+- tapOn:
+    id: "missed-submit"
+- assertVisible:
+    id: "profile-detail"
+- scrollUntilVisible:
+    element:
+      text: "Teste E2E internacao sem sinal"
+    direction: DOWN
+- tapOn:
+    id: "detail-missed-delete-.*"
+- tapOn:
+    text: "Remover"
+- assertNotVisible:
+    text: "Teste E2E internacao sem sinal"

@@ -1,0 +1,56 @@
+appId: com.geronton.client
+---
+# Needs at least one elder linked to profissional@demo.com, otherwise the
+# adherence card is not shown.
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "login-email"
+- inputText: "profissional@demo.com"
+- tapOn:
+    id: "login-password"
+- inputText: "senha123"
+- hideKeyboard
+- tapOn:
+    id: "login-submit"
+- assertVisible:
+    id: "professional-home"
+- assertVisible:
+    id: "adherence-summary"
+- assertVisible:
+    id: "professional-item-.*"
+- assertVisible:
+    id: "professional-adherence-.*"
+- scrollUntilVisible:
+    element:
+      id: "risk-legend"
+    direction: DOWN
+- assertVisible:
+    text: "O que cada cor quer dizer"
+# report screen
+- scrollUntilVisible:
+    element:
+      id: "professional-report"
+    direction: UP
+- tapOn:
+    id: "professional-report"
+- assertVisible:
+    id: "report"
+- assertVisible:
+    id: "report-true-positives"
+- assertVisible:
+    id: "report-false-positives"
+- assertVisible:
+    id: "report-false-negatives"
+- assertVisible:
+    id: "report-export"
+- back
+- assertVisible:
+    id: "professional-home"
+# opening a card leads to the elder's hub
+- tapOn:
+    id: "professional-item-.*"
+- assertVisible:
+    id: "profile-detail"
+- assertVisible:
+    id: "detail-missed"

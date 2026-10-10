@@ -1,0 +1,101 @@
+appId: com.geronton.client
+---
+# The caregiver sends a short check-in with high glycemia, which raises a
+# signal. The professional then sees it on the dashboard, opens it and marks
+# the contact as done.
+#
+# Needs cuidador@demo.com with exactly one elder (so login lands on the
+# elder's hub) and profissional@demo.com linked to that same elder.
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "login-email"
+- inputText: "cuidador@demo.com"
+- tapOn:
+    id: "login-password"
+- inputText: "senha123"
+- hideKeyboard
+- tapOn:
+    id: "login-submit"
+- assertVisible:
+    id: "profile-detail"
+- tapOn:
+    id: "detail-checkin"
+- assertVisible:
+    id: "checkin"
+# short version, 3 steps
+- tapOn:
+    id: "checkin-short"
+- tapOn:
+    id: "checkin-skinIssues-no"
+- tapOn:
+    id: "checkin-bowelRegular-yes"
+- tapOn:
+    id: "checkin-sleepWell-yes"
+- tapOn:
+    id: "checkin-unstableGait-no"
+- scrollUntilVisible:
+    element:
+      id: "checkin-glycemia"
+    direction: DOWN
+- tapOn:
+    id: "checkin-glycemia"
+- inputText: "300"
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      id: "checkin-next"
+    direction: DOWN
+- tapOn:
+    id: "checkin-next"
+- tapOn:
+    id: "checkin-appetite-good"
+- tapOn:
+    id: "checkin-hydrationGoal-yes"
+- tapOn:
+    id: "checkin-medsOnTime-yes"
+- tapOn:
+    id: "checkin-next"
+- tapOn:
+    id: "checkin-mood-happy"
+- tapOn:
+    id: "checkin-sunExposure-yes"
+- tapOn:
+    id: "checkin-selfExpression-yes"
+- tapOn:
+    id: "checkin-stimulation-yes"
+- tapOn:
+    id: "checkin-submit"
+# back on the hub, the caregiver also sees the signal
+- assertVisible:
+    id: "profile-detail"
+- assertVisible:
+    text: "Glicemia 300.*"
+- tapOn:
+    id: "header-signout"
+# professional side
+- tapOn:
+    id: "login-email"
+- inputText: "profissional@demo.com"
+- tapOn:
+    id: "login-password"
+- inputText: "senha123"
+- hideKeyboard
+- tapOn:
+    id: "login-submit"
+- assertVisible:
+    id: "professional-home"
+- assertVisible:
+    text: "Sinais para contato"
+- tapOn:
+    text: "Glicemia 300.*"
+- assertVisible:
+    id: "profile-detail"
+- tapOn:
+    id: "detail-alert-.*-resolve"
+- assertVisible:
+    text: "Depois do contato, o sinal procedia?"
+- tapOn:
+    id: "detail-alert-.*-verdict-yes"
+- assertNotVisible:
+    text: "Glicemia 300.*"
