@@ -11,6 +11,7 @@ import profilesRouter from "./routes/profiles.js";
 import { alertsDashboardRouter } from "./routes/alerts.js";
 import { triageRouter } from "./routes/triage.js";
 import notificationsRouter from "./routes/notifications.js";
+import { reportsRouter } from "./routes/reports.js";
 
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
 const REGISTRATION_WINDOW_MS = 60 * 60 * 1000;
@@ -102,6 +103,7 @@ app.use("/perfis", profilesRouter);
 app.use("/alertas", alertsDashboardRouter);
 app.use("/notificacoes", notificationsRouter);
 app.use("/triagem", triageRouter);
+app.use("/relatorios", reportsRouter);
 
 /**
  * Status a rejected request carries when the failure is the client's fault.

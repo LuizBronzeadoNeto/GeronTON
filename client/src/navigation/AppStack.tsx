@@ -22,6 +22,7 @@ import { MedicationInventoryScreen } from "../screens/MedicationInventoryScreen"
 import { MedicationFormScreen } from "../screens/MedicationFormScreen";
 import { RoutineRegistrationScreen } from "../screens/RoutineRegistrationScreen";
 import { MissedSignalFormScreen } from "../screens/MissedSignalFormScreen";
+import { SignalReportScreen } from "../screens/SignalReportScreen";
 
 const Stack = createNativeStackNavigator<AppStackParamList>();
 
@@ -176,6 +177,11 @@ export function AppStack({ role }: { role: Role }) {
         name="MissedSignalForm"
         component={MissedSignalFormScreen}
         options={{ title: "Sinal não detectado" }}
+      />
+      <Stack.Screen
+        name="SignalReport"
+        component={SignalReportScreen}
+        options={{ title: "Relatório de sinais" }}
       />
     </Stack.Navigator>
   );

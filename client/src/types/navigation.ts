@@ -26,4 +26,5 @@ export type AppStackParamList = {
   MedicationForm: { profileId: number; medicationId?: number };
   RoutineRegistration: { profileId: number };
   MissedSignalForm: { profileId: number };
+  SignalReport: undefined;
 };

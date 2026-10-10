@@ -240,4 +240,13 @@ describe("ProfessionalHomeScreen", () => {
 
     expect(navigation.navigate).toHaveBeenCalledWith("ProfileIdentification");
   });
+
+  it("opens the signal report", async () => {
+    const { navigation } = renderScreen();
+    await waitFor(() => expect(listTriage).toHaveBeenCalled());
+
+    fireEvent.press(screen.getByTestId("professional-report"));
+
+    expect(navigation.navigate).toHaveBeenCalledWith("SignalReport");
+  });
 });

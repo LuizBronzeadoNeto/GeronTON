@@ -102,12 +102,21 @@ export function ProfessionalHomeScreen({ navigation }: Props) {
           with the list, and it is a one-time action, not list content. */}
       <EnableNotificationsCard />
 
-      <PrimaryButton
-        testID="professional-add"
-        title="+ Cadastrar idoso"
-        size="small"
-        onPress={() => navigation.navigate("ProfileIdentification")}
-      />
+      <View style={styles.actionsRow}>
+        <PrimaryButton
+          testID="professional-report"
+          title="Relatório de sinais"
+          size="small"
+          variant="outline"
+          onPress={() => navigation.navigate("SignalReport")}
+        />
+        <PrimaryButton
+          testID="professional-add"
+          title="+ Cadastrar idoso"
+          size="small"
+          onPress={() => navigation.navigate("ProfileIdentification")}
+        />
+      </View>
 
       {loading ? (
         <ActivityIndicator
@@ -165,6 +174,11 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     color: COLORS.grey500,
     paddingHorizontal: 8,
+  },
+  actionsRow: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 8,
   },
   alertsPanel: {
     gap: 8,
