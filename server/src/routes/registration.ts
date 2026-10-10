@@ -4,6 +4,7 @@ import { prisma, Role } from "../lib/prisma.js";
 import bcrypt from "bcrypt";
 import { MIN_PASSWORD_LENGTH, SALT_ROUNDS } from "../config/auth.js";
 import { normalizeCrm } from "../utils/crm.js";
+import { CONSENT_VERSION } from "../config/consent.js";
 
 /**
  * Builds a router exposing `POST /` that registers a new user with the given
@@ -25,6 +26,11 @@ import { normalizeCrm } from "../utils/crm.js";
  * an account rather than proving anyone is licensed.
  *
  * Created passwords are hashed using 12 SALT rounds in order to prevent identification.
+ *
+ * Sending acceptedTerms true stores the current consent version with the account,
+ * so someone who ticked the box on the sign-up screen isn't asked again right
+ * after. Without it the account is still created and the app asks for consent
+ * on first sign-in.
  */
 export function buildRegistrationRouter(role: Role): Router {
   const router = Router();
@@ -60,10 +66,14 @@ export function buildRegistrationRouter(role: Role): Router {
     }
 
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+    const consent =
+      req.body?.acceptedTerms === true
+        ? { consentVersion: CONSENT_VERSION, consentAcceptedAt: new Date() }
+        : {};
 
     try {
       const user = await prisma.user.create({
-        data: { email, password: hashedPassword, role, crm },
+        data: { email, password: hashedPassword, role, crm, ...consent },
         select: { id: true, email: true, role: true, crm: true },
       });
       return res.status(201).json(user);

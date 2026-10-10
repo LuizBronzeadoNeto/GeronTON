@@ -48,6 +48,7 @@ function mockSignedInAs(role: Role) {
     isRestoring: false,
     signIn: jest.fn(async () => {}),
     signOut: jest.fn(),
+    acceptConsent: jest.fn(async () => {}),
   });
 }
 

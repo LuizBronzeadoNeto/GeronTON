@@ -15,6 +15,8 @@ import { useAuth } from "../context/AuthContext";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { SelectField } from "../components/SelectField";
 import { ErrorToast } from "../components/ErrorToast";
+import { CheckboxRow } from "../components/CheckboxRow";
+import { CONSENT_STATEMENT } from "../constants/privacy";
 import { COLORS, FONTS } from "../theme";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "Register">;
@@ -36,6 +38,9 @@ const ROLE_OPTIONS = Object.keys(ROLE_LABELS);
  * the login form, so a caregiver never has to retype the password they just
  * chose. The password rule mirrors the backend's minimum so the failure is
  * shown before a request is made rather than as a generic 400.
+ *
+ * The account can only be created after ticking the consent box, and the
+ * acceptance goes to the backend with the sign-up so it's on record.
  */
 export function RegisterScreen({ navigation }: Props) {
   const { signIn, isSigningIn } = useAuth();
@@ -44,6 +49,7 @@ export function RegisterScreen({ navigation }: Props) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [crm, setCrm] = useState("");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -54,7 +60,8 @@ export function RegisterScreen({ navigation }: Props) {
     role !== null &&
     email.trim() !== "" &&
     password.length >= MIN_PASSWORD_LENGTH &&
-    (!isProfessional || crm.trim() !== "");
+    (!isProfessional || crm.trim() !== "") &&
+    acceptedTerms;
 
   async function handleSubmit() {
     if (!role) return;
@@ -68,6 +75,7 @@ export function RegisterScreen({ navigation }: Props) {
         password,
         role,
         crm: crm.trim(),
+        acceptedTerms,
       });
       await signIn(email.trim(), password);
     } catch (err) {
@@ -135,6 +143,22 @@ export function RegisterScreen({ navigation }: Props) {
             />
           </View>
         ) : null}
+
+        <View style={styles.consent}>
+          <CheckboxRow
+            testID="register-terms"
+            checked={acceptedTerms}
+            label={CONSENT_STATEMENT}
+            onToggle={() => setAcceptedTerms((value) => !value)}
+          />
+          <Pressable
+            testID="register-policy"
+            accessibilityRole="link"
+            onPress={() => navigation.navigate("PrivacyPolicy")}
+          >
+            <Text style={styles.policyLink}>Ler o termo completo</Text>
+          </Pressable>
+        </View>
 
         <PrimaryButton
           testID="register-submit"
@@ -206,6 +230,17 @@ const styles = StyleSheet.create({
   },
   action: {
     marginTop: 16,
+  },
+  consent: {
+    marginTop: 12,
+    gap: 6,
+  },
+  policyLink: {
+    fontFamily: FONTS.semiBold,
+    fontSize: 13,
+    color: COLORS.primary,
+    textDecorationLine: "underline",
+    marginLeft: 32,
   },
   footer: {
     textAlign: "center",

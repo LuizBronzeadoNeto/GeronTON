@@ -36,9 +36,10 @@ function chooseRole(label: string) {
   fireEvent.press(screen.getByTestId(`register-role-option-${label}`));
 }
 
-function fillCredentials(password = PASSWORD) {
+function fillCredentials(password = PASSWORD, acceptTerms = true) {
   fireEvent.changeText(screen.getByTestId("register-email"), EMAIL);
   fireEvent.changeText(screen.getByTestId("register-password"), password);
+  if (acceptTerms) fireEvent.press(screen.getByTestId("register-terms"));
 }
 
 describe("RegisterScreen", () => {
@@ -115,6 +116,7 @@ describe("RegisterScreen", () => {
       password: PASSWORD,
       role: "cuidador",
       crm: "",
+      acceptedTerms: true,
     });
     await waitFor(() => expect(login).toHaveBeenCalledWith(EMAIL, PASSWORD));
   });
@@ -133,6 +135,7 @@ describe("RegisterScreen", () => {
         password: PASSWORD,
         role: "profissional",
         crm: "12345-PB",
+        acceptedTerms: true,
       }),
     );
   });
@@ -156,6 +159,27 @@ describe("RegisterScreen", () => {
       screen.getByText("Já existe uma conta com esse e-mail ou CRM."),
     ).toBeTruthy();
     expect(login).not.toHaveBeenCalled();
+  });
+
+  it("keeps submit disabled until the consent box is ticked", () => {
+    renderRegister();
+    const disabled = () =>
+      screen.getByTestId("register-submit").props.accessibilityState.disabled;
+
+    chooseRole("Cuidador");
+    fillCredentials(PASSWORD, false);
+    expect(disabled()).toBe(true);
+
+    fireEvent.press(screen.getByTestId("register-terms"));
+    expect(disabled()).toBe(false);
+  });
+
+  it("opens the full consent term", () => {
+    const { navigation } = renderRegister();
+
+    fireEvent.press(screen.getByTestId("register-policy"));
+
+    expect(navigation.navigate).toHaveBeenCalledWith("PrivacyPolicy");
   });
 
   it("goes back to the login screen from the footer", () => {

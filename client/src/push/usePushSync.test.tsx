@@ -38,6 +38,7 @@ function signedIn() {
     isRestoring: false,
     signIn: jest.fn<() => Promise<void>>(),
     signOut: jest.fn(),
+    acceptConsent: jest.fn(async () => {}),
   });
 }
 
@@ -48,6 +49,7 @@ function signedOut() {
     isRestoring: false,
     signIn: jest.fn<() => Promise<void>>(),
     signOut: jest.fn(),
+    acceptConsent: jest.fn(async () => {}),
   });
 }
 

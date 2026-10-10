@@ -29,6 +29,9 @@ model User {
   password          String
   role              Role
   crm               String?            @unique
+  /// Version of the consent term the user last accepted, null if never.
+  consentVersion    String?
+  consentAcceptedAt DateTime?
   profiles          Profile[]          @relation("CaregiverProfiles")
   access            ProfileAccess[]
   pushSubscriptions PushSubscription[]

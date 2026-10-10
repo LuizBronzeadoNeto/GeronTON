@@ -5,6 +5,7 @@ import { usePushSync } from "../push/usePushSync";
 import { COLORS } from "../theme";
 import { AuthStack } from "./AuthStack";
 import { AppStack } from "./AppStack";
+import { ConsentScreen } from "../screens/ConsentScreen";
 
 /**
  * Top-level navigation. Swaps between the auth flow and the app depending on
@@ -19,6 +20,9 @@ import { AppStack } from "./AppStack";
  * both a fresh sign-in and a session restored from storage, and it sits inside
  * NotificationProvider, so a push arriving with the app open can be handed to
  * the same toast the rest of the app uses.
+ *
+ * A signed-in user who still owes consent to the current term sees only the
+ * consent screen until they accept or sign out.
  */
 export function RootNavigator() {
   const { user, isRestoring } = useAuth();
@@ -31,6 +35,10 @@ export function RootNavigator() {
         <ActivityIndicator size="large" color={COLORS.primary} />
       </View>
     );
+  }
+
+  if (user?.consentRequired) {
+    return <ConsentScreen />;
   }
 
   return (

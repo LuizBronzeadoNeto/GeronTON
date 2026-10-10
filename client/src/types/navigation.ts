@@ -3,6 +3,7 @@ import type { Intercorrence } from "../api/intercorrences";
 export type AuthStackParamList = {
   Login: undefined;
   Register: undefined;
+  PrivacyPolicy: undefined;
 };
 
 export type AppStackParamList = {
@@ -27,4 +28,5 @@ export type AppStackParamList = {
   RoutineRegistration: { profileId: number };
   MissedSignalForm: { profileId: number };
   SignalReport: undefined;
+  PrivacyPolicy: undefined;
 };

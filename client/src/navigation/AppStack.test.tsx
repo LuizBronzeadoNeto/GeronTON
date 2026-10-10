@@ -69,6 +69,7 @@ describe("AppStack landing screen", () => {
       isRestoring: false,
       signIn: jest.fn<() => Promise<void>>(),
       signOut: jest.fn(),
+      acceptConsent: jest.fn(async () => {}),
     });
     jest.mocked(listTriage).mockResolvedValue([]);
     jest.mocked(listDashboardAlerts).mockResolvedValue([]);
@@ -93,6 +94,7 @@ describe("AppStack landing screen", () => {
       isRestoring: false,
       signIn: jest.fn<() => Promise<void>>(),
       signOut: jest.fn(),
+      acceptConsent: jest.fn(async () => {}),
     });
     jest
       .mocked(listProfiles)
@@ -112,6 +114,7 @@ describe("AppStack landing screen", () => {
       isRestoring: false,
       signIn: jest.fn<() => Promise<void>>(),
       signOut: jest.fn(),
+      acceptConsent: jest.fn(async () => {}),
     });
     jest.mocked(listProfiles).mockResolvedValue([]);
 
