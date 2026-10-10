@@ -1,5 +1,4 @@
-# Only used by builds whose context is the repo root (Dockerfile.heroku).
-# server/Dockerfile builds from ./server and has its own .dockerignore.
+# Keeps the Heroku build context (Dockerfile.heroku) small.
 .git
 **/node_modules
 **/dist

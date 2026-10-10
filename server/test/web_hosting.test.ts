@@ -9,9 +9,9 @@ let app: Express;
 let webDir: string;
 
 /**
- * Hosting without Caddy (Heroku): the /api prefix is dropped by the app
- * itself and the web build is served from WEB_DIR. The app reads WEB_DIR when
- * it is imported, so it is imported after the folder exists.
+ * Hosting on Heroku: the /api prefix is dropped by the app itself and the web
+ * build is served from WEB_DIR. The app reads WEB_DIR when it is imported, so
+ * it is imported after the folder exists.
  */
 beforeAll(async () => {
   webDir = fs.mkdtempSync(path.join(os.tmpdir(), "geronton-web-"));

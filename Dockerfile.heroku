@@ -1,6 +1,5 @@
 # Single image for Heroku: the API plus the web build, served from one dyno.
-# Built from the repo root (see heroku.yml). The VPS deploy keeps using
-# server/Dockerfile and Caddy; this file is only for Heroku.
+# Built from the repo root (see heroku.yml).
 
 # Web build. The API lives on the same origin, so the bundle points at a
 # relative /api and does not depend on the Heroku domain.

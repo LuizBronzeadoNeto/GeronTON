@@ -83,9 +83,10 @@ const registrationLimiter = rateLimit({
 });
 
 /**
- * Folder with the web build (expo export output), served by this same process
- * when set. On the VPS Caddy serves the web build and this stays unset; on
- * Heroku there is no Caddy, so the API serves it and both live on one origin.
+ * Folder with the web build (expo export output). When set, this process
+ * serves the web app next to the API, so both live on one origin. The Heroku
+ * image sets it; in local development it stays unset and Expo serves the web
+ * app instead.
  */
 const webDir = process.env.WEB_DIR
   ? path.resolve(process.env.WEB_DIR)
@@ -94,10 +95,10 @@ const webIndex = webDir ? path.join(webDir, "index.html") : undefined;
 const servesWeb = webIndex !== undefined && fs.existsSync(webIndex);
 
 /**
- * The clients call the API under /api. Caddy strips that prefix before
- * proxying, but nothing does on Heroku, so it is dropped here as well. Routes
- * keep their paths either way, and a request that already lost the prefix
- * passes through untouched.
+ * The deployed clients call the API under /api, which keeps it apart from the
+ * web app's pages on the same origin. The prefix is dropped here so the routes
+ * keep their paths, and local development, which calls them without it, works
+ * the same.
  */
 const stripApiPrefix: RequestHandler = (req, _res, next) => {
   if (req.url === "/api" || req.url.startsWith("/api/")) {
@@ -111,9 +112,8 @@ const stripApiPrefix: RequestHandler = (req, _res, next) => {
 /**
  * Sends plain HTTP requests to HTTPS in production. Heroku answers on both
  * and only tells the app through X-Forwarded-Proto, so without this a first
- * visit typed as http:// would send the login unencrypted. On the VPS Caddy
- * already redirects, and requests that don't come through a proxy (like the
- * container health check) carry no header and pass through.
+ * visit typed as http:// would send the login unencrypted. Requests that don't
+ * come through the router carry no header and pass through.
  */
 const forceHttps: RequestHandler = (req, res, next) => {
   const proto = req.headers["x-forwarded-proto"];
