@@ -25,10 +25,13 @@ const BOOLEAN_FIELDS = [
   "sunExposure",
   "selfExpression",
   "stimulation",
-  "dailyBath",
-  "oralHygiene",
-  "groomedNails",
 ] as const;
+
+/**
+ * The hygiene step. Required on the full check-in and skipped (stored as
+ * null) on the short one, since none of these answers feed the risk score.
+ */
+const HYGIENE_FIELDS = ["dailyBath", "oralHygiene", "groomedNails"] as const;
 
 const OPTIONAL_STRING_FIELDS = [
   "otherEvent",
@@ -51,18 +54,29 @@ const MOOD_VALUES = Object.values(Mood);
 
 /**
  * Returns the names of the weekly check-in fields that are missing or of the
- * wrong type for a create. The yes/no answers must be booleans, `appetite` and
- * `mood` must match their enums, `stressLevel` must be an integer from 0 to 5,
- * `weeklyEvents` must be an array of known event keys, the optional fields must
- * be strings when present and the logistics fields arrays of strings. Unlike the
- * shared missingFields helper this rejects wrong types, which matters here
- * because `false` is a valid answer.
+ * wrong type for a create. The yes/no answers must be booleans (the hygiene ones
+ * may be left out on a short check-in), appetite and mood must match their
+ * enums, stressLevel must be an integer from 0 to 5, weeklyEvents must be an
+ * array of known event keys, the optional fields must be strings when present
+ * and the logistics fields arrays of strings. Unlike the shared missingFields
+ * helper this rejects wrong types, which matters here because false is a
+ * valid answer.
  */
 function invalidCheckInFields(body: Record<string, unknown>): string[] {
   const invalid: string[] = [];
 
   for (const field of BOOLEAN_FIELDS) {
     if (typeof body[field] !== "boolean") invalid.push(field);
+  }
+
+  if (body.shortForm !== undefined && typeof body.shortForm !== "boolean") {
+    invalid.push("shortForm");
+  }
+  const shortForm = body.shortForm === true;
+  for (const field of HYGIENE_FIELDS) {
+    const value = body[field];
+    const skipped = shortForm && (value === undefined || value === null);
+    if (!skipped && typeof value !== "boolean") invalid.push(field);
   }
 
   if (!APPETITE_VALUES.includes(body.appetite as Appetite)) {
@@ -156,7 +170,8 @@ function optionalStrings(
 /**
  * POST /perfis/:perfilId/avaliacoes — record a weekly check-in for the profile,
  * covering the five wizard domains (health, nutrition/medication, behavior,
- * hygiene and logistics). Persists the clinical alerts derived from the vital
+ * hygiene and logistics). On a short check-in (shortForm true) the hygiene and
+ * logistics steps are skipped: hygiene is stored as null and the lists as empty. Persists the clinical alerts derived from the vital
  * signs, and resolves any open "Vínculo Domiciliar Fragilizado" alert since a
  * new weekly report re-establishes the home bond. Responds 201 with the created
  * check-in, or 400 when a field is missing or has the wrong type. `date`
@@ -177,12 +192,20 @@ router.post("/", async (req: Request, res: Response) => {
     booleans[field] = body[field] as boolean;
   }
 
+  const shortForm = body.shortForm === true;
+  const hygiene = {} as Record<(typeof HYGIENE_FIELDS)[number], boolean | null>;
+  for (const field of HYGIENE_FIELDS) {
+    hygiene[field] = shortForm ? null : (body[field] as boolean);
+  }
+
   const checkIn = await prisma.checkIn.create({
     data: {
       profileId: req.profile!.id,
       ...booleans,
+      ...hygiene,
+      shortForm,
       ...optionalStrings(body),
-      ...listFields(body),
+      ...(shortForm ? listFields({}) : listFields(body)),
       appetite: body.appetite as Appetite,
       mood: body.mood as Mood,
       stressLevel: body.stressLevel as number,
@@ -252,9 +275,12 @@ router.put("/:avaliacaoId", async (req: Request, res: Response) => {
 
   const body = (req.body ?? {}) as Record<string, unknown>;
   const present = Object.keys(body);
-  const invalid = invalidCheckInFields({ ...existing, ...body }).filter(
-    (field) => present.includes(field),
-  );
+  // shortForm is fixed at creation, so validate against the stored value.
+  const invalid = invalidCheckInFields({
+    ...existing,
+    ...body,
+    shortForm: existing.shortForm,
+  }).filter((field) => present.includes(field));
   if (invalid.length) {
     return res
       .status(400)
@@ -264,6 +290,11 @@ router.put("/:avaliacaoId", async (req: Request, res: Response) => {
   const data: Prisma.CheckInUpdateInput = {};
   for (const field of BOOLEAN_FIELDS) {
     if (body[field] !== undefined) data[field] = body[field] as boolean;
+  }
+  for (const field of HYGIENE_FIELDS) {
+    if (body[field] !== undefined) {
+      data[field] = body[field] as boolean | null;
+    }
   }
   for (const field of OPTIONAL_STRING_FIELDS) {
     if (body[field] !== undefined) {

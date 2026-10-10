@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "check_ins" ADD COLUMN     "shortForm" BOOLEAN NOT NULL DEFAULT false,
+ALTER COLUMN "dailyBath" DROP NOT NULL,
+ALTER COLUMN "oralHygiene" DROP NOT NULL,
+ALTER COLUMN "groomedNails" DROP NOT NULL;

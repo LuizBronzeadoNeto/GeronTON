@@ -153,9 +153,11 @@ model CheckIn {
   sunExposure       Boolean
   selfExpression    Boolean
   stimulation       Boolean
-  dailyBath         Boolean
-  oralHygiene       Boolean
-  groomedNails      Boolean
+  /// The hygiene answers are null on a short-form check-in, which skips that step.
+  dailyBath         Boolean?
+  oralHygiene       Boolean?
+  groomedNails      Boolean?
+  shortForm         Boolean  @default(false)
   needsMedications  String[]
   needsHygiene      String[]
   needsFood         String[]

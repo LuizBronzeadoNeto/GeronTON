@@ -29,9 +29,11 @@ export interface CheckIn {
   sunExposure: boolean;
   selfExpression: boolean;
   stimulation: boolean;
-  dailyBath: boolean;
-  oralHygiene: boolean;
-  groomedNails: boolean;
+  /** Null on a short check-in, which skips the hygiene step. */
+  dailyBath: boolean | null;
+  oralHygiene: boolean | null;
+  groomedNails: boolean | null;
+  shortForm?: boolean;
   needsMedications: string[];
   needsHygiene: string[];
   needsFood: string[];
