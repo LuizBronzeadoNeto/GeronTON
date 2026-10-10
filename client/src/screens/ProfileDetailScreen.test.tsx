@@ -273,8 +273,9 @@ describe("ProfileDetailScreen", () => {
     expect(getProfileDetails).toHaveBeenCalledWith(7);
 
     fireEvent.press(screen.getByTestId("detail-alert-31-resolve"));
+    fireEvent.press(screen.getByTestId("detail-alert-31-verdict-yes"));
 
-    await waitFor(() => expect(resolveAlert).toHaveBeenCalledWith(7, 31));
+    await waitFor(() => expect(resolveAlert).toHaveBeenCalledWith(7, 31, true));
     expect(screen.queryByTestId("detail-alert-31")).toBeNull();
   });
 
@@ -308,6 +309,7 @@ describe("ProfileDetailScreen", () => {
       expect(screen.getByTestId("detail-alert-31")).toBeTruthy(),
     );
     fireEvent.press(screen.getByTestId("detail-alert-31-resolve"));
+    fireEvent.press(screen.getByTestId("detail-alert-31-verdict-no"));
 
     await waitFor(() =>
       expect(screen.getByTestId("detail-alert-31")).toBeTruthy(),

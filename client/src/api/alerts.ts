@@ -17,6 +17,9 @@ export interface Alert {
   message: string;
   createdAt: string;
   resolvedAt: string | null;
+  /** Whether the signal turned out to be real. Null until a person resolves it. */
+  signalConfirmed?: boolean | null;
+  resolvedBy?: { id: number; email: string } | null;
 }
 
 /**
@@ -47,13 +50,18 @@ export async function listProfileAlerts(
   return data;
 }
 
+/**
+ * Resolves an alert. signalConfirmed records whether, after getting in touch
+ * with the family, the signal turned out to be real.
+ */
 export async function resolveAlert(
   profileId: number,
   alertId: number,
+  signalConfirmed: boolean,
 ): Promise<Alert> {
   const { data } = await http.put<Alert>(
     `/perfis/${profileId}/alertas/${alertId}`,
-    { resolved: true },
+    { resolved: true, signalConfirmed },
   );
   return data;
 }

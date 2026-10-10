@@ -44,14 +44,15 @@ describe("alerts api", () => {
     expect(mockedGet).toHaveBeenCalledWith("/perfis/5/alertas?open=true");
   });
 
-  it("resolves an alert", async () => {
+  it("resolves an alert with the signal verdict", async () => {
     const resolved = makeAlert({ resolvedAt: "2026-07-09T10:00:00.000Z" });
     mockedPut.mockResolvedValue({ data: resolved } as never);
 
-    const alert = await resolveAlert(5, 31);
+    const alert = await resolveAlert(5, 31, false);
 
     expect(mockedPut).toHaveBeenCalledWith("/perfis/5/alertas/31", {
       resolved: true,
+      signalConfirmed: false,
     });
     expect(alert.resolvedAt).not.toBeNull();
   });

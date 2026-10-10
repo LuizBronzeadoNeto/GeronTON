@@ -247,9 +247,14 @@ describe("alert routes", () => {
     const resolveRes = await request(app)
       .put(`/perfis/${perfilId}/alertas/${alertId}`)
       .set("Authorization", `Bearer ${professionalToken}`)
-      .send({ resolved: true });
+      .send({ resolved: true, signalConfirmed: true });
     expect(resolveRes.status).toBe(200);
     expect(resolveRes.body.resolvedAt).not.toBeNull();
+    expect(resolveRes.body.signalConfirmed).toBe(true);
+    expect(resolveRes.body.resolvedBy).toEqual({
+      id: expect.any(Number),
+      email: "profissional@demo.com",
+    });
 
     const reopenRes = await request(app)
       .put(`/perfis/${perfilId}/alertas/${alertId}`)
@@ -257,6 +262,52 @@ describe("alert routes", () => {
       .send({ resolved: false });
     expect(reopenRes.status).toBe(200);
     expect(reopenRes.body.resolvedAt).toBeNull();
+    expect(reopenRes.body.signalConfirmed).toBeNull();
+    expect(reopenRes.body.resolvedBy).toBeNull();
+  });
+
+  it("records a signal that did not hold up as a false positive", async () => {
+    await createCheckIn({ glycemia: "260" });
+    const listed = await listAlerts();
+    const alertId = listed.body[0].id;
+
+    const res = await request(app)
+      .put(`/perfis/${perfilId}/alertas/${alertId}`)
+      .set("Authorization", `Bearer ${professionalToken}`)
+      .send({ resolved: true, signalConfirmed: false });
+
+    expect(res.status).toBe(200);
+    expect(res.body.signalConfirmed).toBe(false);
+
+    const after = await listAlerts();
+    expect(after.body[0].signalConfirmed).toBe(false);
+    expect(after.body[0].resolvedBy.email).toBe("profissional@demo.com");
+  });
+
+  it("requires the signal verdict when resolving", async () => {
+    await createCheckIn({ glycemia: "260" });
+    const listed = await listAlerts();
+
+    const res = await request(app)
+      .put(`/perfis/${perfilId}/alertas/${listed.body[0].id}`)
+      .set("Authorization", `Bearer ${professionalToken}`)
+      .send({ resolved: true });
+
+    expect(res.status).toBe(400);
+    const after = await listAlerts("?open=true");
+    expect(after.body).toHaveLength(1);
+  });
+
+  it("leaves the resolver empty when a new check-in closes the bond alert", async () => {
+    await ageProfile();
+    await detectCheckInOmissions();
+
+    await createCheckIn();
+
+    const all = await listAlerts();
+    expect(all.body[0].resolvedAt).not.toBeNull();
+    expect(all.body[0].resolvedBy).toBeNull();
+    expect(all.body[0].signalConfirmed).toBeNull();
   });
 
   it("forbids a caregiver from resolving alerts", async () => {
@@ -268,7 +319,7 @@ describe("alert routes", () => {
     const res = await request(app)
       .put(`/perfis/${perfilId}/alertas/${alertId}`)
       .set("Authorization", `Bearer ${caregiverToken}`)
-      .send({ resolved: true });
+      .send({ resolved: true, signalConfirmed: true });
 
     expect(res.status).toBe(403);
   });
@@ -296,7 +347,7 @@ describe("alert routes", () => {
     const res = await request(app)
       .put(`/perfis/${otherId}/alertas/${alertId}`)
       .set("Authorization", `Bearer ${professionalToken}`)
-      .send({ resolved: true });
+      .send({ resolved: true, signalConfirmed: true });
     expect(res.status).toBe(404);
 
     await prisma.profile.delete({ where: { id: otherId } });

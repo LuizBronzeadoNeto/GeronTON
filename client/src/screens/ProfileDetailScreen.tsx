@@ -121,11 +121,11 @@ export function ProfileDetailScreen({ navigation, route }: Props) {
     }, [profileId]),
   );
 
-  async function handleResolveAlert(alertId: number) {
+  async function handleResolveAlert(alertId: number, signalConfirmed: boolean) {
     const previous = alerts;
     setAlerts((old) => old.filter((item) => item.id !== alertId));
     try {
-      await resolveAlert(profileId, alertId);
+      await resolveAlert(profileId, alertId, signalConfirmed);
     } catch {
       setAlerts(previous);
       setError("Não foi possível resolver o alerta.");
@@ -270,7 +270,10 @@ export function ProfileDetailScreen({ navigation, route }: Props) {
               testID={`detail-alert-${alert.id}`}
               alert={alert}
               onResolve={
-                isProfessional ? () => handleResolveAlert(alert.id) : undefined
+                isProfessional
+                  ? (signalConfirmed) =>
+                      handleResolveAlert(alert.id, signalConfirmed)
+                  : undefined
               }
             />
           ))}

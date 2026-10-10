@@ -32,6 +32,7 @@ model User {
   profiles          Profile[]          @relation("CaregiverProfiles")
   access            ProfileAccess[]
   pushSubscriptions PushSubscription[]
+  resolvedAlerts    Alert[]            @relation("AlertResolver")
 
   @@map("users")
 }
@@ -184,16 +185,23 @@ enum AlertSeverity {
 }
 
 model Alert {
-  id         Int           @id @default(autoincrement())
-  profileId  Int
-  profile    Profile       @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  checkInId  Int?
-  checkIn    CheckIn?      @relation(fields: [checkInId], references: [id], onDelete: Cascade)
-  type       AlertType
-  severity   AlertSeverity
-  message    String
-  createdAt  DateTime      @default(now())
-  resolvedAt DateTime?
+  id              Int           @id @default(autoincrement())
+  profileId       Int
+  profile         Profile       @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  checkInId       Int?
+  checkIn         CheckIn?      @relation(fields: [checkInId], references: [id], onDelete: Cascade)
+  type            AlertType
+  severity        AlertSeverity
+  message         String
+  createdAt       DateTime      @default(now())
+  resolvedAt      DateTime?
+  /// Who resolved it. Null while open, and also when the system closed it on
+  /// its own (a new check-in closes the home bond alert).
+  resolvedById    Int?
+  resolvedBy      User?         @relation("AlertResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+  /// Whether the professional found the signal to be real after contacting
+  /// the family. Feeds the false positive count in the validation report.
+  signalConfirmed Boolean?
 
   @@index([profileId, createdAt(sort: Desc)])
   @@index([checkInId])
