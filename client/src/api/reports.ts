@@ -38,3 +38,29 @@ export async function getSignalReportCsv(): Promise<string> {
   });
   return data;
 }
+
+export interface UsageMonth {
+  /** YYYY-MM */
+  mes: string;
+  acessos: number;
+  usuarios: number;
+  cuidadores: number;
+  profissionais: number;
+}
+
+/** Monthly app usage, oldest month first (GET /relatorios/acessos). */
+export async function getUsageReport(): Promise<{ meses: UsageMonth[] }> {
+  const { data } = await http.get<{ meses: UsageMonth[] }>(
+    "/relatorios/acessos",
+  );
+  return data;
+}
+
+/** The same usage numbers as CSV text. */
+export async function getUsageReportCsv(): Promise<string> {
+  const { data } = await http.get<string>("/relatorios/acessos", {
+    params: { formato: "csv" },
+    responseType: "text",
+  });
+  return data;
+}

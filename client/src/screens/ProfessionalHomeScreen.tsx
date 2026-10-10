@@ -110,7 +110,7 @@ export function ProfessionalHomeScreen({ navigation }: Props) {
       <View style={styles.actionsRow}>
         <PrimaryButton
           testID="professional-report"
-          title="Relatório de sinais"
+          title="Relatórios"
           size="small"
           variant="outline"
           onPress={() => navigation.navigate("SignalReport")}

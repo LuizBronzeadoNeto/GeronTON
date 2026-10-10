@@ -37,6 +37,7 @@ model User {
   pushSubscriptions PushSubscription[]
   resolvedAlerts    Alert[]            @relation("AlertResolver")
   missedSignals     MissedSignal[]
+  accessLogs        AccessLog[]
 
   @@map("users")
 }
@@ -258,4 +259,21 @@ model PushSubscription {
 
   @@index([userId])
   @@map("push_subscriptions")
+}
+
+/// One row per account per day the app was used, for the monthly usage
+/// report. userId is cleared when the account is deleted, so past totals keep
+/// adding up without pointing at anyone. role is copied so the split between
+/// caregivers and professionals survives that too.
+model AccessLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  role      Role
+  day       DateTime @db.Date
+  createdAt DateTime @default(now())
+
+  @@unique([userId, day])
+  @@index([day])
+  @@map("access_logs")
 }

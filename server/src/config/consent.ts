@@ -4,4 +4,4 @@
  * user whose stored version differs is asked to accept the new one at their
  * next sign-in. Keep it equal to CONSENT_VERSION in client/src/constants/privacy.ts.
  */
-export const CONSENT_VERSION = "2026-10-10";
+export const CONSENT_VERSION = "2026-10-10.2";

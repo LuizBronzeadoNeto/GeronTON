@@ -8,7 +8,7 @@
  * PRIVACY_CONTACT is who answers for the data (the "encarregado" in Art. 41
  * of the LGPD).
  */
-export const CONSENT_VERSION = "2026-10-10";
+export const CONSENT_VERSION = "2026-10-10.2";
 
 export const PRIVACY_CONTACT = "mikael.amaral@ccc.ufcg.edu.br";
 
@@ -29,6 +29,7 @@ export const PRIVACY_POLICY: PolicySection[] = [
     title: "Quais dados coletamos",
     paragraphs: [
       "Da sua conta: e-mail, senha (guardada de forma criptografada, nunca em texto puro), o tipo de perfil (cuidador ou profissional) e, para profissionais, o CRM informado.",
+      "Do uso do aplicativo: os dias em que cada conta usou o app, para acompanhar a adesão durante o estudo. Os relatórios mostram só totais por mês, sem identificar ninguém.",
       "Do idoso: nome, CPF, data de nascimento, sexo, escolaridade, condições de saúde, medicamentos, rotinas, respostas do check-in semanal (sono, alimentação, humor, sinais vitais e outras) e intercorrências registradas.",
       "Informações de saúde são dados pessoais sensíveis pela LGPD (Art. 5º, II). Por isso pedimos o seu consentimento de forma específica e destacada, só para as finalidades descritas aqui (Art. 11, I).",
     ],
@@ -66,7 +67,7 @@ export const PRIVACY_POLICY: PolicySection[] = [
     paragraphs: [
       "Pelo Art. 18 da LGPD você pode, a qualquer momento: confirmar se tratamos seus dados, ter acesso a eles, corrigir dados incompletos ou errados, pedir a anonimização, o bloqueio ou a eliminação de dados desnecessários, pedir a portabilidade, saber com quem compartilhamos, e revogar este consentimento.",
       "Você pode não aceitar este termo. Nesse caso não é possível usar o aplicativo, porque ele depende desses dados para funcionar. Revogar o consentimento depois também é possível e não afeta o que foi feito antes da revogação.",
-      "Você mesmo pode excluir sua conta a qualquer momento, no botão de privacidade no topo do aplicativo. Idosos que só você acompanha são apagados junto. Se outra pessoa também acompanha o idoso, o cadastro dele continua com ela.",
+      "Você mesmo pode excluir sua conta a qualquer momento, no botão de privacidade no topo do aplicativo. Idosos que só você acompanha são apagados junto. Se outra pessoa também acompanha o idoso, o cadastro dele continua com ela. Os dias de uso já registrados ficam só como números nos totais mensais, sem ligação com você.",
       `Para exercer qualquer um desses direitos ou tirar dúvidas, escreva para ${PRIVACY_CONTACT}.`,
     ],
   },

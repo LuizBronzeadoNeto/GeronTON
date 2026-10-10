@@ -44,6 +44,12 @@ appId: com.geronton.client
     id: "report-false-negatives"
 - assertVisible:
     id: "report-export"
+- scrollUntilVisible:
+    element:
+      id: "usage-report"
+    direction: DOWN
+- assertVisible:
+    text: "Uso do aplicativo"
 - back
 - assertVisible:
     id: "professional-home"

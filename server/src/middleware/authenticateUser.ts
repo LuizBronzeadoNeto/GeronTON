@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { Role } from "../lib/prisma.js";
+import { recordAccess } from "../services/accessLog.js";
 
 export interface AuthPayload {
   id: number;
@@ -18,6 +19,9 @@ declare global {
 /**
  * Validates the bearer token and populates `req.user`. Responds 401 on a
  * missing, malformed, expired or unverifiable token.
+ *
+ * A valid token also counts as a day of use for the monthly usage report
+ * (see services/accessLog.ts).
  *
  * The accepted algorithm is pinned to HS256, the one POST /login signs with, so
  * a token cannot be presented under a different algorithm than the one intended.
@@ -47,6 +51,8 @@ export function authMiddleware(
       return res.status(401).json({ error: "Invalid token payload." });
 
     req.user = payload;
+    // Not awaited: logging the day's access shouldn't slow the request down.
+    void recordAccess(payload);
     next();
   } catch {
     return res.status(401).json({ error: "Invalid token" });
