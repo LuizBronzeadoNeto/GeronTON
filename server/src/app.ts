@@ -169,13 +169,15 @@ app.use("/metricas", metricsRouter);
 
 /**
  * Any other GET (or HEAD) from a browser gets the web app's index.html, so
- * reloading the page works. Requests that don't accept HTML (the API clients)
- * still get the plain 404.
+ * reloading the page works. Only requests that name text/html count: the API
+ * clients send a catch-all Accept header, and a wrong API path should still
+ * answer 404 for them, not a page.
  */
 if (servesWeb) {
   app.use((req, res, next) => {
     const isRead = req.method === "GET" || req.method === "HEAD";
-    if (!isRead || !req.accepts("html")) return next();
+    const wantsPage = req.headers.accept?.includes("text/html") ?? false;
+    if (!isRead || !wantsPage) return next();
     res.sendFile(webIndex!);
   });
 }

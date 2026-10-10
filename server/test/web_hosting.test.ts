@@ -70,6 +70,13 @@ describe("web build", () => {
     expect(res.status).toBe(200);
   });
 
+  it("leaves 404s alone for clients that accept anything", async () => {
+    const res = await request(app).get("/api/nao-existe").set("Accept", "*/*");
+
+    expect(res.status).toBe(404);
+    expect(res.text).not.toContain("GeronTON");
+  });
+
   it("leaves API 404s alone", async () => {
     const res = await request(app)
       .get("/api/nao-existe")
