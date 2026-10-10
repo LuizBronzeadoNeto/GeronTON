@@ -8,7 +8,7 @@ describe("RiskLegend", () => {
     render(<RiskLegend />);
 
     expect(screen.getByTestId("risk-legend")).toBeTruthy();
-    expect(screen.getByText("Legenda dos níveis de risco")).toBeTruthy();
+    expect(screen.getByText("O que cada cor quer dizer")).toBeTruthy();
     for (const level of RISK_LEVEL_ORDER) {
       expect(screen.getByTestId(`risk-legend-${level}`)).toBeTruthy();
       expect(screen.getByText(RISK_LEVELS[level].label)).toBeTruthy();

@@ -40,8 +40,8 @@ export function IntercorrenceConfirmationScreen({ navigation, route }: Props) {
         <View testID="confirmation-critical" style={styles.criticalNotice}>
           <Ionicons name="warning-outline" size={18} color={COLORS.danger} />
           <Text style={styles.criticalText}>
-            Evento crítico: o nível de risco do idoso foi elevado e a equipe de
-            saúde verá o alerta no painel de triagem.
+            Evento grave: a equipe de saúde vai receber um sinal para entrar em
+            contato com você.
           </Text>
         </View>
       ) : null}

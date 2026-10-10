@@ -306,7 +306,7 @@ export function ProfileDetailScreen({ navigation, route }: Props) {
 
       {alerts.length > 0 ? (
         <View testID="detail-alerts" style={styles.alertsSection}>
-          <Text style={styles.cardTitle}>Alertas ativos</Text>
+          <Text style={styles.cardTitle}>Sinais para contato</Text>
           {alerts.map((alert) => (
             <AlertCard
               key={alert.id}

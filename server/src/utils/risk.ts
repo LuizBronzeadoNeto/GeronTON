@@ -12,6 +12,10 @@ export interface RiskStatus {
  * statistical-deviation (outlier) filter of the screening algorithm. These are
  * persisted as alerts on the profile so the care team sees them on the
  * dashboard; `sarcopenia_risk` additionally adds points to the weekly score.
+ *
+ * The message only states what was measured and which limit it crossed. The
+ * system flags a reason to get in touch with the family, it doesn't diagnose,
+ * so words like "hipertensão" or "sarcopenia" stay out of the text.
  */
 export interface ClinicalFlag {
   type: "clinical_warning" | "metabolic_decompensation" | "sarcopenia_risk";
@@ -137,7 +141,7 @@ function evaluateVitalSigns(checkIn: CheckIn): {
     points += 2;
     flags.push({
       type: "sarcopenia_risk",
-      message: `Risco de sarcopenia/desnutrição proteica: circunferência da panturrilha ${checkIn.calfCircumference} (< ${CALF_SARCOPENIA_LIMIT_CM} cm)`,
+      message: `Panturrilha esquerda com ${checkIn.calfCircumference}, abaixo de ${CALF_SARCOPENIA_LIMIT_CM} cm`,
     });
   }
 
@@ -150,9 +154,12 @@ function evaluateVitalSigns(checkIn: CheckIn): {
       pressure.systolic < SYSTOLIC_HYPOTENSION_LIMIT ||
       pressure.diastolic < DIASTOLIC_HYPOTENSION_LIMIT;
     if (hypertension || hypotension) {
+      const limit = hypertension
+        ? `acima de ${SYSTOLIC_HYPERTENSION_LIMIT}/${DIASTOLIC_HYPERTENSION_LIMIT}`
+        : `abaixo de ${SYSTOLIC_HYPOTENSION_LIMIT}/${DIASTOLIC_HYPOTENSION_LIMIT}`;
       flags.push({
         type: "clinical_warning",
-        message: `Aviso clínico: pressão arterial ${checkIn.pressure} fora dos parâmetros (${hypertension ? "hipertensão" : "hipotensão"})`,
+        message: `Pressão arterial ${checkIn.pressure}, ${limit}`,
       });
     }
   }
@@ -161,7 +168,7 @@ function evaluateVitalSigns(checkIn: CheckIn): {
   if (glycemia !== null && glycemia > GLYCEMIA_DECOMPENSATION_LIMIT) {
     flags.push({
       type: "metabolic_decompensation",
-      message: `Descompensação metabólica: glicemia ${checkIn.glycemia} acima de ${GLYCEMIA_DECOMPENSATION_LIMIT} mg/dL`,
+      message: `Glicemia ${checkIn.glycemia}, acima de ${GLYCEMIA_DECOMPENSATION_LIMIT} mg/dL`,
     });
   }
 

@@ -56,7 +56,7 @@ describe("ProfileListScreen", () => {
     renderScreen();
 
     await waitFor(() => expect(screen.getByTestId("risk-legend")).toBeTruthy());
-    expect(screen.getByText("Legenda dos níveis de risco")).toBeTruthy();
+    expect(screen.getByText("O que cada cor quer dizer")).toBeTruthy();
     expect(screen.getByTestId("risk-legend-high")).toBeTruthy();
     expect(screen.getByTestId("risk-legend-unknown")).toBeTruthy();
   });

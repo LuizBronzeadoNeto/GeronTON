@@ -13,7 +13,7 @@ import { COLORS, FONTS } from "../theme";
 export function RiskLegend() {
   return (
     <View testID="risk-legend" style={styles.card}>
-      <Text style={styles.title}>Legenda dos níveis de risco</Text>
+      <Text style={styles.title}>O que cada cor quer dizer</Text>
       {RISK_LEVEL_ORDER.map((level) => {
         const presentation = RISK_LEVELS[level];
         return (

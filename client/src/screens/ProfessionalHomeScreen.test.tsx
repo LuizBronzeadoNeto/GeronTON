@@ -207,7 +207,7 @@ describe("ProfessionalHomeScreen", () => {
     renderScreen();
 
     await waitFor(() => expect(screen.getByTestId("risk-legend")).toBeTruthy());
-    expect(screen.getByText("Legenda dos níveis de risco")).toBeTruthy();
+    expect(screen.getByText("O que cada cor quer dizer")).toBeTruthy();
   });
 
   it("shows the empty state when there are no profiles", async () => {
