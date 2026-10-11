@@ -8,6 +8,11 @@ import {
   evaluateCheckIn,
   type RiskLevel,
 } from "../utils/risk.js";
+import {
+  ADHERENCE_WEEKS,
+  weeklyAdherence,
+  type WeeklyAdherence,
+} from "../utils/adherence.js";
 
 const INTERCORRENCE_WINDOW_DAYS = 30;
 
@@ -24,13 +29,15 @@ const LEVEL_PRIORITY: Record<RiskLevel, number> = {
 
 interface TriageEntry extends Profile {
   risk: { status: RiskLevel; score: number; criticalEvents: string[] };
+  adherence: WeeklyAdherence;
 }
 
 /**
  * Evaluates the profiles the given user is linked to, in bulk: one query for
  * the latest check-in per profile (distinct on profileId after ordering by
- * date) and one for the 30-day intercorrence window, then the pure risk engine
- * per profile.
+ * date), one for the 30-day intercorrence window and one for the check-in
+ * dates of the last 8 weeks (for adherence), then the pure risk engine per
+ * profile.
  */
 async function evaluateLinkedProfiles(userId: number): Promise<TriageEntry[]> {
   const profiles = await prisma.profile.findMany({
@@ -41,19 +48,38 @@ async function evaluateLinkedProfiles(userId: number): Promise<TriageEntry[]> {
     Date.now() - INTERCORRENCE_WINDOW_DAYS * 24 * 60 * 60 * 1000,
   );
 
-  const [latestCheckIns, recentIntercorrences] = await Promise.all([
-    prisma.checkIn.findMany({
-      where: { profileId: { in: profiles.map((profile) => profile.id) } },
-      orderBy: { date: "desc" },
-      distinct: ["profileId"],
-    }),
-    prisma.intercorrence.findMany({
-      where: {
-        profileId: { in: profiles.map((profile) => profile.id) },
-        date: { gte: windowStart },
-      },
-    }),
-  ]);
+  const adherenceStart = new Date(
+    Date.now() - ADHERENCE_WEEKS * 7 * 24 * 60 * 60 * 1000,
+  );
+
+  const [latestCheckIns, recentIntercorrences, windowCheckIns] =
+    await Promise.all([
+      prisma.checkIn.findMany({
+        where: { profileId: { in: profiles.map((profile) => profile.id) } },
+        orderBy: { date: "desc" },
+        distinct: ["profileId"],
+      }),
+      prisma.intercorrence.findMany({
+        where: {
+          profileId: { in: profiles.map((profile) => profile.id) },
+          date: { gte: windowStart },
+        },
+      }),
+      prisma.checkIn.findMany({
+        where: {
+          profileId: { in: profiles.map((profile) => profile.id) },
+          date: { gte: adherenceStart },
+        },
+        select: { profileId: true, date: true },
+      }),
+    ]);
+
+  const checkInDatesByProfile = new Map<number, Date[]>();
+  for (const { profileId, date } of windowCheckIns) {
+    const dates = checkInDatesByProfile.get(profileId) ?? [];
+    dates.push(date);
+    checkInDatesByProfile.set(profileId, dates);
+  }
 
   const checkInByProfile = new Map(
     latestCheckIns.map((checkIn) => [checkIn.profileId, checkIn]),
@@ -77,7 +103,11 @@ async function evaluateLinkedProfiles(userId: number): Promise<TriageEntry[]> {
     const criticalEvents = latestCheckIn
       ? evaluateCheckIn(latestCheckIn).criticalEvents
       : [];
-    return { ...profile, risk: { ...risk, criticalEvents } };
+    const adherence = weeklyAdherence(
+      profile.createdAt,
+      checkInDatesByProfile.get(profile.id) ?? [],
+    );
+    return { ...profile, risk: { ...risk, criticalEvents }, adherence };
   });
 }
 
@@ -85,7 +115,8 @@ async function evaluateLinkedProfiles(userId: number): Promise<TriageEntry[]> {
  * GET /triagem — the professional triage dashboard: the elderly profiles the
  * requesting professional is linked to, each with its computed risk status,
  * ordered by clinical priority (high, moderate, low, unknown), by functional
- * score within the same level and by id as the final tiebreaker.
+ * score within the same level and by id as the final tiebreaker. Each entry
+ * also carries its weekly check-in adherence over the last 8 weeks.
  *
  * The panel spans several caregivers' profiles, but only those the professional
  * has been granted access to — it is no longer a view of the whole system.

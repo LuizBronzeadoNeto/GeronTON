@@ -187,6 +187,7 @@ describe("WeeklyCheckInScreen", () => {
       needsMedications: ["Losartana"],
       needsHygiene: [],
       needsFood: [],
+      shortForm: false,
     });
 
     await waitFor(() => expect(navigation.goBack).toHaveBeenCalled());
@@ -327,5 +328,41 @@ describe("WeeklyCheckInScreen", () => {
       profileId: 9,
       checkInId: 1,
     });
+  });
+
+  it("finishes the short check-in after three steps", async () => {
+    renderScreen(9);
+    await waitFor(() => expect(listCheckIns).toHaveBeenCalled());
+
+    fireEvent.press(screen.getByTestId("checkin-short"));
+    answerStep1();
+    fireEvent.press(screen.getByTestId("checkin-next"));
+
+    fireEvent.press(screen.getByTestId("checkin-appetite-good"));
+    fireEvent.press(screen.getByTestId("checkin-hydrationGoal-yes"));
+    fireEvent.press(screen.getByTestId("checkin-medsOnTime-yes"));
+    fireEvent.press(screen.getByTestId("checkin-next"));
+
+    fireEvent.press(screen.getByTestId("checkin-mood-happy"));
+    fireEvent.press(screen.getByTestId("checkin-sunExposure-yes"));
+    fireEvent.press(screen.getByTestId("checkin-selfExpression-yes"));
+    fireEvent.press(screen.getByTestId("checkin-stimulation-yes"));
+
+    expect(screen.queryByTestId("checkin-next")).toBeNull();
+    fireEvent.press(screen.getByTestId("checkin-submit"));
+
+    await waitFor(() => expect(createCheckIn).toHaveBeenCalled());
+    expect(createCheckIn).toHaveBeenCalledWith(
+      9,
+      expect.objectContaining({
+        shortForm: true,
+        dailyBath: null,
+        oralHygiene: null,
+        groomedNails: null,
+        needsMedications: [],
+        needsHygiene: [],
+        needsFood: [],
+      }),
+    );
   });
 });

@@ -98,7 +98,7 @@ export async function detectCheckInOmissions(
       profileId: profile.id,
       type: "weakened_home_bond" as const,
       severity: "attention" as const,
-      message: `${WEAKENED_HOME_BOND_MESSAGE}: sem check-in semanal há ${OMISSION_WEEKS} semanas. Agendar busca ativa.`,
+      message: `${WEAKENED_HOME_BOND_MESSAGE}: sem check-in semanal há ${OMISSION_WEEKS} semanas. Entrar em contato com a família.`,
     })),
   });
 

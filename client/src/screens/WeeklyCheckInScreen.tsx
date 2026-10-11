@@ -32,6 +32,7 @@ import { ProfileHeader } from "../components/ProfileHeader";
 import { StepIndicator } from "../components/StepIndicator";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { TagListInput } from "../components/TagListInput";
+import { CheckboxRow } from "../components/CheckboxRow";
 import { checkinStyles } from "../components/checkin/common";
 import { YesNoRow, type Answer } from "../components/checkin/YesNoRow";
 import { EventToggleRow } from "../components/checkin/EventToggleRow";
@@ -42,6 +43,9 @@ import { COLORS, FONTS } from "../theme";
 
 type Props = NativeStackScreenProps<AppStackParamList, "WeeklyCheckIn">;
 
+/** The short check-in keeps the health, nutrition and behavior steps. */
+const SHORT_FORM_STEPS = 3;
+
 /**
  * Weekly check-in wizard for an elderly profile, following the Figma flow: five
  * domain steps (health + acute events + vitals, nutrition/medication, behavior,
@@ -50,11 +54,17 @@ type Props = NativeStackScreenProps<AppStackParamList, "WeeklyCheckIn">;
  * The question widgets live in components/checkin; this screen owns the wizard
  * state and flow. The check-in history is listed on the first step and opens
  * the read-only detail screen.
+ *
+ * The short version, chosen on the first step, stops after the behavior step.
+ * It skips hygiene and the shopping list, which don't feed the score, so the
+ * signals come out the same while the caregiver answers fewer questions.
  */
 export function WeeklyCheckInScreen({ navigation, route }: Props) {
   const { profileId } = route.params;
 
   const [step, setStep] = useState(1);
+  const [shortForm, setShortForm] = useState(false);
+  const steps = shortForm ? STEPS.slice(0, SHORT_FORM_STEPS) : STEPS;
 
   const [yesNo, setYesNo] = useState<Record<string, Answer>>({
     skinIssues: null,
@@ -222,12 +232,13 @@ export function WeeklyCheckInScreen({ navigation, route }: Props) {
       sunExposure: yesNo.sunExposure === true,
       selfExpression: yesNo.selfExpression === true,
       stimulation: yesNo.stimulation === true,
-      dailyBath: yesNo.dailyBath === true,
-      oralHygiene: yesNo.oralHygiene === true,
-      groomedNails: yesNo.groomedNails === true,
-      needsMedications: lists.needsMedications,
-      needsHygiene: lists.needsHygiene,
-      needsFood: lists.needsFood,
+      dailyBath: shortForm ? null : yesNo.dailyBath === true,
+      oralHygiene: shortForm ? null : yesNo.oralHygiene === true,
+      groomedNails: shortForm ? null : yesNo.groomedNails === true,
+      needsMedications: shortForm ? [] : lists.needsMedications,
+      needsHygiene: shortForm ? [] : lists.needsHygiene,
+      needsFood: shortForm ? [] : lists.needsFood,
+      shortForm,
     };
 
     try {
@@ -240,7 +251,7 @@ export function WeeklyCheckInScreen({ navigation, route }: Props) {
     }
   }
 
-  const currentStep = STEPS[step - 1];
+  const currentStep = steps[step - 1];
 
   return (
     <ScrollView contentContainerStyle={styles.container} testID="checkin">
@@ -255,13 +266,26 @@ export function WeeklyCheckInScreen({ navigation, route }: Props) {
         </View>
         <StepIndicator
           current={step}
-          total={STEPS.length}
+          total={steps.length}
           onStepPress={setStep}
         />
       </View>
 
       {step === 1 ? (
         <View style={styles.stepContent}>
+          <View style={styles.shortFormBox}>
+            <CheckboxRow
+              testID="checkin-short"
+              checked={shortForm}
+              label="Check-in rápido (3 etapas)"
+              onToggle={() => setShortForm((value) => !value)}
+            />
+            <Text style={styles.shortFormHint}>
+              Pula higiene e lista de compras. Os sinais para a equipe são
+              calculados do mesmo jeito.
+            </Text>
+          </View>
+
           {["skinIssues", "bowelRegular", "sleepWell", "unstableGait"].map(
             (field) => (
               <YesNoRow
@@ -434,7 +458,7 @@ export function WeeklyCheckInScreen({ navigation, route }: Props) {
           style={styles.navButton}
           onPress={handleBack}
         />
-        {step < STEPS.length ? (
+        {step < steps.length ? (
           <PrimaryButton
             testID="checkin-next"
             title="Próximo"
@@ -519,6 +543,21 @@ const styles = StyleSheet.create({
   },
   stepContent: {
     gap: 8,
+  },
+  shortFormBox: {
+    borderWidth: 1,
+    borderColor: COLORS.grey300,
+    borderRadius: 8,
+    padding: 12,
+    gap: 4,
+    marginBottom: 8,
+  },
+  shortFormHint: {
+    fontFamily: FONTS.regular,
+    fontSize: 12,
+    lineHeight: 17,
+    color: COLORS.grey500,
+    marginLeft: 32,
   },
   sectionTitle: {
     fontFamily: FONTS.semiBold,

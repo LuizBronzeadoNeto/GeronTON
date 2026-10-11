@@ -6,8 +6,19 @@ import type { RiskLevel } from "./risk";
  * A profile in the professional triage dashboard, carrying its computed risk
  * so the panel needs no per-profile risk requests.
  */
+/**
+ * Weekly check-in adherence over the last 8 weeks. weeksObserved is smaller
+ * for an elder registered less than 8 weeks ago.
+ */
+export interface WeeklyAdherence {
+  weeksWithCheckIn: number;
+  weeksObserved: number;
+  checkedInThisWeek: boolean;
+}
+
 export interface TriageEntry extends Profile {
   risk: { status: RiskLevel; score: number; criticalEvents: string[] };
+  adherence: WeeklyAdherence;
 }
 
 /**

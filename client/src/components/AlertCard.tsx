@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import type { Alert, AlertSeverity, AlertType } from "../api/alerts";
@@ -10,7 +11,7 @@ interface Props {
   testID?: string;
   subtitle?: string;
   onPress?: () => void;
-  onResolve?: () => void;
+  onResolve?: (signalConfirmed: boolean) => void;
 }
 
 const SEVERITIES: Record<
@@ -41,8 +42,11 @@ const TYPE_ICONS: Record<AlertType, keyof typeof Ionicons.glyphMap> = {
  * Card for a clinical alert (weakened home bond, vital-sign warnings): a
  * type icon, the severity pill, the message, an optional subtitle (the elderly
  * person's name on the professional dashboard) and the creation timestamp.
- * `onPress` makes the card tappable (e.g. to open the elder's hub) and
- * `onResolve` adds the "Resolver" action shown to healthcare professionals.
+ * onPress makes the card tappable (to open the elder's hub, for instance) and
+ * onResolve adds the "Contato feito" action shown to healthcare professionals.
+ *
+ * Marking the contact as done asks whether the signal turned out to be real
+ * before calling onResolve, since that answer feeds the false positive count.
  */
 export function AlertCard({
   alert,
@@ -52,6 +56,12 @@ export function AlertCard({
   onResolve,
 }: Props) {
   const severity = SEVERITIES[alert.severity];
+  const [asking, setAsking] = useState(false);
+
+  function answer(signalConfirmed: boolean) {
+    setAsking(false);
+    onResolve?.(signalConfirmed);
+  }
 
   return (
     <Pressable
@@ -75,19 +85,55 @@ export function AlertCard({
             color={severity.color}
             backgroundColor={COLORS.white}
           />
-          {onResolve ? (
+          {onResolve && !asking ? (
             <Pressable
               testID={testID ? `${testID}-resolve` : undefined}
               accessibilityRole="button"
-              accessibilityLabel="Resolver alerta"
+              accessibilityLabel="Marcar contato como feito"
               style={styles.resolveButton}
-              onPress={onResolve}
+              onPress={() => setAsking(true)}
             >
-              <Text style={styles.resolveLabel}>Resolver</Text>
+              <Text style={styles.resolveLabel}>Contato feito</Text>
             </Pressable>
           ) : null}
         </View>
         <Text style={styles.message}>{alert.message}</Text>
+        {asking ? (
+          <View
+            testID={testID ? `${testID}-verdict` : undefined}
+            style={styles.verdict}
+          >
+            <Text style={styles.verdictQuestion}>
+              Depois do contato, o sinal procedia?
+            </Text>
+            <View style={styles.verdictButtons}>
+              <Pressable
+                testID={testID ? `${testID}-verdict-yes` : undefined}
+                accessibilityRole="button"
+                style={styles.resolveButton}
+                onPress={() => answer(true)}
+              >
+                <Text style={styles.resolveLabel}>Sim, procedia</Text>
+              </Pressable>
+              <Pressable
+                testID={testID ? `${testID}-verdict-no` : undefined}
+                accessibilityRole="button"
+                style={styles.resolveButton}
+                onPress={() => answer(false)}
+              >
+                <Text style={styles.resolveLabel}>Não procedia</Text>
+              </Pressable>
+              <Pressable
+                testID={testID ? `${testID}-verdict-cancel` : undefined}
+                accessibilityRole="button"
+                style={styles.cancelButton}
+                onPress={() => setAsking(false)}
+              >
+                <Text style={styles.cancelLabel}>Cancelar</Text>
+              </Pressable>
+            </View>
+          </View>
+        ) : null}
         {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
         <Text style={styles.date}>{formatTimestamp(alert.createdAt)}</Text>
       </View>
@@ -150,5 +196,28 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.semiBold,
     fontSize: 12,
     color: COLORS.heading,
+  },
+  verdict: {
+    gap: 6,
+  },
+  verdictQuestion: {
+    fontFamily: FONTS.semiBold,
+    fontSize: 12,
+    color: COLORS.heading,
+  },
+  verdictButtons: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  cancelButton: {
+    height: 28,
+    paddingHorizontal: 6,
+    justifyContent: "center",
+  },
+  cancelLabel: {
+    fontFamily: FONTS.semiBold,
+    fontSize: 12,
+    color: COLORS.grey500,
   },
 });

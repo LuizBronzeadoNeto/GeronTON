@@ -7,11 +7,15 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { login as loginRequest } from "../api/auth";
+import {
+  acceptConsent as acceptConsentRequest,
+  login as loginRequest,
+} from "../api/auth";
 import { setAuthToken, setOnUnauthorized } from "../api/http";
 import { clearSession, loadSession, saveSession } from "../api/session";
 import { unregister as unregisterPush } from "../push";
 import type { User } from "../types/auth";
+import { CONSENT_VERSION } from "../constants/privacy";
 
 interface AuthContextValue {
   user: User | null;
@@ -19,6 +23,8 @@ interface AuthContextValue {
   isRestoring: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => void;
+  /** Records consent to the current term and lets the user into the app. */
+  acceptConsent: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -114,6 +120,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       },
       signOut,
+      async acceptConsent() {
+        if (!user) return;
+        await acceptConsentRequest(CONSENT_VERSION);
+        const updated = { ...user, consentRequired: false };
+        setUser(updated);
+        await saveSession(updated);
+      },
     }),
     [user, isSigningIn, isRestoring, signOut],
   );

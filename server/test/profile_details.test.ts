@@ -133,7 +133,7 @@ describe("GET /perfis/:id/detalhes", () => {
     const resolveRes = await request(app)
       .put(`/perfis/${perfilId}/alertas/${first.body.alerts[0].id}`)
       .set("Authorization", `Bearer ${professionalToken}`)
-      .send({ resolved: true });
+      .send({ resolved: true, signalConfirmed: true });
     expect(resolveRes.status).toBe(200);
 
     const second = await getDetails();

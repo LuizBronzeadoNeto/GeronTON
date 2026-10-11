@@ -16,6 +16,7 @@ import { AlertCard } from "../components/AlertCard";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { EnableNotificationsCard } from "../components/EnableNotificationsCard";
 import { RiskLegend } from "../components/RiskLegend";
+import { AdherenceSummary } from "../components/AdherenceSummary";
 import { COLORS, FONTS } from "../theme";
 
 type Props = NativeStackScreenProps<AppStackParamList, "Home">;
@@ -29,6 +30,10 @@ type Props = NativeStackScreenProps<AppStackParamList, "Home">;
  * unresolved alerts raised by the monitoring system (weakened home bond,
  * vital-sign warnings) appear above the cards, each opening the elder's detail
  * hub where it can be resolved. The header action registers a new profile.
+ *
+ * Above the list sits the weekly adherence summary (how many elders had a
+ * check-in in the last 7 days, and the average over 8 weeks), plus the link
+ * to the false positive / false negative report.
  */
 export function ProfessionalHomeScreen({ navigation }: Props) {
   const [profiles, setProfiles] = useState<TriageEntry[]>([]);
@@ -58,7 +63,7 @@ export function ProfessionalHomeScreen({ navigation }: Props) {
           if (active) setAlerts(data);
         })
         .catch(() => {
-          if (active) setAlertsError("Não foi possível carregar os alertas.");
+          if (active) setAlertsError("Não foi possível carregar os sinais.");
         });
       return () => {
         active = false;
@@ -69,7 +74,7 @@ export function ProfessionalHomeScreen({ navigation }: Props) {
   const alertsPanel =
     alerts.length > 0 || alertsError ? (
       <View testID="professional-alerts" style={styles.alertsPanel}>
-        <Text style={styles.alertsTitle}>Alertas</Text>
+        <Text style={styles.alertsTitle}>Sinais para contato</Text>
         {alertsError ? (
           <Text testID="professional-alerts-error" style={styles.error}>
             {alertsError}
@@ -94,20 +99,29 @@ export function ProfessionalHomeScreen({ navigation }: Props) {
   return (
     <View testID="professional-home" style={styles.container}>
       <Text style={styles.description}>
-        Idosos sob seu acompanhamento, ordenados por nível de risco. Cores
-        indicam prioridade clínica.
+        Idosos sob seu acompanhamento. Quem precisa de contato primeiro aparece
+        no topo.
       </Text>
 
       {/* Outside the FlatList's header: inside it the card would scroll away
           with the list, and it is a one-time action, not list content. */}
       <EnableNotificationsCard />
 
-      <PrimaryButton
-        testID="professional-add"
-        title="+ Cadastrar idoso"
-        size="small"
-        onPress={() => navigation.navigate("ProfileIdentification")}
-      />
+      <View style={styles.actionsRow}>
+        <PrimaryButton
+          testID="professional-report"
+          title="Relatório de sinais"
+          size="small"
+          variant="outline"
+          onPress={() => navigation.navigate("SignalReport")}
+        />
+        <PrimaryButton
+          testID="professional-add"
+          title="+ Cadastrar idoso"
+          size="small"
+          onPress={() => navigation.navigate("ProfileIdentification")}
+        />
+      </View>
 
       {loading ? (
         <ActivityIndicator
@@ -125,7 +139,14 @@ export function ProfessionalHomeScreen({ navigation }: Props) {
         data={profiles}
         keyExtractor={(item) => String(item.id)}
         contentContainerStyle={styles.listContent}
-        ListHeaderComponent={alertsPanel}
+        ListHeaderComponent={
+          <>
+            {loading || profiles.length === 0 ? null : (
+              <AdherenceSummary entries={profiles} />
+            )}
+            {alertsPanel}
+          </>
+        }
         ListFooterComponent={loading ? null : <RiskLegend />}
         ListFooterComponentStyle={styles.legendFooter}
         ListEmptyComponent={
@@ -141,6 +162,7 @@ export function ProfessionalHomeScreen({ navigation }: Props) {
             testIDPrefix="professional"
             showLastCheckIn
             criticalEvents={item.risk.criticalEvents}
+            adherence={item.adherence}
             onOpen={() =>
               navigation.navigate("ProfileDetail", { profileId: item.id })
             }
@@ -165,6 +187,11 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     color: COLORS.grey500,
     paddingHorizontal: 8,
+  },
+  actionsRow: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 8,
   },
   alertsPanel: {
     gap: 8,

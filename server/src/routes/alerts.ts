@@ -1,4 +1,5 @@
 import { Router, Request, Response } from "express";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 import { authMiddleware } from "../middleware/authenticateUser.js";
 import { loadProfile } from "../middleware/loadProfile.js";
@@ -7,6 +8,14 @@ import { requireRole } from "../middleware/requireRole.js";
 const router = Router({ mergeParams: true });
 
 router.use(loadProfile);
+
+/**
+ * Who resolved the alert. Only the id and e-mail are selected, so the rest of
+ * the user row (password hash included) never ends up in a response.
+ */
+const RESOLVED_BY = {
+  resolvedBy: { select: { id: true, email: true } },
+} satisfies Prisma.AlertInclude;
 
 /**
  * GET /perfis/:perfilId/alertas — list the profile's alerts, newest first.
@@ -21,16 +30,23 @@ router.get("/", async (req: Request, res: Response) => {
       ...(openOnly ? { resolvedAt: null } : {}),
     },
     orderBy: { createdAt: "desc" },
+    include: RESOLVED_BY,
   });
 
   return res.json(alerts);
 });
 
 /**
- * PUT /perfis/:perfilId/alertas/:alertaId — resolve (or reopen) an alert. Only
- * a healthcare professional may change it, since alerts drive the care team's
- * active-outreach workflow. Body: `{ resolved: boolean }` — true stamps
- * resolvedAt, false clears it. 404 if the alert is not on the profile.
+ * PUT /perfis/:perfilId/alertas/:alertaId
+ *
+ * Resolves or reopens an alert. Professionals only, since alerts drive the
+ * care team's outreach.
+ *
+ * To resolve, send resolved true plus signalConfirmed, which says whether the
+ * signal turned out to be real after the team got in touch. It is required so
+ * every alert closed by a person counts in the validation report. Sending
+ * resolved false reopens the alert and wipes the previous answer. 404 if the
+ * alert is not on the profile.
  */
 router.put(
   "/:alertaId",
@@ -41,9 +57,14 @@ router.put(
       return res.status(400).json({ error: "invalid alert id" });
     }
 
-    const { resolved } = req.body ?? {};
+    const { resolved, signalConfirmed } = req.body ?? {};
     if (typeof resolved !== "boolean") {
       return res.status(400).json({ error: "resolved must be a boolean." });
+    }
+    if (resolved && typeof signalConfirmed !== "boolean") {
+      return res
+        .status(400)
+        .json({ error: "signalConfirmed must be a boolean." });
     }
 
     const existing = await prisma.alert.findFirst({
@@ -55,7 +76,14 @@ router.put(
 
     const alert = await prisma.alert.update({
       where: { id },
-      data: { resolvedAt: resolved ? new Date() : null },
+      data: resolved
+        ? {
+            resolvedAt: new Date(),
+            resolvedById: req.user!.id,
+            signalConfirmed,
+          }
+        : { resolvedAt: null, resolvedById: null, signalConfirmed: null },
+      include: RESOLVED_BY,
     });
 
     return res.json(alert);

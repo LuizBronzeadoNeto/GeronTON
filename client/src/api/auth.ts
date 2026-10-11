@@ -24,6 +24,7 @@ export interface RegisterInput {
   password: string;
   role: Role;
   crm: string;
+  acceptedTerms: boolean;
 }
 
 /**
@@ -40,11 +41,12 @@ export async function register({
   password,
   role,
   crm,
+  acceptedTerms,
 }: RegisterInput): Promise<void> {
   const path = role === "profissional" ? "/profissionais" : "/cuidadores";
 
   try {
-    await http.post(path, { email, password, crm });
+    await http.post(path, { email, password, crm, acceptedTerms });
   } catch (err) {
     if (isAxiosError(err)) {
       if (err.response?.status === 409) {
@@ -58,5 +60,28 @@ export async function register({
       }
     }
     throw new Error("Não foi possível criar a conta.");
+  }
+}
+
+/**
+ * Records that the signed-in user accepted the given version of the consent
+ * term (POST /consentimento).
+ */
+export async function acceptConsent(version: string): Promise<void> {
+  await http.post("/consentimento", { version });
+}
+
+/**
+ * Deletes the signed-in user's account (DELETE /conta) after checking the
+ * password. Rejects with an Error whose message is ready to show.
+ */
+export async function deleteAccount(password: string): Promise<void> {
+  try {
+    await http.delete("/conta", { data: { password } });
+  } catch (err) {
+    if (isAxiosError(err) && err.response?.status === 403) {
+      throw new Error("Senha incorreta.");
+    }
+    throw new Error("Não foi possível excluir a conta. Tente de novo.");
   }
 }

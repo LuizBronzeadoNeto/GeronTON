@@ -188,6 +188,34 @@ describe("GET /triagem", () => {
     expect(ordered.indexOf(highId)).toBeLessThan(ordered.indexOf(moderateId));
   });
 
+  it("carries each profile's weekly check-in adherence", async () => {
+    await createCheckIn(stableId);
+    await prisma.profile.update({
+      where: { id: moderateId },
+      data: { createdAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000) },
+    });
+
+    const res = await getTriage();
+
+    const byId = new Map(
+      res.body.map((item: { id: number }) => [item.id, item]),
+    );
+    expect(byId.get(stableId)).toMatchObject({
+      adherence: {
+        weeksWithCheckIn: 1,
+        weeksObserved: 1,
+        checkedInThisWeek: true,
+      },
+    });
+    expect(byId.get(moderateId)).toMatchObject({
+      adherence: {
+        weeksWithCheckIn: 0,
+        weeksObserved: 3,
+        checkedInThisWeek: false,
+      },
+    });
+  });
+
   it("forbids caregivers", async () => {
     const res = await request(app)
       .get("/triagem")

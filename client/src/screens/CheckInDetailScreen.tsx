@@ -41,7 +41,8 @@ function DetailRow({ label, value }: RowProps) {
   );
 }
 
-function yesNo(value: boolean): string {
+function yesNo(value: boolean | null): string {
+  if (value === null) return "-";
   return value ? "Sim" : "Não";
 }
 
@@ -195,30 +196,40 @@ export function CheckInDetailScreen({ navigation, route }: Props) {
         ))}
       </View>
 
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>{STEPS[3].title}</Text>
-        {["dailyBath", "oralHygiene", "groomedNails"].map((field) => (
-          <DetailRow
-            key={field}
-            label={YES_NO_QUESTIONS[field]}
-            value={yesNo(checkIn[field as keyof CheckIn] as boolean)}
-          />
-        ))}
-      </View>
+      {checkIn.shortForm ? (
+        <Text testID="checkin-detail-short" style={styles.shortNote}>
+          Check-in rápido: higiene e lista de compras não foram perguntadas.
+        </Text>
+      ) : null}
 
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>{STEPS[4].title}</Text>
-        {LOGISTICS.map((section) => {
-          const items = checkIn[section.key as keyof CheckIn] as string[];
-          return (
+      {checkIn.shortForm ? null : (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>{STEPS[3].title}</Text>
+          {["dailyBath", "oralHygiene", "groomedNails"].map((field) => (
             <DetailRow
-              key={section.key}
-              label={section.label}
-              value={items.length > 0 ? items.join(", ") : "—"}
+              key={field}
+              label={YES_NO_QUESTIONS[field]}
+              value={yesNo(checkIn[field as keyof CheckIn] as boolean | null)}
             />
-          );
-        })}
-      </View>
+          ))}
+        </View>
+      )}
+
+      {checkIn.shortForm ? null : (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>{STEPS[4].title}</Text>
+          {LOGISTICS.map((section) => {
+            const items = checkIn[section.key as keyof CheckIn] as string[];
+            return (
+              <DetailRow
+                key={section.key}
+                label={section.label}
+                value={items.length > 0 ? items.join(", ") : "—"}
+              />
+            );
+          })}
+        </View>
+      )}
 
       {error ? (
         <Text testID="checkin-detail-error" style={styles.error}>
@@ -282,6 +293,11 @@ const styles = StyleSheet.create({
     color: COLORS.heading,
     textAlign: "right",
     flexShrink: 1,
+  },
+  shortNote: {
+    fontFamily: FONTS.semiBold,
+    fontSize: 13,
+    color: COLORS.grey500,
   },
   error: {
     fontFamily: FONTS.semiBold,

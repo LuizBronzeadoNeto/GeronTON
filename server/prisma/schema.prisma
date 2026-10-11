@@ -29,9 +29,15 @@ model User {
   password          String
   role              Role
   crm               String?            @unique
+  /// Version of the consent term the user last accepted, null if never.
+  consentVersion    String?
+  consentAcceptedAt DateTime?
   profiles          Profile[]          @relation("CaregiverProfiles")
   access            ProfileAccess[]
   pushSubscriptions PushSubscription[]
+  resolvedAlerts    Alert[]            @relation("AlertResolver")
+  missedSignals     MissedSignal[]
+  accessLogs        AccessLog[]
 
   @@map("users")
 }
@@ -54,25 +60,26 @@ model ProfileAccess {
 }
 
 model Profile {
-  id                Int          @id @default(autoincrement())
-  cpf               String?      @unique
+  id                Int             @id @default(autoincrement())
+  cpf               String?         @unique
   firstName         String
   lastName          String
-  birthDate         DateTime     @db.Date
+  birthDate         DateTime        @db.Date
   sex               String?
   scholarship       String
   medicalConditions String[]
   notes             String?
   caregiverId       Int
-  caregiver         User         @relation("CaregiverProfiles", fields: [caregiverId], references: [id], onDelete: Cascade)
+  caregiver         User            @relation("CaregiverProfiles", fields: [caregiverId], references: [id], onDelete: Cascade)
   medications       Medication[]
   routines          Routine[]
   checkIns          CheckIn[]
   intercorrences    Intercorrence[]
   alerts            Alert[]
+  missedSignals     MissedSignal[]
   access            ProfileAccess[]
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
 
   @@index([caregiverId])
   @@map("profiles")
@@ -147,9 +154,11 @@ model CheckIn {
   sunExposure       Boolean
   selfExpression    Boolean
   stimulation       Boolean
-  dailyBath         Boolean
-  oralHygiene       Boolean
-  groomedNails      Boolean
+  /// The hygiene answers are null on a short-form check-in, which skips that step.
+  dailyBath         Boolean?
+  oralHygiene       Boolean?
+  groomedNails      Boolean?
+  shortForm         Boolean  @default(false)
   needsMedications  String[]
   needsHygiene      String[]
   needsFood         String[]
@@ -184,20 +193,45 @@ enum AlertSeverity {
 }
 
 model Alert {
-  id         Int           @id @default(autoincrement())
-  profileId  Int
-  profile    Profile       @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  checkInId  Int?
-  checkIn    CheckIn?      @relation(fields: [checkInId], references: [id], onDelete: Cascade)
-  type       AlertType
-  severity   AlertSeverity
-  message    String
-  createdAt  DateTime      @default(now())
-  resolvedAt DateTime?
+  id              Int           @id @default(autoincrement())
+  profileId       Int
+  profile         Profile       @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  checkInId       Int?
+  checkIn         CheckIn?      @relation(fields: [checkInId], references: [id], onDelete: Cascade)
+  type            AlertType
+  severity        AlertSeverity
+  message         String
+  createdAt       DateTime      @default(now())
+  resolvedAt      DateTime?
+  /// Who resolved it. Null while open, and also when the system closed it on
+  /// its own (a new check-in closes the home bond alert).
+  resolvedById    Int?
+  resolvedBy      User?         @relation("AlertResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+  /// Whether the professional found the signal to be real after contacting
+  /// the family. Feeds the false positive count in the validation report.
+  signalConfirmed Boolean?
 
   @@index([profileId, createdAt(sort: Desc)])
   @@index([checkInId])
   @@map("alerts")
+}
+
+/// Something that happened to the elder which the system should have flagged
+/// but did not (a false negative). Recorded by a professional so the heuristic
+/// can be checked against what actually happened.
+model MissedSignal {
+  id           Int           @id @default(autoincrement())
+  profileId    Int
+  profile      Profile       @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  reportedById Int?
+  reportedBy   User?         @relation(fields: [reportedById], references: [id], onDelete: SetNull)
+  occurredAt   DateTime      @db.Date
+  severity     AlertSeverity
+  description  String
+  createdAt    DateTime      @default(now())
+
+  @@index([profileId, occurredAt(sort: Desc)])
+  @@map("missed_signals")
 }
 
 enum PushTransport {
@@ -225,4 +259,21 @@ model PushSubscription {
 
   @@index([userId])
   @@map("push_subscriptions")
+}
+
+/// One row per account per day the app was used, for the monthly usage
+/// report. userId is cleared when the account is deleted, so past totals keep
+/// adding up without pointing at anyone. role is copied so the split between
+/// caregivers and professionals survives that too.
+model AccessLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  role      Role
+  day       DateTime @db.Date
+  createdAt DateTime @default(now())
+
+  @@unique([userId, day])
+  @@index([day])
+  @@map("access_logs")
 }

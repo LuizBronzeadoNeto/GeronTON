@@ -11,6 +11,7 @@ import checkinsRouter from "./checkins.js";
 import intercorrencesRouter from "../routes/intercorrences.js";
 import riskRouter from "./risk.js";
 import alertsRouter from "./alerts.js";
+import missedSignalsRouter from "./missedSignals.js";
 
 const router = Router();
 
@@ -22,6 +23,7 @@ router.use("/:perfilId/avaliacoes", checkinsRouter);
 router.use("/:perfilId/intercorrencias", intercorrencesRouter);
 router.use("/:perfilId/risco", riskRouter);
 router.use("/:perfilId/alertas", alertsRouter);
+router.use("/:perfilId/sinais-nao-detectados", missedSignalsRouter);
 
 /**
  * POST /perfis — create an elderly profile.

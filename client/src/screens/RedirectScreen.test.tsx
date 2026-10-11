@@ -25,6 +25,7 @@ function mockRole(role: Role) {
     isRestoring: false,
     signIn: jest.fn<() => Promise<void>>(),
     signOut: jest.fn(),
+    acceptConsent: jest.fn(async () => {}),
   });
 }
 

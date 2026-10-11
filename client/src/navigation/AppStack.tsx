@@ -1,5 +1,9 @@
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { Platform, Pressable, StyleSheet, Text } from "react-native";
+import {
+  createNativeStackNavigator,
+  type NativeStackNavigationProp,
+} from "@react-navigation/native-stack";
+import { useNavigation } from "@react-navigation/native";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import type { AppStackParamList } from "../types/navigation";
@@ -21,6 +25,9 @@ import { RedirectScreen } from "../screens/RedirectScreen";
 import { MedicationInventoryScreen } from "../screens/MedicationInventoryScreen";
 import { MedicationFormScreen } from "../screens/MedicationFormScreen";
 import { RoutineRegistrationScreen } from "../screens/RoutineRegistrationScreen";
+import { MissedSignalFormScreen } from "../screens/MissedSignalFormScreen";
+import { SignalReportScreen } from "../screens/SignalReportScreen";
+import { PrivacyPolicyScreen } from "../screens/PrivacyPolicyScreen";
 
 const Stack = createNativeStackNavigator<AppStackParamList>();
 
@@ -45,6 +52,34 @@ function SignOutButton() {
       <Ionicons name="log-out-outline" size={22} color={COLORS.heading} />
       <Text style={styles.signOutLabel}>Sair</Text>
     </Pressable>
+  );
+}
+
+/**
+ * Header actions on every signed-in screen: a shield that opens the privacy
+ * policy (where the account can be deleted) and the "Sair" button.
+ */
+function HeaderActions() {
+  const navigation =
+    useNavigation<NativeStackNavigationProp<AppStackParamList>>();
+
+  return (
+    <View style={styles.headerActions}>
+      <Pressable
+        testID="header-privacy"
+        accessibilityRole="button"
+        accessibilityLabel="Privacidade e dados"
+        hitSlop={8}
+        onPress={() => navigation.navigate("PrivacyPolicy")}
+      >
+        <Ionicons
+          name="shield-checkmark-outline"
+          size={20}
+          color={COLORS.heading}
+        />
+      </Pressable>
+      <SignOutButton />
+    </View>
   );
 }
 
@@ -90,7 +125,7 @@ export function AppStack({ role }: { role: Role }) {
           color: COLORS.heading,
         },
         headerBackButtonDisplayMode: "minimal",
-        headerRight: () => <SignOutButton />,
+        headerRight: () => <HeaderActions />,
         contentStyle: {
           backgroundColor: COLORS.white,
           paddingBottom: Platform.OS === "web" ? 0 : insets.bottom,
@@ -171,11 +206,31 @@ export function AppStack({ role }: { role: Role }) {
         component={RoutineRegistrationScreen}
         options={{ title: "Rotina" }}
       />
+      <Stack.Screen
+        name="MissedSignalForm"
+        component={MissedSignalFormScreen}
+        options={{ title: "Sinal não detectado" }}
+      />
+      <Stack.Screen
+        name="SignalReport"
+        component={SignalReportScreen}
+        options={{ title: "Relatório de sinais" }}
+      />
+      <Stack.Screen
+        name="PrivacyPolicy"
+        component={PrivacyPolicyScreen}
+        options={{ title: "Privacidade" }}
+      />
     </Stack.Navigator>
   );
 }
 
 const styles = StyleSheet.create({
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+  },
   signOut: {
     flexDirection: "row",
     alignItems: "center",

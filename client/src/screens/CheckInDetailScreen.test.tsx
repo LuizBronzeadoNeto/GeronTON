@@ -119,4 +119,21 @@ describe("CheckInDetailScreen", () => {
       expect(screen.getByTestId("checkin-detail-error")).toBeTruthy(),
     );
   });
+
+  it("notes a short check-in instead of empty hygiene answers", async () => {
+    jest.mocked(getCheckIn).mockResolvedValue({
+      ...EXISTING,
+      shortForm: true,
+      dailyBath: null,
+      oralHygiene: null,
+      groomedNails: null,
+    });
+    renderScreen();
+
+    await waitFor(() =>
+      expect(screen.getByTestId("checkin-detail-short")).toBeTruthy(),
+    );
+    expect(screen.queryByText("Banho realizado todos os dias?")).toBeNull();
+    expect(screen.queryByText("Estoque e Logística")).toBeNull();
+  });
 });
