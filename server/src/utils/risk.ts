@@ -8,10 +8,9 @@ export interface RiskStatus {
 }
 
 /**
- * A clinical warning derived from a check-in's optional vital signs by the
- * statistical-deviation (outlier) filter of the screening algorithm. These are
- * persisted as alerts on the profile so the care team sees them on the
- * dashboard; `sarcopenia_risk` additionally adds points to the weekly score.
+ * A warning from an optional measurement crossing a fixed limit in the
+ * care-support heuristic (docs/heuristica.md). Warnings are persisted as
+ * alerts on the dashboard; `sarcopenia_risk` also adds weekly points.
  *
  * The message only states what was measured and which limit it crossed. The
  * system flags a reason to get in touch with the family, it doesn't diagnose,
@@ -43,9 +42,9 @@ export const WEEKLY_EVENTS = [
 ] as const;
 
 /**
- * Weekly events carrying the native critical tag of the screening algorithm:
- * each adds 5 points, accumulation forces the score into the critical range and
- * their presence raises a visual flag on the triage dashboard.
+ * Weekly events tagged as critical for follow-up: each adds 5 points and
+ * raises a visual flag on the dashboard. A single event does not force the
+ * high level. These tags support care organization, not diagnosis.
  */
 export const CRITICAL_WEEKLY_EVENTS: ReadonlySet<string> = new Set([
   "fever",
@@ -56,9 +55,9 @@ export const CRITICAL_WEEKLY_EVENTS: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * Points added per weekly event: 5 for the native critical tags, 3 for a fall
- * without injury (mechanical frailty) and 2 for pain or cough (declining
- * comfort / early dysphagia risk).
+ * Adds 5 points for critical tags, 3 for a fall without injury and 2 otherwise
+ * (pain or cough among the accepted events). Weights need professional
+ * validation; see docs/heuristica.md.
  */
 function weeklyEventPoints(event: string): number {
   if (CRITICAL_WEEKLY_EVENTS.has(event)) return 5;
@@ -67,10 +66,9 @@ function weeklyEventPoints(event: string): number {
 }
 
 /**
- * Acute-event types the interface maps as immediate high risk, mirroring the
- * weekly native critical tags (fever, shortness of breath, active bleeding,
- * acute confusion). Registering one of these elevates the elderly person to
- * critical status regardless of the severity the caregiver selected.
+ * Intercorrence types that force the high follow-up level regardless of the
+ * caregiver's severity choice. Unlike weekly event tags, these set a floor
+ * without adding points. This rule needs professional validation.
  */
 export const CRITICAL_EVENT_TYPES: ReadonlySet<string> = new Set([
   "fever",
@@ -102,7 +100,8 @@ function parseMeasurement(value: string | null): number | null {
 
 /**
  * Extracts a systolic/diastolic pair from a free-text blood-pressure entry
- * ("140/90", "12x8"). Returns null unless both numbers are present.
+ * ("140/90", "120x80"). Returns null unless both numbers are present.
+ * No unit conversion is applied: "12x8" remains 12 and 8.
  */
 function parsePressure(
   value: string | null,
@@ -117,12 +116,13 @@ function parsePressure(
 }
 
 /**
- * Statistical-deviation (outlier) filter for the optional vital signs, which
- * never enter the linear sum directly: saturation below 92% adds 4 points
- * (imminent hypoxia) and a left calf circumference below 31 cm adds 2 points
- * plus a sarcopenia/protein-malnutrition flag (IVCF-20). Blood pressure beyond
- * 140/90 or below 90/60 and glycemia above 200 mg/dL only raise clinical
- * warning flags, without scoring.
+ * Compares optional measurements with fixed limits: saturation < 92% adds
+ * 4 points; calf circumference < 31 cm adds 2 points and a warning. Pressure
+ * (systolic > 140 or diastolic > 90, or systolic < 90 or diastolic < 60) and
+ * glycemia > 200 mg/dL only raise warnings. The calf limit and its 2-point
+ * contribution match a condition within IVCF-20's combined capacity item;
+ * that full item is not implemented here. Applying these rules in GeronTON
+ * needs professional validation; see docs/heuristica.md. This does not diagnose.
  */
 function evaluateVitalSigns(checkIn: CheckIn): {
   points: number;
@@ -176,12 +176,12 @@ function evaluateVitalSigns(checkIn: CheckIn): {
 }
 
 /**
- * Evaluates a weekly check-in with the functional risk screening algorithm
- * (IVCF-20 + SUS care-pathway guidelines): a cumulative score weighted by
- * clinical severity across the health/vital-signs, nutrition/medication and
- * behavioral/stimulation domains, plus the vital-sign outlier filter. Returns
- * the total functional score (S_total), the clinical warning flags to persist
- * and the native-critical weekly events for the dashboard's visual flag.
+ * Sums weekly points for care organization and returns measurement warnings
+ * and critical weekly events for the dashboard. IVCF-20 informs some aspects
+ * tracked, such as mood and mobility, but this check-in uses adapted questions,
+ * its own score composition and cut-offs. It is not an IVCF-20 result or a
+ * diagnostic tool. Applying the weights needs professional validation;
+ * see docs/heuristica.md.
  */
 export function evaluateCheckIn(checkIn: CheckIn): CheckInEvaluation {
   let score = 0;
@@ -220,8 +220,9 @@ export function evaluateCheckIn(checkIn: CheckIn): CheckInEvaluation {
 }
 
 /**
- * Maps a total functional score to a state: stable (low) up to 5, attention
- * (moderate) from 6 to 11 and critical (high) from 12.
+ * Maps weekly points to a follow-up level: stable (low) up to 5, attention
+ * (moderate) from 6 to 11 and critical (high) from 12. These cut-offs need
+ * professional validation; see docs/heuristica.md.
  */
 function levelFromScore(score: number): RiskLevel {
   if (score >= HIGH_THRESHOLD) return "high";
@@ -230,11 +231,10 @@ function levelFromScore(score: number): RiskLevel {
 }
 
 /**
- * Acute-event subsystem: the classification produced by recent intercorrences,
- * which follows the severity selected by the caregiver (or the intrinsically
- * critical event types) and overrides the weekly score. A critical event forces
- * "high"; any other event forces at least "moderate"; with none there is no
- * override ("low" floor).
+ * Sets a minimum follow-up level without changing weekly points: a critical
+ * intercorrence or a listed critical type forces "high"; any other event
+ * forces at least "moderate"; no events means a "low" floor. This care-support
+ * rule needs professional validation and does not diagnose severity.
  */
 function acuteEventFloor(recentIntercorrences: Intercorrence[]): RiskLevel {
   if (
@@ -255,13 +255,11 @@ const LEVEL_ORDER: Record<RiskLevel, number> = {
 };
 
 /**
- * Computes a profile's risk status from its most recent weekly check-in and its
- * recent intercorrences (the caller decides the window, typically 30 days). The
- * weekly score maps to a state (0–5 low, 6–11 moderate, 12+ high) and acute
- * events act as a floor on top of it: a critical one forces "high", any other
- * forces at least "moderate", and the more severe status always prevails. With
- * no check-in and no intercorrences there is nothing to assess and the status
- * is "unknown".
+ * Combines the latest check-in (without an expiry rule) with intercorrences
+ * selected by the caller, typically over 30 days. Returns the higher of the
+ * weekly level and the intercorrence floor, keeping the weekly score. With
+ * neither source the status is "unknown". Supports care organization, not
+ * diagnosis; see docs/heuristica.md.
  */
 export function computeRiskStatus(
   latestCheckIn: CheckIn | null,

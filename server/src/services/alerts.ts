@@ -15,10 +15,9 @@ export const WEAKENED_HOME_BOND_MESSAGE = "Vínculo Domiciliar Fragilizado";
 export const OMISSION_WEEKS = 4;
 
 /**
- * Synchronizes the persisted clinical alerts derived from a check-in's vital
- * signs (blood-pressure outlier, metabolic decompensation, sarcopenia risk).
- * The check-in's previous alerts are replaced so an update reflects the
- * corrected measurements; all vital-sign alerts carry "attention" severity.
+ * Synchronizes measurement alerts for care follow-up, not diagnosis
+ * (docs/heuristica.md). Replaces only this check-in's alerts so updates reflect
+ * corrected measurements. All measurement alerts carry "attention" severity.
  */
 export async function syncCheckInAlerts(checkIn: CheckIn): Promise<void> {
   const { flags } = evaluateCheckIn(checkIn);
