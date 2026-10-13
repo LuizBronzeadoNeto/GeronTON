@@ -18,6 +18,7 @@ import { AnswerGroup } from "../components/AnswerGroup";
 import { formStyles } from "../components/formStyles";
 import { COLORS } from "../theme";
 import { FormError } from "../components/FormError";
+import { FormScreen } from "../components/FormScreen";
 
 type Props = NativeStackScreenProps<AppStackParamList, "IntercorrenceForm">;
 
@@ -78,7 +79,7 @@ export function IntercorrenceFormScreen({ navigation, route }: Props) {
   }
 
   return (
-    <View style={formStyles.screen}>
+    <FormScreen>
       <ScrollView
         testID="intercorrence-form"
         contentContainerStyle={formStyles.container}
@@ -143,6 +144,6 @@ export function IntercorrenceFormScreen({ navigation, route }: Props) {
           disabled={!canSubmit}
         />
       </ActionBar>
-    </View>
+    </FormScreen>
   );
 }

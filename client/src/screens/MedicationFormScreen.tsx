@@ -6,8 +6,6 @@ import {
   Text,
   TextInput,
   View,
-  KeyboardAvoidingView,
-  Platform,
 } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { AppStackParamList } from "../types/navigation";
@@ -21,6 +19,7 @@ import { PrimaryButton } from "../components/PrimaryButton";
 import { ActionBar } from "../components/ActionBar";
 import { formStyles } from "../components/formStyles";
 import { COLORS } from "../theme";
+import { FormScreen } from "../components/FormScreen";
 
 type Props = NativeStackScreenProps<AppStackParamList, "MedicationForm">;
 
@@ -116,11 +115,7 @@ export function MedicationFormScreen({ route, navigation }: Props) {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={formStyles.screen}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
-    >
+    <FormScreen>
       <ScrollView
         testID="medication-form"
         contentContainerStyle={formStyles.container}
@@ -207,7 +202,7 @@ export function MedicationFormScreen({ route, navigation }: Props) {
           loading={saving}
         />
       </ActionBar>
-    </KeyboardAvoidingView>
+    </FormScreen>
   );
 }
 

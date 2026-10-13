@@ -22,6 +22,7 @@ import { PrimaryButton } from "../components/PrimaryButton";
 import { ActionBar } from "../components/ActionBar";
 import { formStyles } from "../components/formStyles";
 import { COLORS, TYPE } from "../theme";
+import { FormScreen } from "../components/FormScreen";
 
 type Props = NativeStackScreenProps<AppStackParamList, "RoutineRegistration">;
 
@@ -159,7 +160,7 @@ export function RoutineRegistrationScreen({ route }: Props) {
   }
 
   return (
-    <View style={formStyles.screen}>
+    <FormScreen>
       <ScrollView
         testID="routine-registration"
         contentContainerStyle={formStyles.container}
@@ -211,7 +212,7 @@ export function RoutineRegistrationScreen({ route }: Props) {
           loading={saving}
         />
       </ActionBar>
-    </View>
+    </FormScreen>
   );
 }
 

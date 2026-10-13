@@ -8,6 +8,7 @@ import {
   within,
 } from "@testing-library/react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { KeyboardAvoidingView } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { IntercorrenceFormScreen } from "./IntercorrenceFormScreen";
 import { NotificationProvider } from "../context/NotificationContext";
@@ -90,6 +91,12 @@ describe("IntercorrenceFormScreen", () => {
       screen.getByTestId("intercorrence-severity-Crítico").props
         .accessibilityState.checked,
     ).toBe(true);
+  });
+
+  it("lifts the form and its action bar above the keyboard", () => {
+    renderScreen();
+
+    expect(screen.UNSAFE_getAllByType(KeyboardAvoidingView)).toHaveLength(1);
   });
 
   it("registers the intercorrence and opens the confirmation", async () => {

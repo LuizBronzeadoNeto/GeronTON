@@ -50,6 +50,7 @@ import { clearDraft, loadDraft, saveDraft } from "../utils/checkInDraft";
 import { formatDay } from "../utils/date";
 import { COLORS, RADIUS, SPACING, TYPE } from "../theme";
 import { FormError } from "../components/FormError";
+import { FormScreen } from "../components/FormScreen";
 
 type Props = NativeStackScreenProps<AppStackParamList, "WeeklyCheckIn">;
 
@@ -356,7 +357,7 @@ export function WeeklyCheckInScreen({ navigation, route }: Props) {
   const currentStep = steps[step - 1];
 
   return (
-    <View style={styles.screen}>
+    <FormScreen>
       <ScrollView
         ref={scrollRef}
         contentContainerStyle={styles.container}
@@ -632,7 +633,7 @@ export function WeeklyCheckInScreen({ navigation, route }: Props) {
           />
         )}
       </ActionBar>
-    </View>
+    </FormScreen>
   );
 }
 

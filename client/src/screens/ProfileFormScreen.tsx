@@ -27,6 +27,7 @@ import { ActionBar } from "../components/ActionBar";
 import { formStyles } from "../components/formStyles";
 import { COLORS, CONTROL_HEIGHT, SPACING, TYPE } from "../theme";
 import { FormError } from "../components/FormError";
+import { FormScreen } from "../components/FormScreen";
 
 type Props = NativeStackScreenProps<AppStackParamList, "ProfileForm">;
 
@@ -178,7 +179,7 @@ export function ProfileFormScreen({ navigation, route }: Props) {
   }
 
   return (
-    <View style={formStyles.screen}>
+    <FormScreen>
       <ScrollView
         contentContainerStyle={formStyles.container}
         keyboardShouldPersistTaps="handled"
@@ -323,7 +324,7 @@ export function ProfileFormScreen({ navigation, route }: Props) {
           disabled={!canSubmit}
         />
       </ActionBar>
-    </View>
+    </FormScreen>
   );
 }
 

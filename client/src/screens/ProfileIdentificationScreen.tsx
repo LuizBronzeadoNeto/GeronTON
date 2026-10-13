@@ -12,6 +12,7 @@ import { ActionBar } from "../components/ActionBar";
 import { formStyles } from "../components/formStyles";
 import { COLORS, SPACING } from "../theme";
 import { FormError } from "../components/FormError";
+import { FormScreen } from "../components/FormScreen";
 
 type Props = NativeStackScreenProps<AppStackParamList, "ProfileIdentification">;
 
@@ -149,7 +150,7 @@ export function ProfileIdentificationScreen({ navigation }: Props) {
   }
 
   return (
-    <View style={formStyles.screen}>
+    <FormScreen>
       <ScrollView
         testID="profile-identification"
         contentContainerStyle={formStyles.container}
@@ -210,7 +211,7 @@ export function ProfileIdentificationScreen({ navigation }: Props) {
           loading={checking}
         />
       </ActionBar>
-    </View>
+    </FormScreen>
   );
 }
 
