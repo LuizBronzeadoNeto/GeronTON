@@ -26,12 +26,28 @@ appId: com.geronton.client
 # short version, 3 steps
 - tapOn:
     id: "checkin-short"
+- scrollUntilVisible:
+    element:
+      id: "checkin-skinIssues-no"
+    direction: DOWN
 - tapOn:
     id: "checkin-skinIssues-no"
+- scrollUntilVisible:
+    element:
+      id: "checkin-bowelRegular-yes"
+    direction: DOWN
 - tapOn:
     id: "checkin-bowelRegular-yes"
+- scrollUntilVisible:
+    element:
+      id: "checkin-sleepWell-yes"
+    direction: DOWN
 - tapOn:
     id: "checkin-sleepWell-yes"
+- scrollUntilVisible:
+    element:
+      id: "checkin-unstableGait-no"
+    direction: DOWN
 - tapOn:
     id: "checkin-unstableGait-no"
 - scrollUntilVisible:
@@ -48,20 +64,48 @@ appId: com.geronton.client
     direction: DOWN
 - tapOn:
     id: "checkin-next"
+- scrollUntilVisible:
+    element:
+      id: "checkin-appetite-good"
+    direction: DOWN
 - tapOn:
     id: "checkin-appetite-good"
+- scrollUntilVisible:
+    element:
+      id: "checkin-hydrationGoal-yes"
+    direction: DOWN
 - tapOn:
     id: "checkin-hydrationGoal-yes"
+- scrollUntilVisible:
+    element:
+      id: "checkin-medsOnTime-yes"
+    direction: DOWN
 - tapOn:
     id: "checkin-medsOnTime-yes"
 - tapOn:
     id: "checkin-next"
+- scrollUntilVisible:
+    element:
+      id: "checkin-mood-happy"
+    direction: DOWN
 - tapOn:
     id: "checkin-mood-happy"
+- scrollUntilVisible:
+    element:
+      id: "checkin-sunExposure-yes"
+    direction: DOWN
 - tapOn:
     id: "checkin-sunExposure-yes"
+- scrollUntilVisible:
+    element:
+      id: "checkin-selfExpression-yes"
+    direction: DOWN
 - tapOn:
     id: "checkin-selfExpression-yes"
+- scrollUntilVisible:
+    element:
+      id: "checkin-stimulation-yes"
+    direction: DOWN
 - tapOn:
     id: "checkin-stimulation-yes"
 - tapOn:

@@ -19,45 +19,109 @@ appId: com.geronton.client
 - assertVisible:
     id: "checkin"
 # step 1 — health domain
+- scrollUntilVisible:
+    element:
+      id: "checkin-skinIssues-no"
+    direction: DOWN
 - tapOn:
     id: "checkin-skinIssues-no"
+- scrollUntilVisible:
+    element:
+      id: "checkin-bowelRegular-yes"
+    direction: DOWN
 - tapOn:
     id: "checkin-bowelRegular-yes"
+- scrollUntilVisible:
+    element:
+      id: "checkin-sleepWell-yes"
+    direction: DOWN
 - tapOn:
     id: "checkin-sleepWell-yes"
+- scrollUntilVisible:
+    element:
+      id: "checkin-unstableGait-no"
+    direction: DOWN
 - tapOn:
     id: "checkin-unstableGait-no"
+- scrollUntilVisible:
+    element:
+      id: "checkin-event-fever"
+    direction: DOWN
 - tapOn:
     id: "checkin-event-fever"
 - tapOn:
     id: "checkin-next"
 # step 2 — nutrition & medication
+- scrollUntilVisible:
+    element:
+      id: "checkin-appetite-good"
+    direction: DOWN
 - tapOn:
     id: "checkin-appetite-good"
+- scrollUntilVisible:
+    element:
+      id: "checkin-hydrationGoal-yes"
+    direction: DOWN
 - tapOn:
     id: "checkin-hydrationGoal-yes"
+- scrollUntilVisible:
+    element:
+      id: "checkin-medsOnTime-yes"
+    direction: DOWN
 - tapOn:
     id: "checkin-medsOnTime-yes"
 - tapOn:
     id: "checkin-next"
 # step 3 — behavior
+- scrollUntilVisible:
+    element:
+      id: "checkin-mood-happy"
+    direction: DOWN
 - tapOn:
     id: "checkin-mood-happy"
+- scrollUntilVisible:
+    element:
+      id: "checkin-stress-2"
+    direction: DOWN
 - tapOn:
     id: "checkin-stress-2"
+- scrollUntilVisible:
+    element:
+      id: "checkin-sunExposure-yes"
+    direction: DOWN
 - tapOn:
     id: "checkin-sunExposure-yes"
+- scrollUntilVisible:
+    element:
+      id: "checkin-selfExpression-yes"
+    direction: DOWN
 - tapOn:
     id: "checkin-selfExpression-yes"
+- scrollUntilVisible:
+    element:
+      id: "checkin-stimulation-no"
+    direction: DOWN
 - tapOn:
     id: "checkin-stimulation-no"
 - tapOn:
     id: "checkin-next"
 # step 4 — hygiene
+- scrollUntilVisible:
+    element:
+      id: "checkin-dailyBath-yes"
+    direction: DOWN
 - tapOn:
     id: "checkin-dailyBath-yes"
+- scrollUntilVisible:
+    element:
+      id: "checkin-oralHygiene-yes"
+    direction: DOWN
 - tapOn:
     id: "checkin-oralHygiene-yes"
+- scrollUntilVisible:
+    element:
+      id: "checkin-groomedNails-yes"
+    direction: DOWN
 - tapOn:
     id: "checkin-groomedNails-yes"
 - tapOn:
