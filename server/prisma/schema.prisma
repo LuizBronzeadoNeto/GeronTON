@@ -197,7 +197,7 @@ model Alert {
   profileId       Int
   profile         Profile       @relation(fields: [profileId], references: [id], onDelete: Cascade)
   checkInId       Int?
-  checkIn         CheckIn?      @relation(fields: [checkInId], references: [id], onDelete: Cascade)
+  checkIn         CheckIn?      @relation(fields: [checkInId], references: [id], onDelete: SetNull)
   type            AlertType
   severity        AlertSeverity
   message         String

@@ -320,8 +320,10 @@ router.put("/:avaliacaoId", async (req: Request, res: Response) => {
 });
 
 /**
- * DELETE /perfis/:perfilId/avaliacoes/:avaliacaoId — remove a check-in.
- * Responds 204, or 404 if not found on the profile.
+ * DELETE /perfis/:perfilId/avaliacoes/:avaliacaoId — remove a check-in. Its
+ * open alerts go with it; alerts a professional already resolved stay, detached
+ * from it, so their verdicts still count in the validation report. Responds
+ * 204, or 404 if not found on the profile.
  */
 router.delete("/:avaliacaoId", async (req: Request, res: Response) => {
   const id = parseId(req.params.avaliacaoId);
@@ -337,7 +339,10 @@ router.delete("/:avaliacaoId", async (req: Request, res: Response) => {
     return res.status(404).json({ error: "check-in not found" });
   }
 
-  await prisma.checkIn.delete({ where: { id } });
+  await prisma.$transaction([
+    prisma.alert.deleteMany({ where: { checkInId: id, resolvedAt: null } }),
+    prisma.checkIn.delete({ where: { id } }),
+  ]);
   return res.status(204).send();
 });
 

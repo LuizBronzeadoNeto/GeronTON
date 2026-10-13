@@ -100,6 +100,20 @@ async function listAlerts(query = "") {
 }
 
 /**
+ * Resolves every alert on the suite's profile as the professional, with the
+ * given verdict.
+ */
+async function resolveAll(signalConfirmed: boolean) {
+  const res = await listAlerts();
+  for (const alert of res.body as { id: number }[]) {
+    await request(app)
+      .put(`/perfis/${perfilId}/alertas/${alert.id}`)
+      .set("Authorization", `Bearer ${professionalToken}`)
+      .send({ resolved: true, signalConfirmed });
+  }
+}
+
+/**
  * Ages the profile so it looks 5 weeks old with no check-ins, which is the
  * omission scenario the background monitor must flag.
  */
@@ -160,7 +174,35 @@ describe("check-in vital-sign alerts", () => {
     expect(res.body).toEqual([]);
   });
 
-  it("removes a check-in's alerts when it is deleted", async () => {
+  it("keeps resolved alerts when the check-in is updated", async () => {
+    const checkIn = await createCheckIn({ pressure: "85/55" });
+    await resolveAll(false);
+
+    await request(app)
+      .put(`/perfis/${perfilId}/avaliacoes/${checkIn.id}`)
+      .set("Authorization", `Bearer ${caregiverToken}`)
+      .send({ pressure: "85/55", glycemia: "98" });
+
+    const res = await listAlerts();
+    expect(res.body).toHaveLength(1);
+    expect(res.body[0].signalConfirmed).toBe(false);
+  });
+
+  it("keeps resolved alerts when the check-in is deleted", async () => {
+    const checkIn = await createCheckIn({ glycemia: "300" });
+    await resolveAll(true);
+
+    await request(app)
+      .delete(`/perfis/${perfilId}/avaliacoes/${checkIn.id}`)
+      .set("Authorization", `Bearer ${caregiverToken}`);
+
+    const res = await listAlerts();
+    expect(res.body).toHaveLength(1);
+    expect(res.body[0].checkInId).toBeNull();
+    expect(res.body[0].signalConfirmed).toBe(true);
+  });
+
+  it("removes a check-in's open alerts when it is deleted", async () => {
     const checkIn = await createCheckIn({ glycemia: "300" });
 
     const deleteRes = await request(app)

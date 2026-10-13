@@ -17,20 +17,35 @@ export const OMISSION_WEEKS = 4;
 /**
  * Synchronizes the persisted clinical alerts derived from a check-in's vital
  * signs (blood-pressure outlier, metabolic decompensation, sarcopenia risk).
- * The check-in's previous alerts are replaced so an update reflects the
- * corrected measurements; all vital-sign alerts carry "attention" severity.
+ * Open alerts are replaced so an update reflects the corrected measurements.
+ * Alerts a professional already resolved are kept, verdict included, and a
+ * flag matching one of them is not raised again. All vital-sign alerts carry
+ * "attention" severity.
  */
 export async function syncCheckInAlerts(checkIn: CheckIn): Promise<void> {
   const { flags } = evaluateCheckIn(checkIn);
 
+  const resolved = await prisma.alert.findMany({
+    where: { checkInId: checkIn.id, resolvedAt: { not: null } },
+    select: { type: true, message: true },
+  });
+  const pending = flags.filter(
+    (flag) =>
+      !resolved.some(
+        (alert) => alert.type === flag.type && alert.message === flag.message,
+      ),
+  );
+
   const operations: Prisma.PrismaPromise<unknown>[] = [
-    prisma.alert.deleteMany({ where: { checkInId: checkIn.id } }),
+    prisma.alert.deleteMany({
+      where: { checkInId: checkIn.id, resolvedAt: null },
+    }),
   ];
 
-  if (flags.length > 0) {
+  if (pending.length > 0) {
     operations.push(
       prisma.alert.createMany({
-        data: flags.map((flag) => ({
+        data: pending.map((flag) => ({
           profileId: checkIn.profileId,
           checkInId: checkIn.id,
           type: flag.type,
