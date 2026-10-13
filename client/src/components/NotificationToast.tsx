@@ -97,15 +97,15 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: FONTS.semiBold,
-    fontSize: 12,
-    lineHeight: 17,
+    fontSize: 14,
+    lineHeight: 19,
     color: COLORS.heading,
   },
   message: {
     fontFamily: FONTS.regular,
-    fontSize: 10,
-    lineHeight: 14,
-    color: COLORS.grey500,
+    fontSize: 12,
+    lineHeight: 16,
+    color: COLORS.text,
   },
   dismiss: {
     padding: 6,

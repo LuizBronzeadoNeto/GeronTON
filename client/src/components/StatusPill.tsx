@@ -37,8 +37,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     alignSelf: "flex-start",
     gap: 6,
-    height: 20,
-    borderRadius: 10,
+    minHeight: 22,
+    paddingVertical: 2,
+    borderRadius: 11,
     paddingHorizontal: 10,
   },
   dot: {
@@ -48,6 +49,6 @@ const styles = StyleSheet.create({
   },
   label: {
     fontFamily: FONTS.semiBold,
-    fontSize: 10,
+    fontSize: 12,
   },
 });

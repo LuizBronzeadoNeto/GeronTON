@@ -42,9 +42,7 @@ export function MoodSelector({ value, onChange }: Props) {
               size={30}
               color={option.color}
             />
-            <Text style={[styles.moodLabel, { color: option.color }]}>
-              {option.label}
-            </Text>
+            <Text style={styles.moodLabel}>{option.label}</Text>
           </Pressable>
         ))}
       </View>
@@ -70,7 +68,8 @@ const styles = StyleSheet.create({
   },
   moodLabel: {
     fontFamily: FONTS.semiBold,
-    fontSize: 9,
+    fontSize: 11,
+    color: COLORS.text,
     textAlign: "center",
   },
 });
