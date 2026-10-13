@@ -56,7 +56,7 @@ describe("AlertCard", () => {
 
     fireEvent.press(screen.getByTestId("card-verdict-no"));
 
-    expect(onResolve).toHaveBeenCalledWith(false);
+    expect(onResolve).toHaveBeenCalledWith(false, "");
   });
 
   it("passes true when the signal held up", () => {
@@ -68,7 +68,23 @@ describe("AlertCard", () => {
     fireEvent.press(screen.getByTestId("card-resolve"));
     fireEvent.press(screen.getByTestId("card-verdict-yes"));
 
-    expect(onResolve).toHaveBeenCalledWith(true);
+    expect(onResolve).toHaveBeenCalledWith(true, "");
+  });
+
+  it("sends the note written about the contact", () => {
+    const onResolve = jest.fn();
+    render(
+      <AlertCard testID="card" alert={makeAlert()} onResolve={onResolve} />,
+    );
+
+    fireEvent.press(screen.getByTestId("card-resolve"));
+    fireEvent.changeText(
+      screen.getByTestId("card-note"),
+      "  Liguei, ninguém atendeu  ",
+    );
+    fireEvent.press(screen.getByTestId("card-verdict-yes"));
+
+    expect(onResolve).toHaveBeenCalledWith(true, "Liguei, ninguém atendeu");
   });
 
   it("goes back to the button when the question is cancelled", () => {

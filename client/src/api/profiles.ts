@@ -58,6 +58,8 @@ export interface ProfileDetails {
   profile: Profile;
   latestCheckIn: CheckIn | null;
   alerts: Alert[];
+  /** The last family contacts professionals recorded, newest first. */
+  recentContacts: Alert[];
 }
 
 export async function getProfileDetails(id: number): Promise<ProfileDetails> {

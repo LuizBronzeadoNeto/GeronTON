@@ -49,6 +49,7 @@ type Props = NativeStackScreenProps<AppStackParamList, "ProfileDetail">;
 
 const CRITICAL_WINDOW_DAYS = 14;
 const RECENT_HISTORY_LIMIT = 5;
+const RECENT_CONTACTS_LIMIT = 5;
 
 /**
  * Whether any critical intercorrence happened within the warning window, for
@@ -105,6 +106,7 @@ export function ProfileDetailScreen({ navigation, route }: Props) {
   const [intercorrences, setIntercorrences] = useState<Intercorrence[]>([]);
   const [latestCheckIn, setLatestCheckIn] = useState<CheckIn | null>(null);
   const [alerts, setAlerts] = useState<ClinicalAlert[]>([]);
+  const [recentContacts, setRecentContacts] = useState<ClinicalAlert[]>([]);
   const [missedSignals, setMissedSignals] = useState<MissedSignal[]>([]);
   const [hasRecentCritical, setHasRecentCritical] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -120,6 +122,7 @@ export function ProfileDetailScreen({ navigation, route }: Props) {
           setProfile(details.profile);
           setLatestCheckIn(details.latestCheckIn);
           setAlerts(details.alerts);
+          setRecentContacts(details.recentContacts);
           setIntercorrences(intercorrenceData);
           setHasRecentCritical(hasRecentCriticalEvent(intercorrenceData));
         })
@@ -144,11 +147,23 @@ export function ProfileDetailScreen({ navigation, route }: Props) {
     }, [profileId, isProfessional]),
   );
 
-  async function handleResolveAlert(alertId: number, signalConfirmed: boolean) {
+  async function handleResolveAlert(
+    alertId: number,
+    signalConfirmed: boolean,
+    note: string,
+  ) {
     const previous = alerts;
     setAlerts((old) => old.filter((item) => item.id !== alertId));
     try {
-      await resolveAlert(profileId, alertId, signalConfirmed);
+      const resolved = await resolveAlert(
+        profileId,
+        alertId,
+        signalConfirmed,
+        note,
+      );
+      setRecentContacts((old) =>
+        [resolved, ...old].slice(0, RECENT_CONTACTS_LIMIT),
+      );
     } catch {
       setAlerts(previous);
       setError("Não foi possível resolver o alerta.");
@@ -309,11 +324,38 @@ export function ProfileDetailScreen({ navigation, route }: Props) {
               alert={alert}
               onResolve={
                 isProfessional
-                  ? (signalConfirmed) =>
-                      handleResolveAlert(alert.id, signalConfirmed)
+                  ? (signalConfirmed, note) =>
+                      handleResolveAlert(alert.id, signalConfirmed, note)
                   : undefined
               }
             />
+          ))}
+        </View>
+      ) : null}
+
+      {isProfessional && recentContacts.length > 0 ? (
+        <View testID="detail-contacts" style={styles.card}>
+          <Text style={styles.cardTitle} accessibilityRole="header">
+            Contatos registrados
+          </Text>
+          {recentContacts.map((contact) => (
+            <View key={contact.id} style={styles.missedRow}>
+              <Text style={styles.baselineLabel}>
+                {contact.resolvedAt ? formatDay(contact.resolvedAt) : ""} ·{" "}
+                {contact.resolvedBy?.email ?? "Equipe"}
+              </Text>
+              <Text style={styles.contactMessage}>{contact.message}</Text>
+              <Text style={styles.contactVerdict}>
+                {contact.signalConfirmed
+                  ? "Sinal confirmado"
+                  : "Sinal não se confirmou"}
+              </Text>
+              {contact.resolutionNote ? (
+                <Text style={styles.contactMessage}>
+                  {contact.resolutionNote}
+                </Text>
+              ) : null}
+            </View>
           ))}
         </View>
       ) : null}
@@ -670,6 +712,16 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
   },
   chipRemove: {
+    fontSize: 12,
+    color: COLORS.grey500,
+  },
+  contactMessage: {
+    fontFamily: FONTS.regular,
+    fontSize: 13,
+    color: COLORS.text,
+  },
+  contactVerdict: {
+    fontFamily: FONTS.semiBold,
     fontSize: 12,
     color: COLORS.grey500,
   },

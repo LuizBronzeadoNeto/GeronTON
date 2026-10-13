@@ -212,6 +212,9 @@ model Alert {
   /// Whether the professional found the signal to be real after contacting
   /// the family. Feeds the false positive count in the validation report.
   signalConfirmed Boolean?
+  /// What the professional noted about the contact, e.g. "liguei, ninguém
+  /// atendeu". Null when they wrote nothing or the alert is open.
+  resolutionNote  String?
 
   @@index([profileId, createdAt(sort: Desc)])
   @@index([checkInId])

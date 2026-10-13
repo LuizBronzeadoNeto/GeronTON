@@ -100,6 +100,7 @@ export function makeProfileDetails(
     profile: makeProfile(),
     latestCheckIn: makeCheckIn(),
     alerts: [],
+    recentContacts: [],
     ...overrides,
   };
 }

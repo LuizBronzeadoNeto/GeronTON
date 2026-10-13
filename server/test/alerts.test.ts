@@ -326,6 +326,38 @@ describe("alert routes", () => {
     expect(after.body[0].resolvedBy.email).toBe("profissional@demo.com");
   });
 
+  it("stores the contact note when resolving and clears it on reopen", async () => {
+    await createCheckIn({ glycemia: "300" });
+    const [alert] = (await listAlerts()).body;
+
+    const resolved = await request(app)
+      .put(`/perfis/${perfilId}/alertas/${alert.id}`)
+      .set("Authorization", `Bearer ${professionalToken}`)
+      .send({
+        resolved: true,
+        signalConfirmed: true,
+        note: "Liguei, ninguém atendeu",
+      });
+    expect(resolved.body.resolutionNote).toBe("Liguei, ninguém atendeu");
+
+    const reopened = await request(app)
+      .put(`/perfis/${perfilId}/alertas/${alert.id}`)
+      .set("Authorization", `Bearer ${professionalToken}`)
+      .send({ resolved: false });
+    expect(reopened.body.resolutionNote).toBeNull();
+  });
+
+  it("rejects a contact note that is too long", async () => {
+    await createCheckIn({ glycemia: "300" });
+    const [alert] = (await listAlerts()).body;
+
+    const res = await request(app)
+      .put(`/perfis/${perfilId}/alertas/${alert.id}`)
+      .set("Authorization", `Bearer ${professionalToken}`)
+      .send({ resolved: true, signalConfirmed: true, note: "x".repeat(501) });
+    expect(res.status).toBe(400);
+  });
+
   it("requires the signal verdict when resolving", async () => {
     await createCheckIn({ glycemia: "260" });
     const listed = await listAlerts();

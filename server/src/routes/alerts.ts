@@ -7,6 +7,8 @@ import { requireRole } from "../middleware/requireRole.js";
 
 const router = Router({ mergeParams: true });
 
+const MAX_NOTE_LENGTH = 500;
+
 router.use(loadProfile);
 
 /**
@@ -44,8 +46,9 @@ router.get("/", async (req: Request, res: Response) => {
  *
  * To resolve, send resolved true plus signalConfirmed, which says whether the
  * signal turned out to be real after the team got in touch. It is required so
- * every alert closed by a person counts in the validation report. Sending
- * resolved false reopens the alert and wipes the previous answer. 404 if the
+ * every alert closed by a person counts in the validation report. An optional
+ * note (up to 500 characters) records how the contact went. Sending resolved
+ * false reopens the alert and wipes the previous answer and note. 404 if the
  * alert is not on the profile.
  */
 router.put(
@@ -57,7 +60,7 @@ router.put(
       return res.status(400).json({ error: "invalid alert id" });
     }
 
-    const { resolved, signalConfirmed } = req.body ?? {};
+    const { resolved, signalConfirmed, note } = req.body ?? {};
     if (typeof resolved !== "boolean") {
       return res.status(400).json({ error: "resolved must be a boolean." });
     }
@@ -65,6 +68,14 @@ router.put(
       return res
         .status(400)
         .json({ error: "signalConfirmed must be a boolean." });
+    }
+    if (
+      note !== undefined &&
+      (typeof note !== "string" || note.length > MAX_NOTE_LENGTH)
+    ) {
+      return res.status(400).json({
+        error: `note must be a string of up to ${MAX_NOTE_LENGTH} characters.`,
+      });
     }
 
     const existing = await prisma.alert.findFirst({
@@ -81,8 +92,14 @@ router.put(
             resolvedAt: new Date(),
             resolvedById: req.user!.id,
             signalConfirmed,
+            resolutionNote: note?.trim() || null,
           }
-        : { resolvedAt: null, resolvedById: null, signalConfirmed: null },
+        : {
+            resolvedAt: null,
+            resolvedById: null,
+            signalConfirmed: null,
+            resolutionNote: null,
+          },
       include: RESOLVED_BY,
     });
 

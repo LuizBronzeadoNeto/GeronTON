@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import type { Alert, AlertSeverity, AlertType } from "../api/alerts";
 import { StatusPill } from "./StatusPill";
@@ -11,7 +11,7 @@ interface Props {
   testID?: string;
   subtitle?: string;
   onPress?: () => void;
-  onResolve?: (signalConfirmed: boolean) => void;
+  onResolve?: (signalConfirmed: boolean, note: string) => void;
 }
 
 const SEVERITIES: Record<
@@ -46,7 +46,8 @@ const TYPE_ICONS: Record<AlertType, keyof typeof Ionicons.glyphMap> = {
  * onResolve adds the "Contato feito" action shown to healthcare professionals.
  *
  * Marking the contact as done asks whether the signal turned out to be real
- * before calling onResolve, since that answer feeds the false positive count.
+ * before calling onResolve, since that answer feeds the false positive count,
+ * and offers an optional note on how the contact went.
  */
 export function AlertCard({
   alert,
@@ -57,10 +58,11 @@ export function AlertCard({
 }: Props) {
   const severity = SEVERITIES[alert.severity];
   const [asking, setAsking] = useState(false);
+  const [note, setNote] = useState("");
 
   function answer(signalConfirmed: boolean) {
     setAsking(false);
-    onResolve?.(signalConfirmed);
+    onResolve?.(signalConfirmed, note.trim());
   }
 
   return (
@@ -103,6 +105,17 @@ export function AlertCard({
             testID={testID ? `${testID}-verdict` : undefined}
             style={styles.verdict}
           >
+            <TextInput
+              testID={testID ? `${testID}-note` : undefined}
+              style={styles.noteInput}
+              placeholder="Como foi o contato? Ex.: liguei, ninguém atendeu"
+              placeholderTextColor={COLORS.grey400}
+              accessibilityLabel="Observação sobre o contato (opcional)"
+              value={note}
+              onChangeText={setNote}
+              maxLength={500}
+              multiline
+            />
             <Text style={styles.verdictQuestion}>
               Depois do contato, o sinal procedia?
             </Text>
@@ -199,6 +212,18 @@ const styles = StyleSheet.create({
   },
   verdict: {
     gap: 6,
+  },
+  noteInput: {
+    minHeight: 60,
+    borderWidth: 1,
+    borderColor: COLORS.grey300,
+    borderRadius: 8,
+    backgroundColor: COLORS.white,
+    padding: 10,
+    fontFamily: FONTS.regular,
+    fontSize: 13,
+    color: COLORS.text,
+    textAlignVertical: "top",
   },
   verdictQuestion: {
     fontFamily: FONTS.semiBold,

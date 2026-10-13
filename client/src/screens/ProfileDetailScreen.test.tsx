@@ -289,8 +289,49 @@ describe("ProfileDetailScreen", () => {
     fireEvent.press(screen.getByTestId("detail-alert-31-resolve"));
     fireEvent.press(screen.getByTestId("detail-alert-31-verdict-yes"));
 
-    await waitFor(() => expect(resolveAlert).toHaveBeenCalledWith(7, 31, true));
+    await waitFor(() =>
+      expect(resolveAlert).toHaveBeenCalledWith(7, 31, true, ""),
+    );
     expect(screen.queryByTestId("detail-alert-31")).toBeNull();
+  });
+
+  it("lists the recorded family contacts for professionals", async () => {
+    jest.mocked(getProfileDetails).mockResolvedValue(
+      makeProfileDetails({
+        profile: MOCK_PROFILE,
+        recentContacts: [
+          makeAlert({
+            id: 9,
+            resolvedAt: "2026-10-12T15:00:00.000Z",
+            signalConfirmed: false,
+            resolutionNote: "Família disse que está tudo bem",
+            resolvedBy: { id: 2, email: "prof@x.com" },
+          }),
+        ],
+      }),
+    );
+    renderScreen();
+
+    expect(await screen.findByTestId("detail-contacts")).toBeTruthy();
+    expect(screen.getByText("Família disse que está tudo bem")).toBeTruthy();
+    expect(screen.getByText("Sinal não se confirmou")).toBeTruthy();
+    expect(screen.getByText(/prof@x\.com/)).toBeTruthy();
+  });
+
+  it("hides the contact history from caregivers", async () => {
+    mockSignedInAs("cuidador");
+    jest.mocked(getProfileDetails).mockResolvedValue(
+      makeProfileDetails({
+        profile: MOCK_PROFILE,
+        recentContacts: [
+          makeAlert({ id: 9, resolvedAt: "2026-10-12T15:00:00.000Z" }),
+        ],
+      }),
+    );
+    renderScreen();
+
+    await screen.findByTestId("profile-detail");
+    expect(screen.queryByTestId("detail-contacts")).toBeNull();
   });
 
   it("hides the resolve action from caregivers", async () => {
