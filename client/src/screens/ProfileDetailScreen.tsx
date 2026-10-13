@@ -34,6 +34,7 @@ import {
   WEEKLY_EVENTS,
   moodLabel,
 } from "../constants/checkin";
+import { isCriticalEvent } from "../constants/intercorrence";
 import { useAuth } from "../context/AuthContext";
 import { AlertCard } from "../components/AlertCard";
 import { IntercorrenceRow } from "../components/IntercorrenceRow";
@@ -54,7 +55,8 @@ const RECENT_HISTORY_LIMIT = 5;
 function hasRecentCriticalEvent(intercorrences: Intercorrence[]): boolean {
   const windowStart = Date.now() - CRITICAL_WINDOW_DAYS * 24 * 60 * 60 * 1000;
   return intercorrences.some(
-    (item) => item.isCritical && new Date(item.date).getTime() >= windowStart,
+    (item) =>
+      isCriticalEvent(item) && new Date(item.date).getTime() >= windowStart,
   );
 }
 

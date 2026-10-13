@@ -1,6 +1,7 @@
 import { describe, it, expect, jest } from "@jest/globals";
 import { makeIntercorrence } from "../test-utils";
 import { render, screen, fireEvent } from "@testing-library/react-native";
+import { Linking } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { IntercorrenceConfirmationScreen } from "./IntercorrenceConfirmationScreen";
 import type { AppStackParamList } from "../types/navigation";
@@ -12,11 +13,15 @@ type Props = NativeStackScreenProps<
   "IntercorrenceConfirmation"
 >;
 
-function renderScreen(intercorrence: Intercorrence, profileId = 7) {
+function renderScreen(
+  intercorrence: Intercorrence,
+  profileId = 7,
+  teamNotified = false,
+) {
   const navigation = { goBack: jest.fn(), navigate: jest.fn() };
   const props = {
     navigation,
-    route: { params: { profileId, intercorrence } },
+    route: { params: { profileId, intercorrence, teamNotified } },
   } as unknown as Props;
   return {
     navigation,
@@ -46,11 +51,39 @@ describe("IntercorrenceConfirmationScreen", () => {
     expect(screen.queryByTestId("confirmation-critical")).toBeNull();
   });
 
-  it("shows the urgency notice for critical events", () => {
-    renderScreen(makeIntercorrence({ isCritical: true }));
+  it("tells the caregiver the team was notified and to call 192", () => {
+    renderScreen(makeIntercorrence({ isCritical: true }), 7, true);
 
     expect(screen.getByTestId("confirmation-critical")).toBeTruthy();
     expect(screen.getByText("Crítico")).toBeTruthy();
+    expect(
+      screen.getByText(/equipe de saúde que acompanha o idoso foi avisada/),
+    ).toBeTruthy();
+    expect(screen.getByTestId("emergency-callout")).toBeTruthy();
+  });
+
+  it("does not promise contact when no professional is linked", () => {
+    renderScreen(makeIntercorrence({ isCritical: true }), 7, false);
+
+    expect(screen.getByText(/ninguém foi avisado/)).toBeTruthy();
+    expect(screen.queryByText(/foi avisada/)).toBeNull();
+  });
+
+  it("treats an intrinsically critical type as critical", () => {
+    renderScreen(
+      makeIntercorrence({ eventType: "bleeding", isCritical: false }),
+    );
+
+    expect(screen.getByTestId("emergency-callout")).toBeTruthy();
+  });
+
+  it("opens the dialer on the SAMU number", () => {
+    const openURL = jest.spyOn(Linking, "openURL").mockResolvedValue(true);
+    renderScreen(makeIntercorrence({ isCritical: true }));
+
+    fireEvent.press(screen.getByTestId("emergency-callout-call"));
+
+    expect(openURL).toHaveBeenCalledWith("tel:192");
   });
 
   it("omits the description block when it is empty", () => {

@@ -19,6 +19,7 @@ export type AppStackParamList = {
   IntercorrenceConfirmation: {
     profileId: number;
     intercorrence: Intercorrence;
+    teamNotified: boolean;
   };
   IntercorrenceList: { profileId: number };
   WeeklyCheckIn: { profileId: number };

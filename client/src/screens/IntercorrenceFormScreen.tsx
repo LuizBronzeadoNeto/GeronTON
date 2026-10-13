@@ -10,8 +10,13 @@ import {
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { AppStackParamList } from "../types/navigation";
 import { createIntercorrence } from "../api/intercorrences";
-import { EVENT_TYPE_OPTIONS, eventTypeLabel } from "../constants/intercorrence";
+import {
+  EVENT_TYPE_OPTIONS,
+  eventTypeLabel,
+  isCriticalEvent,
+} from "../constants/intercorrence";
 import { useNotification } from "../context/NotificationContext";
+import { EmergencyCallout } from "../components/EmergencyCallout";
 import { ProfileHeader } from "../components/ProfileHeader";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { SelectField } from "../components/SelectField";
@@ -62,11 +67,12 @@ export function IntercorrenceFormScreen({ navigation, route }: Props) {
           ? "Intercorrência crítica registrada"
           : "Intercorrência registrada",
         message: `${eventTypeLabel(eventType)} adicionada ao histórico do idoso.`,
-        critical: isCritical,
+        critical: isCriticalEvent({ eventType, isCritical }),
       });
       navigation.replace("IntercorrenceConfirmation", {
         profileId,
         intercorrence,
+        teamNotified: intercorrence.teamNotified,
       });
     } catch {
       setError("Não foi possível registrar a intercorrência.");
@@ -83,6 +89,8 @@ export function IntercorrenceFormScreen({ navigation, route }: Props) {
       <ProfileHeader profileId={profileId} />
 
       <Text style={styles.title}>Registrar intercorrência</Text>
+
+      <EmergencyCallout />
 
       <SelectField
         testID="intercorrence-eventType"

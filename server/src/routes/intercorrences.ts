@@ -4,7 +4,7 @@ import { loadProfile } from "../middleware/loadProfile.js";
 import { prisma } from "../lib/prisma.js";
 import { dispatchProfileNotification } from "../services/push.js";
 import { eventTypeLabel } from "../utils/labels.js";
-import { CRITICAL_EVENT_TYPES } from "../utils/risk.js";
+import { isCriticalIntercorrence } from "../utils/risk.js";
 
 const router = Router({ mergeParams: true });
 
@@ -16,7 +16,9 @@ const EVENT_TYPES = Object.values(EventType);
  * POST /perfis/:perfilId/intercorrencias — record an adverse event for the
  * profile. `eventType` must be one of the EventType enum values and
  * `isCritical` a boolean; `description` is optional and defaults to an empty
- * string. Responds 201 with the created intercorrence.
+ * string. Responds 201 with the created intercorrence plus `teamNotified`,
+ * which says whether a critical event reached a linked professional, so the
+ * caregiver is not promised a call nobody was told to make.
  */
 router.post("/", async (req: Request, res: Response) => {
   const { eventType, isCritical, description } = req.body ?? {};
@@ -42,18 +44,39 @@ router.post("/", async (req: Request, res: Response) => {
     },
   });
 
-  notifyCriticalEvent(req, intercorrence);
+  const critical = isCriticalIntercorrence(intercorrence);
+  const teamNotified =
+    critical && (await hasLinkedProfessional(req.profile!.id, req.user!.id));
 
-  return res.status(201).json(intercorrence);
+  if (critical) notifyCriticalEvent(req, intercorrence);
+
+  return res.status(201).json({ ...intercorrence, teamNotified });
 });
 
 /**
- * Alerts the rest of the care team about a critical intercorrence.
- *
- * Criticality follows the definition the risk engine already uses
- * (utils/risk.ts): the caregiver's own flag, or an event type that is critical
- * whatever they selected. So a bleed recorded without ticking "crítica" still
- * reaches the team, which is the case worth getting right.
+ * Whether a professional other than the author is linked to the elder, which
+ * is who a critical event notifies.
+ */
+async function hasLinkedProfessional(
+  profileId: number,
+  authorId: number,
+): Promise<boolean> {
+  const count = await prisma.profileAccess.count({
+    where: {
+      profileId,
+      userId: { not: authorId },
+      user: { role: "profissional" },
+    },
+  });
+  return count > 0;
+}
+
+/**
+ * Alerts the rest of the care team about a critical intercorrence. The caller
+ * decides criticality with the risk engine's definition (utils/risk.ts): the
+ * caregiver's own flag, or an event type that is critical whatever they
+ * selected. So a bleed recorded without ticking "crítica" still reaches the
+ * team, which is the case worth getting right.
  *
  * Fire-and-forget by construction: the caregiver's 201 must not wait on a push
  * service, and a push outage must never turn a recorded intercorrence into an
@@ -63,16 +86,8 @@ router.post("/", async (req: Request, res: Response) => {
  */
 function notifyCriticalEvent(
   req: Request,
-  intercorrence: { id: number; eventType: EventType; isCritical: boolean },
+  intercorrence: { id: number; eventType: EventType },
 ): void {
-  const isCriticalEvent =
-    intercorrence.isCritical ||
-    CRITICAL_EVENT_TYPES.has(intercorrence.eventType);
-
-  if (!isCriticalEvent) {
-    return;
-  }
-
   const profile = req.profile!;
 
   dispatchProfileNotification(

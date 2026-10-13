@@ -365,4 +365,13 @@ describe("WeeklyCheckInScreen", () => {
       }),
     );
   });
+
+  it("shows the emergency callout when a critical weekly event is ticked", async () => {
+    renderScreen();
+    await waitFor(() => expect(listCheckIns).toHaveBeenCalled());
+
+    expect(screen.queryByTestId("emergency-callout")).toBeNull();
+    fireEvent.press(screen.getByTestId("checkin-event-active_bleeding"));
+    expect(screen.getByTestId("emergency-callout")).toBeTruthy();
+  });
 });

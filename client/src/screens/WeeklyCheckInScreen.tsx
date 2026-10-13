@@ -28,6 +28,7 @@ import {
   WEEKLY_EVENTS,
   moodLabel,
 } from "../constants/checkin";
+import { EmergencyCallout } from "../components/EmergencyCallout";
 import { ProfileHeader } from "../components/ProfileHeader";
 import { StepIndicator } from "../components/StepIndicator";
 import { PrimaryButton } from "../components/PrimaryButton";
@@ -314,6 +315,11 @@ export function WeeklyCheckInScreen({ navigation, route }: Props) {
             value={texts.otherEvent}
             onChangeText={(value) => setText("otherEvent", value)}
           />
+          {WEEKLY_EVENTS.some(
+            (event) => event.critical && events.includes(event.key),
+          ) ? (
+            <EmergencyCallout />
+          ) : null}
 
           <Text style={styles.sectionTitle}>
             Sinais vitais (média, não obrigatório)
