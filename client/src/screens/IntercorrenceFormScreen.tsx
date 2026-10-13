@@ -89,7 +89,9 @@ export function IntercorrenceFormScreen({ navigation, route }: Props) {
     >
       <ProfileHeader profileId={profileId} />
 
-      <Text style={styles.title}>Registrar intercorrência</Text>
+      <Text style={styles.title} accessibilityRole="header">
+        Registrar intercorrência
+      </Text>
 
       <EmergencyCallout />
 
@@ -102,14 +104,19 @@ export function IntercorrenceFormScreen({ navigation, route }: Props) {
       />
 
       <Text style={styles.label}>Gravidade</Text>
-      <View style={styles.segmented}>
+      <View
+        style={styles.segmented}
+        accessibilityRole="radiogroup"
+        accessibilityLabel="Gravidade"
+      >
         {SEVERITIES.map((severity) => {
           const selected = isCritical === severity.isCritical;
           return (
             <Pressable
               key={severity.label}
               testID={`intercorrence-severity-${severity.label}`}
-              accessibilityRole="button"
+              accessibilityRole="radio"
+              accessibilityState={{ checked: selected }}
               style={[styles.segment, selected && styles.segmentSelected]}
               onPress={() => setIsCritical(severity.isCritical)}
             >
@@ -129,6 +136,7 @@ export function IntercorrenceFormScreen({ navigation, route }: Props) {
       <Text style={styles.label}>Descrição</Text>
       <TextInput
         testID="intercorrence-description"
+        accessibilityLabel="Descrição"
         style={styles.textArea}
         placeholder="O que aconteceu, quando, sintomas associados, o que foi feito..."
         placeholderTextColor={COLORS.grey400}

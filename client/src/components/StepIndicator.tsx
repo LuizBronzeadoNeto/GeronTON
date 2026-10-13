@@ -37,7 +37,8 @@ export function StepIndicator({ current, total, onStepPress }: Props) {
             <Pressable
               testID={`checkin-step-${step}`}
               accessibilityRole="button"
-              accessibilityLabel={`Etapa ${step} de ${total}`}
+              accessibilityLabel={`Etapa ${step} de ${total}${isDone ? ", concluída" : isActive ? ", atual" : ""}`}
+              hitSlop={8}
               disabled={!isDone || !onStepPress}
               style={[
                 styles.circle,

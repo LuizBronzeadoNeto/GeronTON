@@ -1,6 +1,7 @@
 import { useFocusEffect } from "@react-navigation/native";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  AccessibilityInfo,
   ActivityIndicator,
   Pressable,
   ScrollView,
@@ -118,6 +119,7 @@ export function WeeklyCheckInScreen({ navigation, route }: Props) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [draftLoaded, setDraftLoaded] = useState(false);
+  const scrollRef = useRef<ScrollView>(null);
   const [draftRestored, setDraftRestored] = useState(false);
 
   useEffect(() => {
@@ -263,10 +265,22 @@ export function WeeklyCheckInScreen({ navigation, route }: Props) {
     return true;
   }
 
+  /**
+   * Moves to another step, back at the top of the form, and tells screen
+   * reader users where they landed.
+   */
+  function goToStep(next: number) {
+    setStep(next);
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+    AccessibilityInfo.announceForAccessibility(
+      `Etapa ${next} de ${steps.length}: ${steps[next - 1].title}`,
+    );
+  }
+
   function handleBack() {
     setError(null);
     if (step === 1) navigation.goBack();
-    else setStep(step - 1);
+    else goToStep(step - 1);
   }
 
   function optional(value: string): string | null {
@@ -326,12 +340,20 @@ export function WeeklyCheckInScreen({ navigation, route }: Props) {
   const currentStep = steps[step - 1];
 
   return (
-    <ScrollView contentContainerStyle={styles.container} testID="checkin">
+    <ScrollView
+      ref={scrollRef}
+      contentContainerStyle={styles.container}
+      testID="checkin"
+    >
       <ProfileHeader profileId={profileId} />
 
       <View style={styles.stepHeader}>
         <View style={styles.stepTitles}>
-          <Text testID="checkin-title" style={styles.title}>
+          <Text
+            testID="checkin-title"
+            style={styles.title}
+            accessibilityRole="header"
+          >
             {currentStep.title}
           </Text>
           <Text style={styles.stepSubtitle}>{currentStep.subtitle}</Text>
@@ -339,7 +361,7 @@ export function WeeklyCheckInScreen({ navigation, route }: Props) {
         <StepIndicator
           current={step}
           total={steps.length}
-          onStepPress={setStep}
+          onStepPress={goToStep}
         />
       </View>
 
@@ -375,7 +397,9 @@ export function WeeklyCheckInScreen({ navigation, route }: Props) {
             ),
           )}
 
-          <Text style={styles.sectionTitle}>Intercorrências na semana</Text>
+          <Text style={styles.sectionTitle} accessibilityRole="header">
+            Intercorrências na semana
+          </Text>
           {WEEKLY_EVENTS.map((event) => (
             <EventToggleRow
               key={event.key}
@@ -387,6 +411,7 @@ export function WeeklyCheckInScreen({ navigation, route }: Props) {
           <TextInput
             testID="checkin-otherEvent"
             style={checkinStyles.input}
+            accessibilityLabel="Outra intercorrência (opcional)"
             placeholder="Outra intercorrência (opcional)"
             placeholderTextColor={COLORS.grey400}
             value={texts.otherEvent}
@@ -398,18 +423,22 @@ export function WeeklyCheckInScreen({ navigation, route }: Props) {
             <EmergencyCallout />
           ) : null}
 
-          <Text style={styles.sectionTitle}>
+          <Text style={styles.sectionTitle} accessibilityRole="header">
             Sinais vitais (média, não obrigatório)
           </Text>
           <View style={styles.vitalsGrid}>
             {VITALS.map((vital) => (
               <View key={vital.key} style={styles.vitalField}>
                 <View style={styles.vitalLabelZone}>
-                  <Text style={styles.vitalLabel}>{vital.label}</Text>
+                  <Text style={styles.vitalLabel}>
+                    {vital.label} ({vital.unit})
+                  </Text>
                 </View>
                 <TextInput
                   testID={`checkin-${vital.key}`}
                   style={checkinStyles.input}
+                  accessibilityLabel={`${vital.label} (${vital.unit})`}
+                  keyboardType={vital.keyboardType}
                   placeholder={vital.placeholder}
                   placeholderTextColor={COLORS.grey400}
                   value={texts[vital.key]}
@@ -427,12 +456,18 @@ export function WeeklyCheckInScreen({ navigation, route }: Props) {
             <Text style={checkinStyles.questionLabel}>
               Apetite predominante
             </Text>
-            <View style={styles.appetiteRow}>
+            <View
+              style={styles.appetiteRow}
+              accessibilityRole="radiogroup"
+              accessibilityLabel="Apetite predominante"
+            >
               {APPETITE_OPTIONS.map((option) => (
                 <Pressable
                   key={option.value}
                   testID={`checkin-appetite-${option.value}`}
-                  accessibilityRole="button"
+                  accessibilityRole="radio"
+                  accessibilityState={{ checked: appetite === option.value }}
+                  hitSlop={8}
                   style={[
                     checkinStyles.pill,
                     styles.appetitePill,
@@ -549,7 +584,7 @@ export function WeeklyCheckInScreen({ navigation, route }: Props) {
             title="Próximo"
             style={styles.navButton}
             disabled={!canProceed()}
-            onPress={() => setStep(step + 1)}
+            onPress={() => goToStep(step + 1)}
           />
         ) : (
           <PrimaryButton
@@ -564,7 +599,9 @@ export function WeeklyCheckInScreen({ navigation, route }: Props) {
 
       {step === 1 ? (
         <View style={styles.historySection}>
-          <Text style={styles.sectionTitle}>Histórico</Text>
+          <Text style={styles.sectionTitle} accessibilityRole="header">
+            Histórico
+          </Text>
           {loading ? (
             <ActivityIndicator
               testID="checkin-loading"

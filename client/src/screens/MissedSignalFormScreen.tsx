@@ -73,7 +73,9 @@ export function MissedSignalFormScreen({ navigation, route }: Props) {
     >
       <ProfileHeader profileId={profileId} />
 
-      <Text style={styles.title}>Sinal não detectado</Text>
+      <Text style={styles.title} accessibilityRole="header">
+        Sinal não detectado
+      </Text>
       <Text style={styles.hint}>
         Use quando algo aconteceu com o idoso e o sistema não deu nenhum sinal
         antes. Esses registros mostram onde a triagem precisa melhorar.

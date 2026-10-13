@@ -31,7 +31,7 @@ export function ChokingQuestion({
     <View style={checkinStyles.blockRow}>
       <Pressable
         testID="checkin-chokingIncident"
-        accessibilityRole="button"
+        accessibilityRole="checkbox"
         accessibilityState={{ checked: incident }}
         style={styles.radioHeader}
         onPress={onToggleIncident}
@@ -49,6 +49,7 @@ export function ChokingQuestion({
         <>
           <TextInput
             testID="checkin-chokingFrequency"
+            accessibilityLabel="Frequência do engasgo"
             style={checkinStyles.input}
             placeholder="Frequência (ex: 2x na semana)"
             placeholderTextColor={COLORS.grey400}
@@ -57,7 +58,7 @@ export function ChokingQuestion({
           />
           <Pressable
             testID="checkin-breathShortness"
-            accessibilityRole="button"
+            accessibilityRole="checkbox"
             accessibilityState={{ checked: breathShortness }}
             style={styles.radioSubRow}
             onPress={onToggleBreathShortness}

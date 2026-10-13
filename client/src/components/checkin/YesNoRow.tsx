@@ -10,46 +10,49 @@ interface Props {
   onChange: (value: boolean) => void;
 }
 
+const OPTIONS = [
+  { answer: true, label: "Sim", suffix: "yes" },
+  { answer: false, label: "Não", suffix: "no" },
+] as const;
+
 /**
  * Question row with Sim/Não pills, as in the wizard's Figma frames. The chosen
  * pill fills with the primary color; `field` keys the label in
- * YES_NO_QUESTIONS and the `checkin-<field>-yes/no` testIDs.
+ * YES_NO_QUESTIONS and the `checkin-<field>-yes/no` testIDs. The pills form a
+ * radio group named after the question, so screen readers say which question
+ * they answer and which one is chosen.
  */
 export function YesNoRow({ field, value, onChange }: Props) {
+  const question = YES_NO_QUESTIONS[field];
+
   return (
     <View style={styles.questionRow}>
-      <Text style={styles.questionLabel}>{YES_NO_QUESTIONS[field]}</Text>
-      <View style={styles.pillGroup}>
-        <Pressable
-          testID={`checkin-${field}-yes`}
-          accessibilityRole="button"
-          style={[styles.pill, value === true && styles.pillSelected]}
-          onPress={() => onChange(true)}
-        >
-          <Text
-            style={[
-              styles.pillLabel,
-              value === true && styles.pillLabelSelected,
-            ]}
+      <Text style={styles.questionLabel}>{question}</Text>
+      <View
+        style={styles.pillGroup}
+        accessibilityRole="radiogroup"
+        accessibilityLabel={question}
+      >
+        {OPTIONS.map(({ answer, label, suffix }) => (
+          <Pressable
+            key={suffix}
+            testID={`checkin-${field}-${suffix}`}
+            accessibilityRole="radio"
+            accessibilityState={{ checked: value === answer }}
+            hitSlop={8}
+            style={[styles.pill, value === answer && styles.pillSelected]}
+            onPress={() => onChange(answer)}
           >
-            Sim
-          </Text>
-        </Pressable>
-        <Pressable
-          testID={`checkin-${field}-no`}
-          accessibilityRole="button"
-          style={[styles.pill, value === false && styles.pillSelected]}
-          onPress={() => onChange(false)}
-        >
-          <Text
-            style={[
-              styles.pillLabel,
-              value === false && styles.pillLabelSelected,
-            ]}
-          >
-            Não
-          </Text>
-        </Pressable>
+            <Text
+              style={[
+                styles.pillLabel,
+                value === answer && styles.pillLabelSelected,
+              ]}
+            >
+              {label}
+            </Text>
+          </Pressable>
+        ))}
       </View>
     </View>
   );

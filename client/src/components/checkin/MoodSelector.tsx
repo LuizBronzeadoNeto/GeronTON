@@ -20,13 +20,18 @@ export function MoodSelector({ value, onChange }: Props) {
   return (
     <View style={checkinStyles.blockRow}>
       <Text style={checkinStyles.questionLabel}>Humor predominante</Text>
-      <View style={styles.moodRow}>
+      <View
+        style={styles.moodRow}
+        accessibilityRole="radiogroup"
+        accessibilityLabel="Humor predominante"
+      >
         {MOOD_OPTIONS.map((option) => (
           <Pressable
             key={option.value}
             testID={`checkin-mood-${option.value}`}
-            accessibilityRole="button"
-            accessibilityState={{ selected: value === option.value }}
+            accessibilityRole="radio"
+            accessibilityLabel={option.label}
+            accessibilityState={{ checked: value === option.value }}
             style={[
               styles.moodOption,
               value === option.value && styles.moodOptionSelected,

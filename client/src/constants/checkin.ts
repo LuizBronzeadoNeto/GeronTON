@@ -90,14 +90,40 @@ export const MOOD_OPTIONS: {
   },
 ];
 
-export const VITALS: { key: string; label: string; placeholder: string }[] = [
-  { key: "pressure", label: "Pressão", placeholder: "120/80" },
-  { key: "saturation", label: "Saturação", placeholder: "96%" },
-  { key: "glycemia", label: "Glicemia", placeholder: "110" },
+export const VITALS: {
+  key: string;
+  label: string;
+  unit: string;
+  placeholder: string;
+  keyboardType: "numbers-and-punctuation" | "decimal-pad";
+}[] = [
+  {
+    key: "pressure",
+    label: "Pressão",
+    unit: "mmHg",
+    placeholder: "120/80",
+    keyboardType: "numbers-and-punctuation",
+  },
+  {
+    key: "saturation",
+    label: "Saturação",
+    unit: "%",
+    placeholder: "96",
+    keyboardType: "decimal-pad",
+  },
+  {
+    key: "glycemia",
+    label: "Glicemia",
+    unit: "mg/dL",
+    placeholder: "110",
+    keyboardType: "decimal-pad",
+  },
   {
     key: "calfCircumference",
-    label: "Perímetro Panturrilha Esquerda",
-    placeholder: "110",
+    label: "Panturrilha esquerda",
+    unit: "cm",
+    placeholder: "34",
+    keyboardType: "decimal-pad",
   },
 ];
 

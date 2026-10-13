@@ -42,6 +42,7 @@ export function IntercorrenceRow({
         testID={`${testIDPrefix}-intercorrence-delete-${intercorrence.id}`}
         accessibilityRole="button"
         accessibilityLabel="Remover intercorrência"
+        hitSlop={8}
         style={styles.deleteButton}
         onPress={onDelete}
       >

@@ -74,7 +74,9 @@ export function ProfessionalHomeScreen({ navigation }: Props) {
   const alertsPanel =
     alerts.length > 0 || alertsError ? (
       <View testID="professional-alerts" style={styles.alertsPanel}>
-        <Text style={styles.alertsTitle}>Sinais para contato</Text>
+        <Text style={styles.alertsTitle} accessibilityRole="header">
+          Sinais para contato
+        </Text>
         {alertsError ? (
           <Text testID="professional-alerts-error" style={styles.error}>
             {alertsError}

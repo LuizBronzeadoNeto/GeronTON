@@ -100,6 +100,7 @@ export function TagListInput({
         <TextInput
           testID={`${testIDPrefix}-input`}
           style={[styles.input, styles.rowInput]}
+          accessibilityLabel={placeholder}
           placeholder={placeholder}
           placeholderTextColor={COLORS.grey400}
           value={draft}

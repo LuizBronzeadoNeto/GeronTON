@@ -110,6 +110,9 @@ export function RegisterScreen({ navigation }: Props) {
         <TextInput
           testID="register-email"
           style={styles.input}
+          accessibilityLabel="E-mail"
+          autoComplete="email"
+          textContentType="emailAddress"
           placeholder="Digite seu e-mail"
           placeholderTextColor={COLORS.grey400}
           autoCapitalize="none"
@@ -122,6 +125,9 @@ export function RegisterScreen({ navigation }: Props) {
         <TextInput
           testID="register-password"
           style={styles.input}
+          accessibilityLabel="Senha"
+          autoComplete="new-password"
+          textContentType="newPassword"
           placeholder={`Mínimo de ${MIN_PASSWORD_LENGTH} caracteres`}
           placeholderTextColor={COLORS.grey400}
           secureTextEntry
@@ -135,6 +141,7 @@ export function RegisterScreen({ navigation }: Props) {
             <TextInput
               testID="register-crm"
               style={styles.input}
+              accessibilityLabel="CRM"
               placeholder="12345-PB"
               placeholderTextColor={COLORS.grey400}
               autoCapitalize="characters"

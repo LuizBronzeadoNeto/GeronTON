@@ -1,4 +1,5 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
+import { AccessibilityInfo } from "react-native";
 import { makeProfile, mockNavigationModule, mockRiskApi } from "../test-utils";
 import {
   render,
@@ -254,6 +255,58 @@ describe("WeeklyCheckInScreen", () => {
 
     expect(await screen.findByTestId("checkin-draft-restored")).toBeTruthy();
     expect(screen.getByTestId("checkin-hydrationGoal-yes")).toBeTruthy();
+  });
+
+  it("restores a draft's answers as checked radios", async () => {
+    await saveDraft(1, 5, {
+      ...EMPTY_DRAFT,
+      yesNo: { ...EMPTY_DRAFT.yesNo, skinIssues: true },
+    });
+    renderScreen();
+
+    await waitFor(() =>
+      expect(
+        screen.getByTestId("checkin-skinIssues-yes").props.accessibilityState
+          .checked,
+      ).toBe(true),
+    );
+  });
+
+  it("exposes Sim/Não as radios with a checked state", async () => {
+    renderScreen();
+    await waitFor(() => expect(listCheckIns).toHaveBeenCalled());
+
+    fireEvent.press(screen.getByTestId("checkin-skinIssues-yes"));
+
+    expect(
+      screen.getByTestId("checkin-skinIssues-yes").props.accessibilityState
+        .checked,
+    ).toBe(true);
+    expect(
+      screen.getByTestId("checkin-skinIssues-no").props.accessibilityState
+        .checked,
+    ).toBe(false);
+  });
+
+  it("labels the vital-sign inputs with their units", async () => {
+    renderScreen();
+    await waitFor(() => expect(listCheckIns).toHaveBeenCalled());
+
+    expect(screen.getByLabelText("Pressão (mmHg)")).toBeTruthy();
+    expect(screen.getByLabelText("Panturrilha esquerda (cm)")).toBeTruthy();
+  });
+
+  it("announces the new step when moving forward", async () => {
+    const announce = jest.spyOn(AccessibilityInfo, "announceForAccessibility");
+    renderScreen();
+    await waitFor(() => expect(listCheckIns).toHaveBeenCalled());
+
+    answerStep1();
+    fireEvent.press(screen.getByTestId("checkin-next"));
+
+    expect(announce).toHaveBeenCalledWith(
+      expect.stringMatching(/^Etapa 2 de 5/),
+    );
   });
 
   it("saves the answers as a draft while the caregiver fills them in", async () => {

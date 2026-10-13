@@ -42,6 +42,8 @@ export function PrimaryButton({
     <Pressable
       testID={testID}
       accessibilityRole="button"
+      accessibilityLabel={title}
+      accessibilityState={{ disabled: isDisabled, busy: loading }}
       style={[
         styles.button,
         size === "small" && styles.small,

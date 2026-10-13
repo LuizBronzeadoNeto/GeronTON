@@ -76,7 +76,9 @@ export function MedicationInventoryScreen({ route, navigation }: Props) {
   return (
     <View testID="medication-inventory" style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Medicação de Uso Contínuo</Text>
+        <Text style={styles.title} accessibilityRole="header">
+          Medicação de Uso Contínuo
+        </Text>
         <PrimaryButton
           testID="medication-add"
           title="+ Adicionar"
@@ -130,6 +132,7 @@ export function MedicationInventoryScreen({ route, navigation }: Props) {
               testID={`medication-delete-${item.id}`}
               accessibilityRole="button"
               accessibilityLabel="Remover medicamento"
+              hitSlop={8}
               style={styles.deleteButton}
               onPress={() => handleDelete(item.id)}
             >

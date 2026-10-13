@@ -226,7 +226,7 @@ export function ProfileDetailScreen({ navigation, route }: Props) {
       contentContainerStyle={styles.container}
     >
       <View style={styles.nameRow}>
-        <Text style={styles.name} numberOfLines={1}>
+        <Text style={styles.name} numberOfLines={1} accessibilityRole="header">
           {profile.firstName} {profile.lastName}
         </Text>
         <RiskStatusBadge profileId={profileId} />
@@ -294,7 +294,9 @@ export function ProfileDetailScreen({ navigation, route }: Props) {
 
       {alerts.length > 0 ? (
         <View testID="detail-alerts" style={styles.alertsSection}>
-          <Text style={styles.cardTitle}>Sinais para contato</Text>
+          <Text style={styles.cardTitle} accessibilityRole="header">
+            Sinais para contato
+          </Text>
           {alerts.map((alert) => (
             <AlertCard
               key={alert.id}
@@ -314,11 +316,14 @@ export function ProfileDetailScreen({ navigation, route }: Props) {
       {isProfessional ? (
         <View testID="detail-missed" style={styles.card}>
           <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Sinais não detectados</Text>
+            <Text style={styles.cardTitle} accessibilityRole="header">
+              Sinais não detectados
+            </Text>
             <Pressable
               testID="detail-missed-add"
               accessibilityRole="button"
               accessibilityLabel="Registrar sinal não detectado"
+              hitSlop={12}
               onPress={() =>
                 navigation.navigate("MissedSignalForm", { profileId })
               }
@@ -347,6 +352,7 @@ export function ProfileDetailScreen({ navigation, route }: Props) {
                       testID={`detail-missed-delete-${item.id}`}
                       accessibilityRole="button"
                       accessibilityLabel="Remover registro"
+                      hitSlop={8}
                       style={styles.missedDelete}
                       onPress={() => confirmDeleteMissedSignal(item.id)}
                     >
@@ -367,12 +373,15 @@ export function ProfileDetailScreen({ navigation, route }: Props) {
 
       <View style={styles.card}>
         <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle}>Último check-in</Text>
+          <Text style={styles.cardTitle} accessibilityRole="header">
+            Último check-in
+          </Text>
           {latestCheckIn ? (
             <Pressable
               testID="detail-last-checkin-open"
               accessibilityRole="button"
               accessibilityLabel="Ver check-in completo"
+              hitSlop={12}
               onPress={() =>
                 navigation.navigate("CheckInDetail", {
                   profileId,
@@ -419,7 +428,9 @@ export function ProfileDetailScreen({ navigation, route }: Props) {
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Linha de base</Text>
+        <Text style={styles.cardTitle} accessibilityRole="header">
+          Linha de base
+        </Text>
         <View style={styles.baselineRow}>
           <Text style={styles.baselineLabel}>Nascimento</Text>
           <Text style={styles.baselineValue}>
@@ -438,11 +449,14 @@ export function ProfileDetailScreen({ navigation, route }: Props) {
 
       <View style={styles.card}>
         <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle}>Condições</Text>
+          <Text style={styles.cardTitle} accessibilityRole="header">
+            Condições
+          </Text>
           <Pressable
             testID="detail-edit"
             accessibilityRole="button"
             accessibilityLabel="Editar idoso"
+            hitSlop={8}
             style={styles.editButton}
             onPress={() => navigation.navigate("ProfileForm", { profileId })}
           >
@@ -459,6 +473,7 @@ export function ProfileDetailScreen({ navigation, route }: Props) {
                 testID={`detail-condition-remove-${condition}`}
                 accessibilityRole="button"
                 accessibilityLabel={`Remover ${condition}`}
+                hitSlop={8}
                 style={styles.chip}
                 onPress={() => removeCondition(condition)}
               >
@@ -473,7 +488,9 @@ export function ProfileDetailScreen({ navigation, route }: Props) {
 
       <View style={styles.card}>
         <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle}>Histórico recente</Text>
+          <Text style={styles.cardTitle} accessibilityRole="header">
+            Histórico recente
+          </Text>
           {intercorrences.length > 0 ? (
             <Pressable
               testID="detail-history-all"

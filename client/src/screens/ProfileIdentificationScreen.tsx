@@ -142,7 +142,9 @@ export function ProfileIdentificationScreen({ navigation }: Props) {
       contentContainerStyle={styles.container}
       keyboardShouldPersistTaps="handled"
     >
-      <Text style={styles.title}>Identificação</Text>
+      <Text style={styles.title} accessibilityRole="header">
+        Identificação
+      </Text>
       <Text style={styles.hint}>
         Informe o CPF e a data de nascimento do idoso para começar.
       </Text>

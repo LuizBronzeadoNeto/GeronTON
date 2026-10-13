@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -32,6 +32,7 @@ export function LoginScreen({ navigation }: Props) {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const passwordRef = useRef<TextInput>(null);
 
   async function handleSubmit() {
     setError(null);
@@ -71,6 +72,11 @@ export function LoginScreen({ navigation }: Props) {
         <TextInput
           testID="login-email"
           style={styles.input}
+          accessibilityLabel="E-mail"
+          autoComplete="email"
+          textContentType="emailAddress"
+          returnKeyType="next"
+          onSubmitEditing={() => passwordRef.current?.focus()}
           placeholder="Digite seu e-mail"
           placeholderTextColor={COLORS.grey400}
           autoCapitalize="none"
@@ -83,8 +89,16 @@ export function LoginScreen({ navigation }: Props) {
         <Text style={styles.label}>Senha</Text>
         <View style={styles.passwordField}>
           <TextInput
+            ref={passwordRef}
             testID="login-password"
             style={[styles.input, styles.passwordInput]}
+            accessibilityLabel="Senha"
+            autoComplete="current-password"
+            textContentType="password"
+            returnKeyType="go"
+            onSubmitEditing={() => {
+              if (canSubmit) void handleSubmit();
+            }}
             placeholder="Digite sua senha"
             placeholderTextColor={COLORS.grey400}
             secureTextEntry={!showPassword}
@@ -115,6 +129,8 @@ export function LoginScreen({ navigation }: Props) {
         <Pressable
           testID="login-submit"
           accessibilityRole="button"
+          accessibilityLabel="Entrar"
+          accessibilityState={{ disabled: !canSubmit, busy: isSigningIn }}
           style={[styles.button, !canSubmit && styles.buttonDisabled]}
           disabled={!canSubmit}
           onPress={handleSubmit}

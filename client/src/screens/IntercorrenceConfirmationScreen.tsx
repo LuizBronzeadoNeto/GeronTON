@@ -35,7 +35,9 @@ export function IntercorrenceConfirmationScreen({ navigation, route }: Props) {
       <View style={styles.badge}>
         <Ionicons name="checkmark" size={36} color={COLORS.success} />
       </View>
-      <Text style={styles.title}>Intercorrência registrada</Text>
+      <Text style={styles.title} accessibilityRole="header">
+        Intercorrência registrada
+      </Text>
       <Text style={styles.subtitle}>
         O evento foi adicionado ao histórico do idoso.
       </Text>

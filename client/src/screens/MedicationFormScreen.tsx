@@ -125,7 +125,7 @@ export function MedicationFormScreen({ route, navigation }: Props) {
         contentContainerStyle={styles.content}
         bounces={false}
       >
-        <Text style={styles.title}>
+        <Text style={styles.title} accessibilityRole="header">
           {isEditing ? "Editar medicamento" : "Novo medicamento"}
         </Text>
 

@@ -163,7 +163,9 @@ export function RoutineRegistrationScreen({ route }: Props) {
     >
       <ProfileHeader profileId={profileId} />
 
-      <Text style={styles.title}>Rotina e aspectos relevantes</Text>
+      <Text style={styles.title} accessibilityRole="header">
+        Rotina e aspectos relevantes
+      </Text>
 
       {ROUTINE_SECTIONS.map((section) => (
         <View key={section.title} style={styles.section}>

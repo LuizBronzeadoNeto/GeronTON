@@ -18,7 +18,7 @@ export function EventToggleRow({ event, selected, onToggle }: Props) {
   return (
     <Pressable
       testID={`checkin-event-${event.key}`}
-      accessibilityRole="button"
+      accessibilityRole="checkbox"
       accessibilityState={{ checked: selected }}
       style={styles.questionRow}
       onPress={onToggle}

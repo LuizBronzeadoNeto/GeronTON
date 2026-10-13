@@ -123,12 +123,10 @@ describe("IntercorrenceFormScreen", () => {
   });
 
   it("raises the in-app notification, critical when the event is critical", async () => {
-    jest
-      .mocked(createIntercorrence)
-      .mockResolvedValue({
-        ...makeIntercorrence({ isCritical: true }),
-        teamNotified: false,
-      });
+    jest.mocked(createIntercorrence).mockResolvedValue({
+      ...makeIntercorrence({ isCritical: true }),
+      teamNotified: false,
+    });
     renderScreen();
 
     fireEvent.press(screen.getByTestId("intercorrence-eventType"));

@@ -75,7 +75,9 @@ export function IntercorrenceListScreen({ route }: Props) {
       ListHeaderComponent={
         <>
           <ProfileHeader profileId={profileId} />
-          <Text style={styles.title}>Histórico de intercorrências</Text>
+          <Text style={styles.title} accessibilityRole="header">
+            Histórico de intercorrências
+          </Text>
           {loading ? (
             <ActivityIndicator
               testID="intercorrence-list-loading"

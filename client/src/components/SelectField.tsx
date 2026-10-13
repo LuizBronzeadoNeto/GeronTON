@@ -33,6 +33,8 @@ export function SelectField({
       <Pressable
         testID={testID}
         accessibilityRole="button"
+        accessibilityLabel={`${label}: ${value ?? placeholder}`}
+        accessibilityState={{ expanded: open }}
         style={[styles.trigger, open && styles.triggerOpen]}
         onPress={() => setOpen((current) => !current)}
       >
@@ -57,7 +59,8 @@ export function SelectField({
             <Pressable
               key={option}
               testID={`${testID}-option-${option}`}
-              accessibilityRole="button"
+              accessibilityRole="radio"
+              accessibilityState={{ checked: option === value }}
               style={styles.option}
               onPress={() => {
                 onSelect(option);
