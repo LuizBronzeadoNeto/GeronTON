@@ -1,8 +1,8 @@
 import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
-  FlatList,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -20,7 +20,8 @@ import { PrimaryButton } from "../components/PrimaryButton";
 import { EnableNotificationsCard } from "../components/EnableNotificationsCard";
 import { RiskLegend } from "../components/RiskLegend";
 import { AdherenceSummary } from "../components/AdherenceSummary";
-import { COLORS, FONTS } from "../theme";
+import { Section } from "../components/Section";
+import { COLORS, RADIUS, SPACING, TYPE } from "../theme";
 
 type Props = NativeStackScreenProps<AppStackParamList, "Home">;
 
@@ -75,101 +76,37 @@ export function ProfessionalHomeScreen({ navigation }: Props) {
     }, []),
   );
 
-  const alertsPanel =
-    alerts.length > 0 || alertsError ? (
-      <View testID="professional-alerts" style={styles.alertsPanel}>
-        <Text style={styles.alertsTitle} accessibilityRole="header">
-          Sinais para contato
-        </Text>
-        {alertsError ? (
-          <Text testID="professional-alerts-error" style={styles.error}>
-            {alertsError}
-          </Text>
-        ) : null}
-        {alerts.map((alert) => (
-          <AlertCard
-            key={alert.id}
-            testID={`professional-alert-${alert.id}`}
-            alert={alert}
-            subtitle={`${alert.profile.firstName} ${alert.profile.lastName}`}
-            onPress={() =>
-              navigation.navigate("ProfileDetail", {
-                profileId: alert.profileId,
-              })
-            }
-          />
-        ))}
-      </View>
-    ) : null;
-
   const visible =
     filter === "all"
       ? profiles
       : profiles.filter((entry) => entry.risk.status === filter);
 
-  const filters =
-    profiles.length > 0 ? (
-      <View
-        style={styles.filters}
-        accessibilityRole="radiogroup"
-        accessibilityLabel="Filtrar por situação"
-      >
-        {(["all", ...RISK_LEVEL_ORDER] as const).map((key) => {
-          const count =
-            key === "all"
-              ? profiles.length
-              : profiles.filter((entry) => entry.risk.status === key).length;
-          const selected = filter === key;
-          return (
-            <Pressable
-              key={key}
-              testID={`professional-filter-${key}`}
-              accessibilityRole="radio"
-              accessibilityState={{ checked: selected }}
-              style={[styles.filterChip, selected && styles.filterChipSelected]}
-              onPress={() => setFilter(key)}
-            >
-              <Text
-                style={[
-                  styles.filterLabel,
-                  selected && styles.filterLabelSelected,
-                ]}
-              >
-                {key === "all" ? "Todos" : RISK_LEVELS[key].label} ({count})
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
-    ) : null;
-
   return (
-    <View testID="professional-home" style={styles.container}>
-      <Text style={styles.description}>
-        Idosos sob seu acompanhamento. Quem precisa de contato primeiro aparece
-        no topo.
-      </Text>
-
-      {/* Outside the FlatList's header: inside it the card would scroll away
-          with the list, and it is a one-time action, not list content. */}
-      <EnableNotificationsCard />
-
-      <View style={styles.actionsRow}>
-        <PrimaryButton
-          testID="professional-report"
-          title="Relatório de sinais"
-          size="small"
-          variant="outline"
-          style={styles.action}
-          onPress={() => navigation.navigate("SignalReport")}
-        />
-        <PrimaryButton
-          testID="professional-add"
-          title="+ Cadastrar idoso"
-          size="small"
-          style={styles.action}
-          onPress={() => navigation.navigate("ProfileIdentification")}
-        />
+    <ScrollView
+      testID="professional-home"
+      style={styles.screen}
+      contentContainerStyle={styles.container}
+    >
+      <View style={styles.intro}>
+        <Text style={styles.description}>
+          Idosos sob seu acompanhamento. Quem precisa de contato primeiro
+          aparece no topo.
+        </Text>
+        <View style={styles.actionsRow}>
+          <PrimaryButton
+            testID="professional-add"
+            title="Cadastrar idoso"
+            style={styles.action}
+            onPress={() => navigation.navigate("ProfileIdentification")}
+          />
+          <PrimaryButton
+            testID="professional-report"
+            title="Relatório de sinais"
+            variant="outline"
+            style={styles.action}
+            onPress={() => navigation.navigate("SignalReport")}
+          />
+        </View>
       </View>
 
       {loading ? (
@@ -184,60 +121,147 @@ export function ProfessionalHomeScreen({ navigation }: Props) {
         </Text>
       ) : null}
 
-      <FlatList
-        data={visible}
-        keyExtractor={(item) => String(item.id)}
-        contentContainerStyle={styles.listContent}
-        ListHeaderComponent={
-          <>
-            {loading || profiles.length === 0 ? null : (
-              <AdherenceSummary entries={profiles} />
-            )}
-            {filters}
-            {alertsPanel}
-          </>
-        }
-        ListFooterComponent={loading ? null : <RiskLegend />}
-        ListFooterComponentStyle={styles.legendFooter}
-        ListEmptyComponent={
-          loading ? null : (
+      {!loading && profiles.length > 0 ? (
+        <AdherenceSummary entries={profiles} />
+      ) : null}
+
+      {alerts.length > 0 || alertsError ? (
+        <Section testID="professional-alerts" title="Sinais para contato">
+          {alertsError ? (
+            <Text testID="professional-alerts-error" style={styles.error}>
+              {alertsError}
+            </Text>
+          ) : null}
+          {alerts.map((alert) => (
+            <AlertCard
+              key={alert.id}
+              testID={`professional-alert-${alert.id}`}
+              alert={alert}
+              subtitle={`${alert.profile.firstName} ${alert.profile.lastName}`}
+              onPress={() =>
+                navigation.navigate("ProfileDetail", {
+                  profileId: alert.profileId,
+                })
+              }
+            />
+          ))}
+        </Section>
+      ) : null}
+
+      {!loading ? (
+        <Section title="Idosos">
+          {profiles.length > 0 ? (
+            <ScrollView
+              testID="professional-filters"
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.filters}
+              accessibilityRole="radiogroup"
+              accessibilityLabel="Filtrar por situação"
+            >
+              {(["all", ...RISK_LEVEL_ORDER] as const).map((key) => {
+                const count =
+                  key === "all"
+                    ? profiles.length
+                    : profiles.filter((entry) => entry.risk.status === key)
+                        .length;
+                const selected = filter === key;
+                return (
+                  <Pressable
+                    key={key}
+                    testID={`professional-filter-${key}`}
+                    accessibilityRole="radio"
+                    accessibilityState={{ checked: selected }}
+                    style={[
+                      styles.filterChip,
+                      selected && styles.filterChipSelected,
+                    ]}
+                    onPress={() => setFilter(key)}
+                  >
+                    <Text
+                      style={[
+                        styles.filterLabel,
+                        selected && styles.filterLabelSelected,
+                      ]}
+                    >
+                      {key === "all" ? "Todos" : RISK_LEVELS[key].label} (
+                      {count})
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          ) : null}
+          {visible.length === 0 ? (
             <Text testID="professional-empty" style={styles.empty}>
               {filter === "all"
-                ? "Nenhum idoso vinculado ainda"
+                ? "Nenhum idoso vinculado ainda. Toque em Cadastrar idoso e informe o CPF e a data de nascimento."
                 : "Nenhum idoso nesta situação."}
             </Text>
-          )
-        }
-        renderItem={({ item }) => (
-          <ProfileCard
-            profile={item}
-            testIDPrefix="professional"
-            riskStatus={item.risk.status}
-            lastCheckInAt={item.lastCheckInAt}
-            criticalEvents={item.risk.criticalEvents}
-            adherence={item.adherence}
-            onOpen={() =>
-              navigation.navigate("ProfileDetail", { profileId: item.id })
-            }
-          />
-        )}
-      />
-    </View>
+          ) : (
+            <View style={styles.list}>
+              {visible.map((item, index) => (
+                <View key={item.id}>
+                  {index > 0 ? <View style={styles.divider} /> : null}
+                  <ProfileCard
+                    profile={item}
+                    testIDPrefix="professional"
+                    riskStatus={item.risk.status}
+                    lastCheckInAt={item.lastCheckInAt}
+                    criticalEvents={item.risk.criticalEvents}
+                    adherence={item.adherence}
+                    onOpen={() =>
+                      navigation.navigate("ProfileDetail", {
+                        profileId: item.id,
+                      })
+                    }
+                  />
+                </View>
+              ))}
+            </View>
+          )}
+        </Section>
+      ) : null}
+
+      <EnableNotificationsCard />
+
+      {!loading ? <RiskLegend /> : null}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  filters: {
+  screen: {
+    flex: 1,
+    backgroundColor: COLORS.white,
+  },
+  container: {
+    padding: SPACING.screen,
+    gap: SPACING.xl,
+  },
+  intro: {
+    gap: SPACING.lg,
+  },
+  description: {
+    ...TYPE.body,
+    color: COLORS.grey500,
+  },
+  actionsRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginBottom: 12,
+    gap: SPACING.sm,
+  },
+  action: {
+    flex: 1,
+    paddingHorizontal: SPACING.sm,
+  },
+  filters: {
+    gap: SPACING.sm,
   },
   filterChip: {
-    minHeight: 36,
+    minHeight: 40,
     justifyContent: "center",
-    paddingHorizontal: 12,
-    borderRadius: 18,
+    paddingHorizontal: SPACING.md,
+    borderRadius: RADIUS.control,
     borderWidth: 1,
     borderColor: COLORS.grey300,
   },
@@ -246,60 +270,27 @@ const styles = StyleSheet.create({
     borderColor: COLORS.primary,
   },
   filterLabel: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 13,
-    color: COLORS.heading,
+    ...TYPE.label,
   },
   filterLabelSelected: {
     color: COLORS.white,
   },
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.white,
-    paddingHorizontal: 13,
-    paddingTop: 8,
-    gap: 16,
+  list: {
+    borderWidth: 1,
+    borderColor: COLORS.cardBorder,
+    borderRadius: RADIUS.group,
+    overflow: "hidden",
   },
-  description: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 13,
-    lineHeight: 18,
-    color: COLORS.grey500,
-    paddingHorizontal: 8,
-  },
-  actionsRow: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  action: {
-    flex: 1,
-  },
-  alertsPanel: {
-    gap: 8,
-    marginBottom: 12,
-  },
-  alertsTitle: {
-    fontFamily: FONTS.extraBold,
-    fontSize: 16,
-    color: COLORS.heading,
-  },
-  listContent: {
-    gap: 12,
-    paddingBottom: 24,
-  },
-  legendFooter: {
-    marginTop: 12,
+  divider: {
+    height: 1,
+    backgroundColor: COLORS.divider,
   },
   empty: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 14,
-    color: COLORS.primary,
-    textAlign: "center",
-    marginTop: 24,
+    ...TYPE.body,
+    color: COLORS.grey500,
   },
   error: {
-    fontFamily: FONTS.semiBold,
+    ...TYPE.label,
     color: COLORS.danger,
-    textAlign: "center",
   },
 });

@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
 import type { TriageEntry } from "../api/triage";
-import { COLORS, FONTS } from "../theme";
+import { Section } from "./Section";
+import { COLORS, FONTS, RADIUS, SPACING, TYPE } from "../theme";
 
 interface Props {
   entries: TriageEntry[];
@@ -34,59 +35,53 @@ export function AdherenceSummary({ entries }: Props) {
   const average = averageAdherence(entries);
 
   return (
-    <View testID="adherence-summary" style={styles.card}>
-      <Text style={styles.title}>Adesão ao check-in semanal</Text>
-      <View style={styles.row}>
-        <View style={styles.metric}>
-          <Text testID="adherence-this-week" style={styles.value}>
-            {thisWeek} de {entries.length}
-          </Text>
-          <Text style={styles.label}>
-            idosos com check-in nos últimos 7 dias
-          </Text>
+    <View testID="adherence-summary">
+      <Section title="Adesão ao check-in semanal">
+        <View style={styles.metrics}>
+          <View style={styles.metric}>
+            <Text testID="adherence-this-week" style={styles.value}>
+              {thisWeek} de {entries.length}
+            </Text>
+            <Text style={styles.label}>
+              idosos com check-in nos últimos 7 dias
+            </Text>
+          </View>
+          <View style={styles.separator} />
+          <View style={styles.metric}>
+            <Text testID="adherence-average" style={styles.value}>
+              {average === null ? "-" : `${Math.round(average * 100)}%`}
+            </Text>
+            <Text style={styles.label}>média das últimas 8 semanas</Text>
+          </View>
         </View>
-        <View style={styles.metric}>
-          <Text testID="adherence-average" style={styles.value}>
-            {average === null ? "-" : `${Math.round(average * 100)}%`}
-          </Text>
-          <Text style={styles.label}>média das últimas 8 semanas</Text>
-        </View>
-      </View>
+      </Section>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    borderWidth: 1,
-    borderColor: COLORS.grey300,
-    borderRadius: 12,
-    padding: 14,
-    gap: 8,
-    marginBottom: 12,
-  },
-  title: {
-    fontFamily: FONTS.extraBold,
-    fontSize: 14,
-    color: COLORS.heading,
-  },
-  row: {
+  metrics: {
     flexDirection: "row",
-    gap: 12,
+    borderWidth: 1,
+    borderColor: COLORS.cardBorder,
+    borderRadius: RADIUS.group,
   },
   metric: {
     flex: 1,
-    gap: 2,
+    gap: SPACING.xs,
+    padding: SPACING.lg,
+  },
+  separator: {
+    width: 1,
+    backgroundColor: COLORS.divider,
   },
   value: {
     fontFamily: FONTS.extraBold,
-    fontSize: 22,
+    fontSize: 28,
+    lineHeight: 34,
     color: COLORS.primary,
   },
   label: {
-    fontFamily: FONTS.regular,
-    fontSize: 12,
-    lineHeight: 16,
-    color: COLORS.grey500,
+    ...TYPE.caption,
   },
 });

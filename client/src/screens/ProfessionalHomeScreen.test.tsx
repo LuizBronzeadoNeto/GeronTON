@@ -21,6 +21,8 @@ import { listTriage } from "../api/triage";
 import { listCheckIns } from "../api/checkins";
 import { listDashboardAlerts } from "../api/alerts";
 import { getRiskStatus } from "../api/risk";
+import { StyleSheet } from "react-native";
+import { RISK_LEVELS } from "../constants/risk";
 
 jest.mock("../api/triage");
 jest.mock("../api/checkins");
@@ -95,6 +97,22 @@ describe("ProfessionalHomeScreen", () => {
     expect(listCheckIns).not.toHaveBeenCalled();
   });
 
+  it("marks each elder with a rule in their risk colour", async () => {
+    renderScreen();
+
+    const accent = await screen.findByTestId("professional-item-1-accent");
+    expect(StyleSheet.flatten(accent.props.style).backgroundColor).toBe(
+      RISK_LEVELS.high.color,
+    );
+  });
+
+  it("keeps the filters on one horizontally scrolling row", async () => {
+    renderScreen();
+
+    const filters = await screen.findByTestId("professional-filters");
+    expect(filters.props.horizontal).toBe(true);
+  });
+
   it("filters the list by risk level", async () => {
     jest.mocked(listTriage).mockResolvedValue([
       makeTriageEntry({
@@ -141,7 +159,7 @@ describe("ProfessionalHomeScreen", () => {
       expect(screen.getByTestId("professional-item-2")).toBeTruthy(),
     );
 
-    const cards = screen.getAllByTestId(/^professional-item-/);
+    const cards = screen.getAllByTestId(/^professional-item-\d+$/);
     expect(cards.map((card) => card.props.testID)).toEqual([
       "professional-item-2",
       "professional-item-1",
