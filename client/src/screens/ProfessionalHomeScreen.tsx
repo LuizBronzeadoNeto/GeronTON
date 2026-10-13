@@ -109,6 +109,10 @@ export function ProfessionalHomeScreen({ navigation }: Props) {
         </View>
       </View>
 
+      {/* Push is how critical signals reach the professional, so the prompt
+          sits above the list rather than after it. */}
+      <EnableNotificationsCard />
+
       {loading ? (
         <ActivityIndicator
           testID="professional-loading"
@@ -222,8 +226,6 @@ export function ProfessionalHomeScreen({ navigation }: Props) {
           )}
         </Section>
       ) : null}
-
-      <EnableNotificationsCard />
 
       {!loading ? <RiskLegend /> : null}
     </ScrollView>

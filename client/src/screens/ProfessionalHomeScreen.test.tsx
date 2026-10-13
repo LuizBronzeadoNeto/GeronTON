@@ -21,6 +21,7 @@ import { listTriage } from "../api/triage";
 import { listCheckIns } from "../api/checkins";
 import { listDashboardAlerts } from "../api/alerts";
 import { getRiskStatus } from "../api/risk";
+import { getPermission, getSupport } from "../push";
 import { StyleSheet } from "react-native";
 import { RISK_LEVELS } from "../constants/risk";
 
@@ -28,6 +29,7 @@ jest.mock("../api/triage");
 jest.mock("../api/checkins");
 jest.mock("../api/risk");
 jest.mock("../api/alerts");
+jest.mock("../push");
 jest.mock("@react-navigation/native", () => mockNavigationModule());
 
 const MOCK_ENTRY = makeTriageEntry({
@@ -68,6 +70,7 @@ function renderScreen() {
 
 describe("ProfessionalHomeScreen", () => {
   beforeEach(() => {
+    jest.mocked(getSupport).mockReturnValue("unsupported");
     jest.mocked(listTriage).mockReset().mockResolvedValue([MOCK_ENTRY]);
     jest.mocked(listCheckIns).mockReset().mockResolvedValue([]);
     jest.mocked(listDashboardAlerts).mockReset().mockResolvedValue([]);
@@ -95,6 +98,19 @@ describe("ProfessionalHomeScreen", () => {
     await screen.findByTestId("risk-badge-1");
     expect(getRiskStatus).not.toHaveBeenCalled();
     expect(listCheckIns).not.toHaveBeenCalled();
+  });
+
+  it("asks to enable notifications above the elder list", async () => {
+    jest.mocked(getSupport).mockReturnValue("available");
+    jest.mocked(getPermission).mockResolvedValue("default");
+    renderScreen();
+
+    await screen.findByTestId("enable-notifications-card");
+    await screen.findByTestId("professional-item-1");
+    const tree = JSON.stringify(screen.toJSON());
+    expect(tree.indexOf('"enable-notifications-card"')).toBeLessThan(
+      tree.indexOf('"professional-item-1"'),
+    );
   });
 
   it("marks each elder with a rule in their risk colour", async () => {
