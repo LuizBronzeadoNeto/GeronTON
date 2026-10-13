@@ -44,6 +44,7 @@ export function makeProfile(overrides: Partial<Profile> = {}): Profile {
     scholarship: "Superior completo",
     medicalConditions: [],
     notes: null,
+    contactPhone: null,
     caregiverId: 1,
     ...overrides,
   };

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { isAxiosError } from "axios";
 import {
   ActivityIndicator,
   ScrollView,
@@ -78,6 +79,7 @@ export function ProfileFormScreen({ navigation, route }: Props) {
   const [scholarship, setScholarship] = useState<string | null>(null);
   const [conditions, setConditions] = useState<string[]>([]);
   const [notes, setNotes] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
 
   const [loading, setLoading] = useState(isEditing);
   const [saving, setSaving] = useState(false);
@@ -98,6 +100,7 @@ export function ProfileFormScreen({ navigation, route }: Props) {
         setScholarship(profile.scholarship);
         setConditions(profile.medicalConditions);
         setNotes(profile.notes ?? "");
+        setContactPhone(profile.contactPhone ?? "");
       })
       .catch(() => {
         if (active) setError("Não foi possível carregar o perfil.");
@@ -132,6 +135,7 @@ export function ProfileFormScreen({ navigation, route }: Props) {
       scholarship: scholarship ?? "",
       medicalConditions: conditions,
       notes: notes.trim() === "" ? null : notes.trim(),
+      contactPhone: contactPhone.trim() === "" ? null : contactPhone.trim(),
     };
 
     try {
@@ -148,8 +152,13 @@ export function ProfileFormScreen({ navigation, route }: Props) {
           ],
         });
       }
-    } catch {
-      setError("Não foi possível salvar o perfil.");
+    } catch (err) {
+      setError(
+        isAxiosError(err) &&
+          String(err.response?.data?.error ?? "").includes("contactPhone")
+          ? "Confira o telefone: informe o DDD e o número."
+          : "Não foi possível salvar o perfil.",
+      );
     } finally {
       setSaving(false);
     }
@@ -218,6 +227,20 @@ export function ProfileFormScreen({ navigation, route }: Props) {
           />
         </View>
       </View>
+
+      <Text style={styles.label}>Telefone da família (com DDD)</Text>
+      <TextInput
+        testID="profile-phone"
+        style={styles.input}
+        placeholder="(83) 99999-1234"
+        placeholderTextColor={COLORS.grey400}
+        accessibilityLabel="Telefone da família, com DDD"
+        keyboardType="phone-pad"
+        autoComplete="tel"
+        textContentType="telephoneNumber"
+        value={contactPhone}
+        onChangeText={setContactPhone}
+      />
 
       <SelectField
         testID="profile-scholarship"

@@ -126,6 +126,10 @@ describe("ProfileFormScreen", () => {
     );
     fireEvent.press(screen.getByTestId("profile-condition-add"));
     fireEvent.changeText(screen.getByTestId("profile-notes"), "Obs geral");
+    fireEvent.changeText(
+      screen.getByTestId("profile-phone"),
+      "(83) 99999-1234",
+    );
 
     fireEvent.press(screen.getByTestId("profile-submit"));
 
@@ -139,6 +143,7 @@ describe("ProfileFormScreen", () => {
       scholarship: "Fundamental completo",
       medicalConditions: ["Diabetes", "Sarcopenia"],
       notes: "Obs geral",
+      contactPhone: "(83) 99999-1234",
     });
     await waitFor(() => expect(navigation.reset).toHaveBeenCalled());
     expect(navigation.reset).toHaveBeenCalledWith({
@@ -206,6 +211,7 @@ describe("ProfileFormScreen", () => {
       scholarship: "Superior completo",
       medicalConditions: ["Diabetes", "Sarcopenia"],
       notes: "Prefere visitas pela manhã",
+      contactPhone: null,
     });
   });
 

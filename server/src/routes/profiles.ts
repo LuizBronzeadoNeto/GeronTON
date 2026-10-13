@@ -3,7 +3,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 import { authMiddleware } from "../middleware/authenticateUser.js";
 import { loadProfile } from "../middleware/loadProfile.js";
-import { missingFields, optionalText } from "../utils/validation.js";
+import { missingFields, optionalText, readPhone } from "../utils/validation.js";
 import { isValidCpf, normalizeCpf } from "../utils/cpf.js";
 import medicationsRouter from "./medications.js";
 import routinesRouter from "./routines.js";
@@ -66,6 +66,13 @@ router.post("/", async (req: Request, res: Response) => {
     return res.status(400).json({ error: "birthDate must be a valid date" });
   }
 
+  const contactPhone = readPhone(body.contactPhone);
+  if (contactPhone === "invalid") {
+    return res
+      .status(400)
+      .json({ error: "contactPhone must have DDD + number (10 or 11 digits)" });
+  }
+
   const caregiverId =
     user.role === "profissional" && typeof body.caregiverId === "number"
       ? body.caregiverId
@@ -99,6 +106,7 @@ router.post("/", async (req: Request, res: Response) => {
             ? body.medicalConditions.map(String)
             : [],
           notes: optionalText(body.notes),
+          contactPhone,
           caregiverId,
         },
       });
@@ -283,6 +291,18 @@ router.put("/:id", loadProfile, async (req: Request, res: Response) => {
   if (body.scholarship !== undefined) data.scholarship = body.scholarship;
   if (body.sex !== undefined) data.sex = optionalText(body.sex);
   if (body.notes !== undefined) data.notes = optionalText(body.notes);
+
+  if (body.contactPhone !== undefined) {
+    const contactPhone = readPhone(body.contactPhone);
+    if (contactPhone === "invalid") {
+      return res
+        .status(400)
+        .json({
+          error: "contactPhone must have DDD + number (10 or 11 digits)",
+        });
+    }
+    data.contactPhone = contactPhone;
+  }
 
   if (body.medicalConditions !== undefined) {
     if (!Array.isArray(body.medicalConditions)) {

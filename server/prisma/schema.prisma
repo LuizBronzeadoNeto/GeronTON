@@ -69,6 +69,8 @@ model Profile {
   scholarship       String
   medicalConditions String[]
   notes             String?
+  /// Family contact phone, digits only (DDD + number).
+  contactPhone      String?
   caregiverId       Int
   caregiver         User            @relation("CaregiverProfiles", fields: [caregiverId], references: [id], onDelete: Cascade)
   medications       Medication[]

@@ -183,3 +183,44 @@ describe("/perfis", () => {
     expect(res.status).toBe(404);
   });
 });
+
+describe("/perfis family contact phone", () => {
+  function createWithPhone(cpfBase: string, contactPhone: string) {
+    return request(app)
+      .post("/perfis")
+      .set("Authorization", `Bearer ${caregiverToken}`)
+      .send({
+        cpf: makeCpf(cpfBase),
+        firstName: PROFILE_MARKER,
+        lastName: "Telefone",
+        birthDate: PROFILE_BIRTH_DATE,
+        scholarship: "ensino fundamental",
+        contactPhone,
+      });
+  }
+
+  it("stores the family phone as digits", async () => {
+    const res = await createWithPhone("150000001", "(83) 99999-1234");
+
+    expect(res.status).toBe(201);
+    expect(res.body.contactPhone).toBe("83999991234");
+  });
+
+  it("rejects a phone without DDD", async () => {
+    const res = await createWithPhone("150000002", "99999-1234");
+
+    expect(res.status).toBe(400);
+  });
+
+  it("clears the phone when sent empty on update", async () => {
+    const created = await createWithPhone("150000003", "8332221100");
+
+    const res = await request(app)
+      .put(`/perfis/${created.body.id}`)
+      .set("Authorization", `Bearer ${caregiverToken}`)
+      .send({ contactPhone: "" });
+
+    expect(res.status).toBe(200);
+    expect(res.body.contactPhone).toBeNull();
+  });
+});

@@ -37,6 +37,7 @@ import { isCriticalEvent } from "../constants/intercorrence";
 import { useAuth } from "../context/AuthContext";
 import { AlertCard } from "../components/AlertCard";
 import { IntercorrenceRow } from "../components/IntercorrenceRow";
+import { FamilyContactCard } from "../components/FamilyContactCard";
 import { RiskReasons } from "../components/RiskReasons";
 import { RiskStatusBadge } from "../components/RiskStatusBadge";
 import { SeverityPill } from "../components/SeverityPill";
@@ -287,6 +288,8 @@ export function ProfileDetailScreen({ navigation, route }: Props) {
           <Text style={styles.actionOutlineLabel}>Medicação</Text>
         </Pressable>
       </View>
+
+      <FamilyContactCard phone={profile.contactPhone} notes={profile.notes} />
 
       {error ? (
         <Text testID="profile-detail-error" style={styles.error}>
