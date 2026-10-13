@@ -1,5 +1,5 @@
 import { useFocusEffect } from "@react-navigation/native";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -40,6 +40,9 @@ import { EventToggleRow } from "../components/checkin/EventToggleRow";
 import { ChokingQuestion } from "../components/checkin/ChokingQuestion";
 import { MoodSelector } from "../components/checkin/MoodSelector";
 import { StressLevelSlider } from "../components/checkin/StressLevelSlider";
+import { useAuth } from "../context/AuthContext";
+import { useNotification } from "../context/NotificationContext";
+import { clearDraft, loadDraft, saveDraft } from "../utils/checkInDraft";
 import { COLORS, FONTS } from "../theme";
 
 type Props = NativeStackScreenProps<AppStackParamList, "WeeklyCheckIn">;
@@ -59,9 +62,16 @@ const SHORT_FORM_STEPS = 3;
  * The short version, chosen on the first step, stops after the behavior step.
  * It skips hygiene and the shopping list, which don't feed the score, so the
  * signals come out the same while the caregiver answers fewer questions.
+ *
+ * Every answer is saved as a draft for this user and elder, so leaving the
+ * screen, closing the app or the session expiring mid-form loses nothing; the
+ * draft is restored on the next visit and cleared once the check-in is sent.
  */
 export function WeeklyCheckInScreen({ navigation, route }: Props) {
   const { profileId } = route.params;
+  const { user } = useAuth();
+  const userId = user?.id ?? 0;
+  const { notify } = useNotification();
 
   const [step, setStep] = useState(1);
   const [shortForm, setShortForm] = useState(false);
@@ -106,6 +116,61 @@ export function WeeklyCheckInScreen({ navigation, route }: Props) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [draftLoaded, setDraftLoaded] = useState(false);
+  const [draftRestored, setDraftRestored] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    void loadDraft(userId, profileId).then((draft) => {
+      if (!active) return;
+      if (draft) {
+        setStep(draft.step);
+        setShortForm(draft.shortForm);
+        setYesNo(draft.yesNo);
+        setEvents(draft.events);
+        setTexts(draft.texts);
+        setLists(draft.lists);
+        setAppetite(draft.appetite);
+        setMood(draft.mood);
+        setStressLevel(draft.stressLevel);
+        setDraftRestored(true);
+      }
+      setDraftLoaded(true);
+    });
+    return () => {
+      active = false;
+    };
+  }, [userId, profileId]);
+
+  // Saved on every change once the stored draft has been read, so the empty
+  // initial state never overwrites it.
+  useEffect(() => {
+    if (!draftLoaded) return;
+    void saveDraft(userId, profileId, {
+      step,
+      shortForm,
+      yesNo,
+      events,
+      texts,
+      lists,
+      appetite,
+      mood,
+      stressLevel,
+    });
+  }, [
+    draftLoaded,
+    userId,
+    profileId,
+    step,
+    shortForm,
+    yesNo,
+    events,
+    texts,
+    lists,
+    appetite,
+    mood,
+    stressLevel,
+  ]);
 
   useFocusEffect(
     useCallback(() => {
@@ -244,6 +309,11 @@ export function WeeklyCheckInScreen({ navigation, route }: Props) {
 
     try {
       await createCheckIn(profileId, input);
+      await clearDraft(userId, profileId);
+      notify({
+        title: "Check-in salvo",
+        message: "As respostas da semana foram registradas.",
+      });
       navigation.goBack();
     } catch {
       setError("Não foi possível salvar o check-in.");
@@ -271,6 +341,12 @@ export function WeeklyCheckInScreen({ navigation, route }: Props) {
           onStepPress={setStep}
         />
       </View>
+
+      {draftRestored ? (
+        <Text testID="checkin-draft-restored" style={styles.draftNotice}>
+          Continuando de onde você parou.
+        </Text>
+      ) : null}
 
       {step === 1 ? (
         <View style={styles.stepContent}>
@@ -549,6 +625,12 @@ const styles = StyleSheet.create({
   },
   stepContent: {
     gap: 8,
+  },
+  draftNotice: {
+    fontFamily: FONTS.semiBold,
+    fontSize: 13,
+    color: COLORS.primary,
+    marginBottom: 8,
   },
   shortFormBox: {
     borderWidth: 1,

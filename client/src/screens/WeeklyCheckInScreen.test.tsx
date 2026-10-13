@@ -12,6 +12,12 @@ import type { AppStackParamList } from "../types/navigation";
 import { createCheckIn, listCheckIns, type CheckIn } from "../api/checkins";
 import { getProfile } from "../api/profiles";
 import { listMedications, type Medication } from "../api/medications";
+import {
+  clearDraft,
+  loadDraft,
+  saveDraft,
+  type CheckInDraft,
+} from "../utils/checkInDraft";
 
 jest.mock("../api/checkins");
 jest.mock("../api/profiles");
@@ -19,6 +25,48 @@ jest.mock("../api/medications");
 jest.mock("../api/risk");
 
 jest.mock("@react-navigation/native", () => mockNavigationModule());
+jest.mock("../context/AuthContext", () => ({
+  useAuth: () => ({ user: { id: 1, role: "cuidador" } }),
+}));
+const mockNotify = jest.fn();
+jest.mock("../context/NotificationContext", () => ({
+  useNotification: () => ({ notify: mockNotify }),
+}));
+
+/** The wizard's initial answers, as a stored draft. */
+const EMPTY_DRAFT: CheckInDraft = {
+  step: 1,
+  shortForm: false,
+  yesNo: {
+    skinIssues: null,
+    bowelRegular: null,
+    sleepWell: null,
+    unstableGait: null,
+    chokingIncident: false,
+    breathShortness: false,
+    hydrationGoal: null,
+    medsOnTime: null,
+    sunExposure: null,
+    selfExpression: null,
+    stimulation: null,
+    dailyBath: null,
+    oralHygiene: null,
+    groomedNails: null,
+  },
+  events: [],
+  texts: {
+    otherEvent: "",
+    pressure: "",
+    saturation: "",
+    glycemia: "",
+    calfCircumference: "",
+    chokingFrequency: "",
+  },
+  lists: { needsMedications: [], needsHygiene: [], needsFood: [] },
+  appetite: null,
+  mood: null,
+  stressLevel: 0,
+};
 
 function makeMedication(name: string): Medication {
   return {
@@ -110,7 +158,10 @@ function completeWizardUntilLastStep() {
 }
 
 describe("WeeklyCheckInScreen", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    await clearDraft(1, 5);
+    await clearDraft(1, 9);
+    mockNotify.mockReset();
     jest.mocked(listCheckIns).mockReset().mockResolvedValue([]);
     jest.mocked(listMedications).mockReset().mockResolvedValue([]);
     jest
@@ -191,6 +242,29 @@ describe("WeeklyCheckInScreen", () => {
     });
 
     await waitFor(() => expect(navigation.goBack).toHaveBeenCalled());
+    expect(mockNotify).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Check-in salvo" }),
+    );
+    expect(await loadDraft(1, 9)).toBeNull();
+  });
+
+  it("restores the answers saved in a draft", async () => {
+    await saveDraft(1, 5, { ...EMPTY_DRAFT, step: 2 });
+    renderScreen();
+
+    expect(await screen.findByTestId("checkin-draft-restored")).toBeTruthy();
+    expect(screen.getByTestId("checkin-hydrationGoal-yes")).toBeTruthy();
+  });
+
+  it("saves the answers as a draft while the caregiver fills them in", async () => {
+    renderScreen();
+    await waitFor(() => expect(listCheckIns).toHaveBeenCalled());
+
+    fireEvent.press(screen.getByTestId("checkin-event-fever"));
+
+    await waitFor(async () =>
+      expect((await loadDraft(1, 5))?.events).toEqual(["fever"]),
+    );
   });
 
   it("offers the elder's registered medications as one-tap suggestions", async () => {

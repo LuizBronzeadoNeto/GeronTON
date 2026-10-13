@@ -27,7 +27,7 @@ type Props = NativeStackScreenProps<AuthStackParamList, "Login">;
  * "Esqueceu a senha?" is still visual-only, as no reset flow exists.
  */
 export function LoginScreen({ navigation }: Props) {
-  const { signIn, isSigningIn } = useAuth();
+  const { signIn, isSigningIn, sessionExpired } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -60,6 +60,12 @@ export function LoginScreen({ navigation }: Props) {
         <Text style={styles.subtitle}>
           Insira seus dados para acessar a plataforma
         </Text>
+
+        {sessionExpired ? (
+          <Text testID="login-session-expired" style={styles.sessionExpired}>
+            Sua sessão expirou. Entre de novo para continuar.
+          </Text>
+        ) : null}
 
         <Text style={styles.label}>E-mail</Text>
         <TextInput
@@ -194,6 +200,15 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     color: COLORS.heading,
     marginBottom: 6,
+  },
+  sessionExpired: {
+    fontFamily: FONTS.semiBold,
+    fontSize: 13,
+    color: COLORS.heading,
+    backgroundColor: COLORS.chipBg,
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
   },
   input: {
     height: 50,

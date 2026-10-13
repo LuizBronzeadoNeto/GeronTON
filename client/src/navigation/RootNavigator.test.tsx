@@ -18,6 +18,7 @@ function renderAs(user: User | null) {
     user,
     isSigningIn: false,
     isRestoring: false,
+    sessionExpired: false,
     signIn: jest.fn(async () => {}),
     signOut: jest.fn(),
     acceptConsent: jest.fn(async () => {}),
