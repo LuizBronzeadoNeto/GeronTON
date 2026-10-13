@@ -160,12 +160,14 @@ export function ProfessionalHomeScreen({ navigation }: Props) {
           title="Relatório de sinais"
           size="small"
           variant="outline"
+          style={styles.action}
           onPress={() => navigation.navigate("SignalReport")}
         />
         <PrimaryButton
           testID="professional-add"
           title="+ Cadastrar idoso"
           size="small"
+          style={styles.action}
           onPress={() => navigation.navigate("ProfileIdentification")}
         />
       </View>
@@ -267,8 +269,10 @@ const styles = StyleSheet.create({
   },
   actionsRow: {
     flexDirection: "row",
-    justifyContent: "flex-end",
     gap: 8,
+  },
+  action: {
+    flex: 1,
   },
   alertsPanel: {
     gap: 8,

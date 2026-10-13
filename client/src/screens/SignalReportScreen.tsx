@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
   },
   tileHint: {
     fontFamily: FONTS.regular,
-    fontSize: 11,
+    fontSize: 12,
     color: COLORS.grey500,
   },
   note: {

@@ -93,7 +93,9 @@ export function IntercorrenceFormScreen({ navigation, route }: Props) {
         Registrar intercorrência
       </Text>
 
-      <EmergencyCallout />
+      <View style={styles.callout}>
+        <EmergencyCallout />
+      </View>
 
       <SelectField
         testID="intercorrence-eventType"
@@ -175,6 +177,9 @@ const styles = StyleSheet.create({
     fontSize: 22,
     color: COLORS.heading,
     marginBottom: 4,
+  },
+  callout: {
+    marginBottom: 8,
   },
   label: {
     fontFamily: FONTS.semiBold,

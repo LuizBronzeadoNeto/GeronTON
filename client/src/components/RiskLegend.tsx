@@ -52,7 +52,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   pillColumn: {
-    width: 86,
+    width: 100,
   },
   description: {
     flex: 1,

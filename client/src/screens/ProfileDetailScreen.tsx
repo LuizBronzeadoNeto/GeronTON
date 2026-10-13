@@ -507,7 +507,7 @@ export function ProfileDetailScreen({ navigation, route }: Props) {
             style={styles.editButton}
             onPress={() => navigation.navigate("ProfileForm", { profileId })}
           >
-            <Ionicons name="pencil" size={16} color={COLORS.warning} />
+            <Ionicons name="pencil" size={16} color={COLORS.primary} />
           </Pressable>
         </View>
         {profile.medicalConditions.length === 0 ? (
@@ -600,8 +600,8 @@ const styles = StyleSheet.create({
   },
   criticalLine: {
     fontFamily: FONTS.semiBold,
-    fontSize: 12,
-    color: COLORS.grey500,
+    fontSize: 13,
+    color: COLORS.danger,
   },
   actions: {
     flexDirection: "row",
@@ -615,8 +615,11 @@ const styles = StyleSheet.create({
   actionButton: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    height: 36,
+    justifyContent: "center",
+    gap: 6,
+    flexBasis: "45%",
+    flexGrow: 1,
+    minHeight: 44,
     borderRadius: 8,
     paddingHorizontal: 12,
   },
@@ -663,7 +666,7 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: COLORS.warning,
+    borderColor: COLORS.primary,
     alignItems: "center",
     justifyContent: "center",
   },

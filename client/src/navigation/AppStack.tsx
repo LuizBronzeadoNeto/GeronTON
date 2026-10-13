@@ -153,7 +153,7 @@ export function AppStack({ role }: { role: Role }) {
         name="ProfileDetail"
         component={ProfileDetailScreen}
         options={{
-          title: role === "cuidador" ? "Meus idosos" : "Painel de triagem",
+          title: "Idoso",
         }}
       />
       <Stack.Screen

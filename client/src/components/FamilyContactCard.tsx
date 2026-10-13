@@ -76,8 +76,8 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   title: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 16,
+    fontFamily: FONTS.extraBold,
+    fontSize: 18,
     color: COLORS.heading,
   },
   phone: {

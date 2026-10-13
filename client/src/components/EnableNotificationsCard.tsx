@@ -174,13 +174,13 @@ const styles = StyleSheet.create({
   message: {
     flex: 1,
     fontFamily: FONTS.regular,
-    fontSize: 11,
+    fontSize: 12,
     lineHeight: 16,
     color: COLORS.grey500,
   },
   error: {
     fontFamily: FONTS.semiBold,
-    fontSize: 11,
+    fontSize: 12,
     lineHeight: 16,
     color: COLORS.danger,
   },

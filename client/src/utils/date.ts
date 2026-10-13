@@ -78,13 +78,13 @@ export function maskBrDate(text: string): string {
 }
 
 /**
- * Formats an ISO timestamp as the design's "16/06/2026, 11:52:21".
+ * Formats an ISO timestamp as "16/06/2026 às 11:52".
  */
 export function formatTimestamp(iso: string): string {
   const date = new Date(iso);
   const pad = (value: number): string => String(value).padStart(2, "0");
   return (
-    `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()}, ` +
-    `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
+    `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} às ` +
+    `${pad(date.getHours())}:${pad(date.getMinutes())}`
   );
 }

@@ -1,10 +1,15 @@
 import { describe, it, expect } from "@jest/globals";
-import { ageInYears, daysSince, formatDay } from "./date";
+import { ageInYears, daysSince, formatDay, formatTimestamp } from "./date";
 
 describe("date helpers", () => {
   it("formats a timestamp as the local day", () => {
     const iso = new Date(2026, 9, 12, 23, 30).toISOString();
     expect(formatDay(iso)).toBe("12/10/2026");
+  });
+
+  it("formats a timestamp as day and time, without seconds", () => {
+    const iso = new Date(2026, 5, 16, 11, 52, 21).toISOString();
+    expect(formatTimestamp(iso)).toBe("16/06/2026 às 11:52");
   });
 
   it("counts whole days since a timestamp", () => {

@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
   },
   date: {
     fontFamily: FONTS.regular,
-    fontSize: 10,
+    fontSize: 12,
     color: COLORS.grey400,
   },
 });
