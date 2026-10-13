@@ -19,6 +19,8 @@ export interface WeeklyAdherence {
 export interface TriageEntry extends Profile {
   risk: { status: RiskLevel; score: number; criticalEvents: string[] };
   adherence: WeeklyAdherence;
+  /** When the latest check-in was sent, or null when there is none. */
+  lastCheckInAt: string | null;
 }
 
 /**

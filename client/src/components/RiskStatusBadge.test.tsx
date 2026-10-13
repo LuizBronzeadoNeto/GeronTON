@@ -47,6 +47,13 @@ describe("RiskStatusBadge", () => {
     },
   );
 
+  it("renders a status it is given without requesting it", () => {
+    render(<RiskStatusBadge profileId={3} status="moderate" />);
+
+    expect(screen.getByText("Atenção")).toBeTruthy();
+    expect(getRiskStatus).not.toHaveBeenCalled();
+  });
+
   it("requests the status for the given profile", async () => {
     render(<RiskStatusBadge profileId={9} />);
 

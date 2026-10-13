@@ -82,6 +82,7 @@ export function makeTriageEntry(
       weeksObserved: 1,
       checkedInThisWeek: false,
     },
+    lastCheckInAt: null,
     ...overrides,
   };
 }

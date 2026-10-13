@@ -20,6 +20,7 @@ import type { AppStackParamList } from "../types/navigation";
 import { listTriage } from "../api/triage";
 import { listCheckIns } from "../api/checkins";
 import { listDashboardAlerts } from "../api/alerts";
+import { getRiskStatus } from "../api/risk";
 
 jest.mock("../api/triage");
 jest.mock("../api/checkins");
@@ -82,8 +83,47 @@ describe("ProfessionalHomeScreen", () => {
       expect(screen.getByTestId("risk-badge-label-1")).toBeTruthy(),
     );
     await waitFor(() =>
-      expect(screen.getByText("Último check-in: -----")).toBeTruthy(),
+      expect(screen.getByText("Nenhum check-in ainda")).toBeTruthy(),
     );
+  });
+
+  it("renders the triage status without fetching each card", async () => {
+    renderScreen();
+
+    await screen.findByTestId("risk-badge-1");
+    expect(getRiskStatus).not.toHaveBeenCalled();
+    expect(listCheckIns).not.toHaveBeenCalled();
+  });
+
+  it("filters the list by risk level", async () => {
+    jest.mocked(listTriage).mockResolvedValue([
+      makeTriageEntry({
+        id: 1,
+        risk: { status: "high", score: 14, criticalEvents: [] },
+      }),
+      makeTriageEntry({ id: 2 }),
+    ]);
+    renderScreen();
+    await screen.findByTestId("professional-item-2");
+
+    fireEvent.press(screen.getByTestId("professional-filter-high"));
+
+    expect(screen.getByTestId("professional-item-1")).toBeTruthy();
+    expect(screen.queryByTestId("professional-item-2")).toBeNull();
+  });
+
+  it("says how long ago the last check-in was", async () => {
+    const fiveDaysAgo = new Date(
+      Date.now() - 5 * 24 * 60 * 60 * 1000,
+    ).toISOString();
+    jest
+      .mocked(listTriage)
+      .mockResolvedValue([
+        makeTriageEntry({ id: 1, lastCheckInAt: fiveDaysAgo }),
+      ]);
+    renderScreen();
+
+    expect(await screen.findByText(/há 5 dias/)).toBeTruthy();
   });
 
   it("keeps the backend's clinical-priority ordering", async () => {

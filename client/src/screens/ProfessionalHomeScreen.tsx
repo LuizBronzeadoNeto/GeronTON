@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  Pressable,
   StyleSheet,
   Text,
   View,
@@ -9,7 +10,9 @@ import {
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { AppStackParamList } from "../types/navigation";
+import type { RiskLevel } from "../api/risk";
 import { listTriage, type TriageEntry } from "../api/triage";
+import { RISK_LEVEL_ORDER, RISK_LEVELS } from "../constants/risk";
 import { listDashboardAlerts, type DashboardAlert } from "../api/alerts";
 import { ProfileCard } from "../components/ProfileCard";
 import { AlertCard } from "../components/AlertCard";
@@ -41,6 +44,7 @@ export function ProfessionalHomeScreen({ navigation }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [alertsError, setAlertsError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<RiskLevel | "all">("all");
 
   useFocusEffect(
     useCallback(() => {
@@ -98,6 +102,47 @@ export function ProfessionalHomeScreen({ navigation }: Props) {
       </View>
     ) : null;
 
+  const visible =
+    filter === "all"
+      ? profiles
+      : profiles.filter((entry) => entry.risk.status === filter);
+
+  const filters =
+    profiles.length > 0 ? (
+      <View
+        style={styles.filters}
+        accessibilityRole="radiogroup"
+        accessibilityLabel="Filtrar por situação"
+      >
+        {(["all", ...RISK_LEVEL_ORDER] as const).map((key) => {
+          const count =
+            key === "all"
+              ? profiles.length
+              : profiles.filter((entry) => entry.risk.status === key).length;
+          const selected = filter === key;
+          return (
+            <Pressable
+              key={key}
+              testID={`professional-filter-${key}`}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: selected }}
+              style={[styles.filterChip, selected && styles.filterChipSelected]}
+              onPress={() => setFilter(key)}
+            >
+              <Text
+                style={[
+                  styles.filterLabel,
+                  selected && styles.filterLabelSelected,
+                ]}
+              >
+                {key === "all" ? "Todos" : RISK_LEVELS[key].label} ({count})
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    ) : null;
+
   return (
     <View testID="professional-home" style={styles.container}>
       <Text style={styles.description}>
@@ -138,7 +183,7 @@ export function ProfessionalHomeScreen({ navigation }: Props) {
       ) : null}
 
       <FlatList
-        data={profiles}
+        data={visible}
         keyExtractor={(item) => String(item.id)}
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={
@@ -146,6 +191,7 @@ export function ProfessionalHomeScreen({ navigation }: Props) {
             {loading || profiles.length === 0 ? null : (
               <AdherenceSummary entries={profiles} />
             )}
+            {filters}
             {alertsPanel}
           </>
         }
@@ -154,7 +200,9 @@ export function ProfessionalHomeScreen({ navigation }: Props) {
         ListEmptyComponent={
           loading ? null : (
             <Text testID="professional-empty" style={styles.empty}>
-              Nenhum idoso vinculado ainda
+              {filter === "all"
+                ? "Nenhum idoso vinculado ainda"
+                : "Nenhum idoso nesta situação."}
             </Text>
           )
         }
@@ -162,7 +210,8 @@ export function ProfessionalHomeScreen({ navigation }: Props) {
           <ProfileCard
             profile={item}
             testIDPrefix="professional"
-            showLastCheckIn
+            riskStatus={item.risk.status}
+            lastCheckInAt={item.lastCheckInAt}
             criticalEvents={item.risk.criticalEvents}
             adherence={item.adherence}
             onOpen={() =>
@@ -176,6 +225,32 @@ export function ProfessionalHomeScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
+  filters: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 12,
+  },
+  filterChip: {
+    minHeight: 36,
+    justifyContent: "center",
+    paddingHorizontal: 12,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: COLORS.grey300,
+  },
+  filterChipSelected: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  filterLabel: {
+    fontFamily: FONTS.semiBold,
+    fontSize: 13,
+    color: COLORS.heading,
+  },
+  filterLabelSelected: {
+    color: COLORS.white,
+  },
   container: {
     flex: 1,
     backgroundColor: COLORS.white,

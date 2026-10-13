@@ -1,19 +1,21 @@
-import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import type { Profile } from "../api/profiles";
+import type { RiskLevel } from "../api/risk";
 import type { WeeklyAdherence } from "../api/triage";
-import { listCheckIns } from "../api/checkins";
 import { WEEKLY_EVENTS } from "../constants/checkin";
 import { RiskStatusBadge } from "./RiskStatusBadge";
-import { ageInYears, formatDay } from "../utils/date";
+import { ageInYears, daysSince, formatDay } from "../utils/date";
 import { COLORS, FONTS } from "../theme";
 
 interface Props {
   profile: Profile;
   testIDPrefix: string;
   onOpen: () => void;
-  showLastCheckIn?: boolean;
+  /** The risk status, when the caller already has it (skips a request). */
+  riskStatus?: RiskLevel;
+  /** Shows the last check-in line; null means there has been none. */
+  lastCheckInAt?: string | null;
   criticalEvents?: string[];
   adherence?: WeeklyAdherence;
 }
@@ -31,41 +33,21 @@ function criticalEventsSummary(events: string[]): string {
 }
 
 /**
- * "Último check-in: <date>" line for a triage card. Fetches the profile's most
- * recent check-in and shows the design's "-----" placeholder when there is
- * none (or the fetch fails).
+ * "Último check-in" line of a triage card, with how long ago it was so a
+ * silent family stands out without opening the profile.
  */
-function LastCheckInLine({ profileId }: { profileId: number }) {
-  const [date, setDate] = useState<string | null | undefined>(undefined);
-
-  useEffect(() => {
-    let active = true;
-    listCheckIns(profileId)
-      .then((checkIns) => {
-        if (active) setDate(checkIns[0]?.date ?? null);
-      })
-      .catch(() => {
-        if (active) setDate(null);
-      });
-    return () => {
-      active = false;
-    };
-  }, [profileId]);
-
-  if (date === undefined) return null;
-
-  return (
-    <Text style={styles.cardLine}>
-      Último check-in: {date ? formatDay(date) : "-----"}
-    </Text>
-  );
+function lastCheckInText(iso: string | null): string {
+  if (!iso) return "Nenhum check-in ainda";
+  const days = daysSince(iso);
+  const ago = days === 0 ? "hoje" : days === 1 ? "há 1 dia" : `há ${days} dias`;
+  return `Último check-in: ${formatDay(iso)} (${ago})`;
 }
 
 /**
  * Elderly-profile card from the Figma design, shared by the caregiver's "Meus
  * idosos" list and the professional's "Painel de triagem": avatar initial,
- * name with the risk pill, age (plus optionally the last check-in date) and a
- * chevron. When the latest check-in reported critical weekly events
+ * name with the risk pill, age (plus optionally the last check-in date and
+ * how long ago it was) and a chevron. When the latest check-in reported critical weekly events
  * (criticalEvents), a red warning line flags them, per the screening
  * algorithm's visual-flag requirement. Tapping the card opens the elder's
  * detail hub, where the per-profile actions live.
@@ -74,7 +56,8 @@ export function ProfileCard({
   profile,
   testIDPrefix,
   onOpen,
-  showLastCheckIn = false,
+  riskStatus,
+  lastCheckInAt,
   criticalEvents = [],
   adherence,
 }: Props) {
@@ -95,12 +78,14 @@ export function ProfileCard({
           <Text style={styles.name} numberOfLines={1}>
             {profile.firstName} {profile.lastName}
           </Text>
-          <RiskStatusBadge profileId={profile.id} />
+          <RiskStatusBadge profileId={profile.id} status={riskStatus} />
         </View>
         <Text style={styles.cardLine}>
           {ageInYears(profile.birthDate)} anos
         </Text>
-        {showLastCheckIn ? <LastCheckInLine profileId={profile.id} /> : null}
+        {lastCheckInAt !== undefined ? (
+          <Text style={styles.cardLine}>{lastCheckInText(lastCheckInAt)}</Text>
+        ) : null}
         {adherence ? (
           <Text
             testID={`${testIDPrefix}-adherence-${profile.id}`}
