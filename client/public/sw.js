@@ -12,6 +12,7 @@
  */
 
 const FOREGROUND_MESSAGE = "geronton-push";
+const OPEN_MESSAGE = "geronton-push-open";
 
 /**
  * Take over immediately instead of waiting for every tab to close. A deployment
@@ -86,11 +87,11 @@ self.addEventListener("push", (event) => {
 });
 
 /**
- * Focuses an open GeronTON window rather than opening a second one. The app has
- * no navigation ref yet, so a tap lands on whatever screen was already showing
- * instead of the elder the notification was about.
+ * Brings GeronTON forward on the elder the notification is about: an open
+ * window is focused and told which profile to show, otherwise a new window
+ * opens with the profile in the URL.
  */
-async function focusApp() {
+async function openApp(data) {
   const clientList = await self.clients.matchAll({
     type: "window",
     includeUncontrolled: true,
@@ -99,13 +100,16 @@ async function focusApp() {
   const existing = clientList[0];
   if (existing) {
     await existing.focus();
+    existing.postMessage({ type: OPEN_MESSAGE, data });
     return;
   }
 
-  await self.clients.openWindow("/");
+  await self.clients.openWindow(
+    data.profileId ? `/?perfil=${encodeURIComponent(data.profileId)}` : "/",
+  );
 }
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  event.waitUntil(focusApp());
+  event.waitUntil(openApp(event.notification.data || {}));
 });

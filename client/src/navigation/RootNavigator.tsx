@@ -1,5 +1,6 @@
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
+import { flushPendingNavigation, navigationRef } from "./navigationRef";
 import { useAuth } from "../context/AuthContext";
 import { usePushSync } from "../push/usePushSync";
 import { COLORS } from "../theme";
@@ -42,7 +43,7 @@ export function RootNavigator() {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef} onReady={flushPendingNavigation}>
       {user == null ? <AuthStack /> : <AppStack role={user.role} />}
     </NavigationContainer>
   );

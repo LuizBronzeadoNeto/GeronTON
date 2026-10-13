@@ -1,7 +1,21 @@
 import { useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNotification } from "../context/NotificationContext";
-import { addForegroundListener, prepare, syncExisting } from "./";
+import { openProfile } from "../navigation/navigationRef";
+import {
+  addForegroundListener,
+  addOpenListener,
+  prepare,
+  syncExisting,
+} from "./";
+
+/**
+ * The elder a push is about, from its data, or null when it names none.
+ */
+function profileIdFrom(data: Record<string, string>): number | null {
+  const id = Number(data.profileId);
+  return Number.isInteger(id) && id > 0 ? id : null;
+}
 
 /**
  * Keeps this device's push registration in step with the session, and turns a
@@ -46,11 +60,24 @@ export function usePushSync(): void {
     }
 
     return addForegroundListener((push) => {
+      const profileId = profileIdFrom(push.data);
       notify({
         title: push.title,
         message: push.body,
         critical: push.critical,
+        onPress: profileId ? () => openProfile(profileId) : undefined,
       });
     });
   }, [user, notify]);
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    return addOpenListener((data) => {
+      const profileId = profileIdFrom(data);
+      if (profileId) openProfile(profileId);
+    });
+  }, [user]);
 }
