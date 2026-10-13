@@ -62,14 +62,18 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   moodOption: {
+    flex: 1,
     alignItems: "center",
     gap: 4,
-    borderRadius: 12,
-    padding: 6,
-    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 2,
+    borderWidth: 1,
+    borderColor: COLORS.grey300,
+    borderRadius: 8,
   },
   moodOptionSelected: {
     backgroundColor: COLORS.chipBg,
+    borderColor: COLORS.primary,
   },
   moodLabel: {
     fontFamily: FONTS.semiBold,

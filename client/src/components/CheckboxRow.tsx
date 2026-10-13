@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { COLORS, FONTS } from "../theme";
+import { COLORS, SPACING, TYPE } from "../theme";
 
 interface Props {
   testID?: string;
@@ -32,14 +32,12 @@ export function CheckboxRow({ testID, checked, label, onToggle }: Props) {
 const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 10,
+    alignItems: "center",
+    gap: SPACING.md,
+    minHeight: 48,
   },
   label: {
+    ...TYPE.body,
     flex: 1,
-    fontFamily: FONTS.regular,
-    fontSize: 13,
-    lineHeight: 19,
-    color: COLORS.text,
   },
 });

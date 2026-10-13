@@ -1,72 +1,53 @@
 import { StyleSheet } from "react-native";
-import { COLORS, FONTS } from "../../theme";
+import {
+  COLORS,
+  CONTROL_HEIGHT,
+  FONTS,
+  RADIUS,
+  SPACING,
+  TYPE,
+} from "../../theme";
 
 /**
- * Styles shared by the check-in wizard's question widgets: the rounded
- * question rows and block cards, the Sim/Não-style pills and the outlined
- * text inputs.
+ * Styles shared by the check-in wizard's question widgets: the rows of a
+ * grouped checklist (weekly events, choking), free-standing question blocks
+ * (mood, stress) and the text inputs.
  */
 export const checkinStyles = StyleSheet.create({
   questionRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: 12,
-    borderWidth: 1,
-    borderColor: COLORS.grey300,
-    borderRadius: 24,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-  },
-  blockRow: {
-    borderWidth: 1,
-    borderColor: COLORS.grey300,
-    borderRadius: 16,
-    padding: 16,
-    gap: 12,
-  },
-  questionLabel: {
-    flex: 1,
-    fontFamily: FONTS.semiBold,
-    fontSize: 13,
-    color: COLORS.heading,
-  },
-  criticalTag: {
-    color: COLORS.danger,
-    fontSize: 11,
-  },
-  pillGroup: {
-    flexDirection: "row",
-    gap: 6,
-  },
-  pill: {
-    borderWidth: 1,
-    borderColor: COLORS.heading,
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 5,
+    gap: SPACING.md,
+    minHeight: 56,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
     backgroundColor: COLORS.white,
   },
-  pillSelected: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
+  blockRow: {
+    gap: SPACING.sm,
   },
-  pillLabel: {
+  group: {
+    borderWidth: 1,
+    borderColor: COLORS.cardBorder,
+    borderRadius: RADIUS.group,
+    overflow: "hidden",
+  },
+  questionLabel: {
+    ...TYPE.bodyStrong,
+    flex: 1,
+  },
+  criticalTag: {
     fontFamily: FONTS.semiBold,
-    fontSize: 12,
-    color: COLORS.heading,
-  },
-  pillLabelSelected: {
-    color: COLORS.white,
+    fontSize: 13,
+    color: COLORS.danger,
   },
   input: {
-    height: 50,
+    minHeight: CONTROL_HEIGHT,
     borderWidth: 1,
     borderColor: COLORS.grey300,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    fontFamily: FONTS.semiBold,
-    fontSize: 14,
-    color: COLORS.heading,
+    borderRadius: RADIUS.control,
+    paddingHorizontal: SPACING.lg,
+    ...TYPE.body,
   },
 });

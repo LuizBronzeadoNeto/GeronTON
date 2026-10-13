@@ -3,17 +3,16 @@ import { StyleSheet, Text, View } from "react-native";
 import { getProfile, type Profile } from "../api/profiles";
 import { RiskStatusBadge } from "./RiskStatusBadge";
 import { ageInYears } from "../utils/date";
-import { COLORS, FONTS } from "../theme";
+import { COLORS, SPACING, TYPE } from "../theme";
 
 interface Props {
   profileId: number;
 }
 
 /**
- * Profile heading block from the Figma design, shown at the top of the
- * per-elderly screens (check-in, rotina): the person's name with the risk pill
- * beside it and the age underneath. Renders nothing until the profile loads and
- * stays hidden if the fetch fails — the screen content works without it.
+ * Who a form is about, in one quiet line above it: the elder's name and age
+ * with the risk pill on the right, separated from the form by a hairline. It
+ * stays small so the form's own title is the first thing read.
  */
 export function ProfileHeader({ profileId }: Props) {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -36,37 +35,35 @@ export function ProfileHeader({ profileId }: Props) {
 
   return (
     <View testID={`profile-header-${profileId}`} style={styles.container}>
-      <View style={styles.nameRow}>
+      <View style={styles.text}>
         <Text style={styles.name} numberOfLines={1}>
           {profile.firstName} {profile.lastName}
         </Text>
-        <RiskStatusBadge profileId={profileId} />
+        <Text style={styles.subtitle}>
+          {ageInYears(profile.birthDate)} anos
+        </Text>
       </View>
-      <Text style={styles.subtitle}>{ageInYears(profile.birthDate)} anos</Text>
+      <RiskStatusBadge profileId={profileId} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 16,
-    gap: 2,
-  },
-  nameRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
+    gap: SPACING.md,
+    paddingBottom: SPACING.md,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.divider,
+  },
+  text: {
+    flex: 1,
   },
   name: {
-    fontFamily: FONTS.extraBold,
-    fontSize: 24,
-    color: COLORS.heading,
-    flexShrink: 1,
+    ...TYPE.bodyStrong,
   },
   subtitle: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 12,
-    color: COLORS.grey500,
+    ...TYPE.caption,
   },
 });

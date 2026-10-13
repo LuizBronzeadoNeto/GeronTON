@@ -12,7 +12,7 @@ interface Props {
 /**
  * "Intercorrências na semana" row from the wizard's first step: the event
  * label (with the red "crítico" tag for the clinically critical ones) and a
- * radio-style toggle on the right.
+ * checkbox on the right, as one row of the grouped weekly checklist.
  */
 export function EventToggleRow({ event, selected, onToggle }: Props) {
   return (
@@ -30,8 +30,8 @@ export function EventToggleRow({ event, selected, onToggle }: Props) {
         ) : null}
       </Text>
       <Ionicons
-        name={selected ? "radio-button-on" : "ellipse-outline"}
-        size={22}
+        name={selected ? "checkbox" : "square-outline"}
+        size={24}
         color={selected ? COLORS.primary : COLORS.grey400}
       />
     </Pressable>

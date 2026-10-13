@@ -7,6 +7,7 @@ import {
   screen,
   fireEvent,
   waitFor,
+  within,
 } from "@testing-library/react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { WeeklyCheckInScreen } from "./WeeklyCheckInScreen";
@@ -314,6 +315,24 @@ describe("WeeklyCheckInScreen", () => {
 
     fireEvent.press(screen.getByTestId("checkin-unstableGait-no"));
     expect(screen.queryByTestId("checkin-missing")).toBeNull();
+  });
+
+  it("tells the caregiver which step they are on", async () => {
+    renderScreen();
+    await waitFor(() => expect(listCheckIns).toHaveBeenCalled());
+
+    expect(screen.getByTestId("checkin-step-caption").props.children).toBe(
+      "Etapa 1 de 5",
+    );
+  });
+
+  it("keeps Voltar and Próximo in the action bar", async () => {
+    renderScreen();
+    await waitFor(() => expect(listCheckIns).toHaveBeenCalled());
+
+    const bar = screen.getByTestId("checkin-actions");
+    expect(within(bar).getByTestId("checkin-back")).toBeTruthy();
+    expect(within(bar).getByTestId("checkin-next")).toBeTruthy();
   });
 
   it("announces the new step when moving forward", async () => {

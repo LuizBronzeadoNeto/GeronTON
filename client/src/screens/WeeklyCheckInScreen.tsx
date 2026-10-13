@@ -3,7 +3,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   AccessibilityInfo,
   ActivityIndicator,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -33,6 +32,10 @@ import { EmergencyCallout } from "../components/EmergencyCallout";
 import { ProfileHeader } from "../components/ProfileHeader";
 import { StepIndicator } from "../components/StepIndicator";
 import { PrimaryButton } from "../components/PrimaryButton";
+import { ActionBar } from "../components/ActionBar";
+import { AnswerGroup } from "../components/AnswerGroup";
+import { ListRow } from "../components/ListRow";
+import { Section } from "../components/Section";
 import { TagListInput } from "../components/TagListInput";
 import { CheckboxRow } from "../components/CheckboxRow";
 import { checkinStyles } from "../components/checkin/common";
@@ -45,7 +48,7 @@ import { useAuth } from "../context/AuthContext";
 import { useNotification } from "../context/NotificationContext";
 import { clearDraft, loadDraft, saveDraft } from "../utils/checkInDraft";
 import { formatDay } from "../utils/date";
-import { COLORS, FONTS } from "../theme";
+import { COLORS, RADIUS, SPACING, TYPE } from "../theme";
 import { FormError } from "../components/FormError";
 
 type Props = NativeStackScreenProps<AppStackParamList, "WeeklyCheckIn">;
@@ -353,15 +356,19 @@ export function WeeklyCheckInScreen({ navigation, route }: Props) {
   const currentStep = steps[step - 1];
 
   return (
-    <ScrollView
-      ref={scrollRef}
-      contentContainerStyle={styles.container}
-      testID="checkin"
-    >
-      <ProfileHeader profileId={profileId} />
+    <View style={styles.screen}>
+      <ScrollView
+        ref={scrollRef}
+        contentContainerStyle={styles.container}
+        testID="checkin"
+        keyboardShouldPersistTaps="handled"
+      >
+        <ProfileHeader profileId={profileId} />
 
-      <View style={styles.stepHeader}>
-        <View style={styles.stepTitles}>
+        <View style={styles.stepHeader}>
+          <Text testID="checkin-step-caption" style={styles.stepCaption}>
+            {`Etapa ${step} de ${steps.length}`}
+          </Text>
           <Text
             testID="checkin-title"
             style={styles.title}
@@ -370,232 +377,249 @@ export function WeeklyCheckInScreen({ navigation, route }: Props) {
             {currentStep.title}
           </Text>
           <Text style={styles.stepSubtitle}>{currentStep.subtitle}</Text>
+          <StepIndicator
+            current={step}
+            total={steps.length}
+            onStepPress={goToStep}
+          />
         </View>
-        <StepIndicator
-          current={step}
-          total={steps.length}
-          onStepPress={goToStep}
-        />
-      </View>
 
-      {draftRestored ? (
-        <Text testID="checkin-draft-restored" style={styles.draftNotice}>
-          Continuando de onde você parou.
-        </Text>
-      ) : null}
+        {draftRestored ? (
+          <Text testID="checkin-draft-restored" style={styles.draftNotice}>
+            Continuando de onde você parou.
+          </Text>
+        ) : null}
 
-      {step === 1 ? (
-        <View style={styles.stepContent}>
-          <View style={styles.shortFormBox}>
-            <CheckboxRow
-              testID="checkin-short"
-              checked={shortForm}
-              label="Check-in rápido (3 etapas)"
-              onToggle={() => setShortForm((value) => !value)}
+        {step === 1 ? (
+          <>
+            <View style={styles.shortForm}>
+              <CheckboxRow
+                testID="checkin-short"
+                checked={shortForm}
+                label="Check-in rápido (3 etapas)"
+                onToggle={() => setShortForm((value) => !value)}
+              />
+              <Text style={styles.shortFormHint}>
+                Pula higiene e lista de compras. Os sinais para a equipe são
+                calculados do mesmo jeito.
+              </Text>
+            </View>
+
+            <View style={styles.questions}>
+              {["skinIssues", "bowelRegular", "sleepWell", "unstableGait"].map(
+                (field) => (
+                  <YesNoRow
+                    key={field}
+                    field={field}
+                    value={yesNo[field]}
+                    onChange={(value) => setAnswer(field, value)}
+                  />
+                ),
+              )}
+            </View>
+
+            <Section title="Intercorrências na semana" grouped>
+              {WEEKLY_EVENTS.map((event) => (
+                <EventToggleRow
+                  key={event.key}
+                  event={event}
+                  selected={events.includes(event.key)}
+                  onToggle={() => toggleEvent(event.key)}
+                />
+              ))}
+            </Section>
+            <TextInput
+              testID="checkin-otherEvent"
+              style={checkinStyles.input}
+              accessibilityLabel="Outra intercorrência (opcional)"
+              placeholder="Outra intercorrência (opcional)"
+              placeholderTextColor={COLORS.grey400}
+              value={texts.otherEvent}
+              onChangeText={(value) => setText("otherEvent", value)}
             />
-            <Text style={styles.shortFormHint}>
-              Pula higiene e lista de compras. Os sinais para a equipe são
-              calculados do mesmo jeito.
-            </Text>
-          </View>
+            {WEEKLY_EVENTS.some(
+              (event) => event.critical && events.includes(event.key),
+            ) ? (
+              <EmergencyCallout />
+            ) : null}
 
-          {["skinIssues", "bowelRegular", "sleepWell", "unstableGait"].map(
-            (field) => (
+            <Section title="Sinais vitais">
+              <Text style={styles.sectionHint}>
+                Média da semana, se foram medidos. Pode deixar em branco.
+              </Text>
+              <View style={styles.vitalsGrid}>
+                {VITALS.map((vital) => (
+                  <View key={vital.key} style={styles.vitalField}>
+                    <Text style={styles.fieldLabel}>
+                      {vital.label} ({vital.unit})
+                    </Text>
+                    <TextInput
+                      testID={`checkin-${vital.key}`}
+                      style={checkinStyles.input}
+                      accessibilityLabel={`${vital.label} (${vital.unit})`}
+                      keyboardType={vital.keyboardType}
+                      placeholder={vital.placeholder}
+                      placeholderTextColor={COLORS.grey400}
+                      value={texts[vital.key]}
+                      onChangeText={(value) => setText(vital.key, value)}
+                    />
+                  </View>
+                ))}
+              </View>
+            </Section>
+          </>
+        ) : null}
+
+        {step === 2 ? (
+          <View style={styles.questions}>
+            <AnswerGroup
+              question="Apetite predominante"
+              value={appetite}
+              onChange={setAppetite}
+              options={APPETITE_OPTIONS.map((option) => ({
+                value: option.value,
+                label: option.label,
+                testID: `checkin-appetite-${option.value}`,
+              }))}
+            />
+            <ChokingQuestion
+              incident={yesNo.chokingIncident === true}
+              breathShortness={yesNo.breathShortness === true}
+              frequency={texts.chokingFrequency}
+              onToggleIncident={toggleChoking}
+              onToggleBreathShortness={() =>
+                setAnswer("breathShortness", yesNo.breathShortness !== true)
+              }
+              onChangeFrequency={(value) => setText("chokingFrequency", value)}
+            />
+            <YesNoRow
+              field="hydrationGoal"
+              value={yesNo.hydrationGoal}
+              onChange={(value) => setAnswer("hydrationGoal", value)}
+            />
+            <YesNoRow
+              field="medsOnTime"
+              value={yesNo.medsOnTime}
+              onChange={(value) => setAnswer("medsOnTime", value)}
+            />
+          </View>
+        ) : null}
+
+        {step === 3 ? (
+          <View style={styles.questions}>
+            <MoodSelector value={mood} onChange={setMood} />
+            <StressLevelSlider value={stressLevel} onChange={setStressLevel} />
+            {["sunExposure", "selfExpression", "stimulation"].map((field) => (
               <YesNoRow
                 key={field}
                 field={field}
                 value={yesNo[field]}
                 onChange={(value) => setAnswer(field, value)}
               />
-            ),
-          )}
+            ))}
+          </View>
+        ) : null}
 
-          <Text style={styles.sectionTitle} accessibilityRole="header">
-            Intercorrências na semana
-          </Text>
-          {WEEKLY_EVENTS.map((event) => (
-            <EventToggleRow
-              key={event.key}
-              event={event}
-              selected={events.includes(event.key)}
-              onToggle={() => toggleEvent(event.key)}
-            />
-          ))}
-          <TextInput
-            testID="checkin-otherEvent"
-            style={checkinStyles.input}
-            accessibilityLabel="Outra intercorrência (opcional)"
-            placeholder="Outra intercorrência (opcional)"
-            placeholderTextColor={COLORS.grey400}
-            value={texts.otherEvent}
-            onChangeText={(value) => setText("otherEvent", value)}
-          />
-          {WEEKLY_EVENTS.some(
-            (event) => event.critical && events.includes(event.key),
-          ) ? (
-            <EmergencyCallout />
-          ) : null}
+        {step === 4 ? (
+          <View style={styles.questions}>
+            {["dailyBath", "oralHygiene", "groomedNails"].map((field) => (
+              <YesNoRow
+                key={field}
+                field={field}
+                value={yesNo[field]}
+                onChange={(value) => setAnswer(field, value)}
+              />
+            ))}
+          </View>
+        ) : null}
 
-          <Text style={styles.sectionTitle} accessibilityRole="header">
-            Sinais vitais (média, não obrigatório)
-          </Text>
-          <View style={styles.vitalsGrid}>
-            {VITALS.map((vital) => (
-              <View key={vital.key} style={styles.vitalField}>
-                <View style={styles.vitalLabelZone}>
-                  <Text style={styles.vitalLabel}>
-                    {vital.label} ({vital.unit})
-                  </Text>
-                </View>
-                <TextInput
-                  testID={`checkin-${vital.key}`}
-                  style={checkinStyles.input}
-                  accessibilityLabel={`${vital.label} (${vital.unit})`}
-                  keyboardType={vital.keyboardType}
-                  placeholder={vital.placeholder}
-                  placeholderTextColor={COLORS.grey400}
-                  value={texts[vital.key]}
-                  onChangeText={(value) => setText(vital.key, value)}
+        {step === 5 ? (
+          <View style={styles.questions}>
+            {LOGISTICS.map((section) => (
+              <View key={section.key} style={styles.blockField}>
+                <Text style={styles.fieldLabel}>{section.label}</Text>
+                <TagListInput
+                  testIDPrefix={`checkin-${section.key}`}
+                  value={lists[section.key]}
+                  onChange={(value) => setList(section.key, value)}
+                  suggestions={
+                    section.key === "needsMedications" ? medicationNames : []
+                  }
+                  placeholder={section.placeholder}
+                  addAccessibilityLabel={`Adicionar em ${section.label}`}
                 />
               </View>
             ))}
           </View>
-        </View>
-      ) : null}
+        ) : null}
 
-      {step === 2 ? (
-        <View style={styles.stepContent}>
-          <View style={checkinStyles.blockRow}>
-            <Text style={checkinStyles.questionLabel}>
-              Apetite predominante
-            </Text>
-            <View
-              style={styles.appetiteRow}
-              accessibilityRole="radiogroup"
-              accessibilityLabel="Apetite predominante"
-            >
-              {APPETITE_OPTIONS.map((option) => (
-                <Pressable
-                  key={option.value}
-                  testID={`checkin-appetite-${option.value}`}
-                  accessibilityRole="radio"
-                  accessibilityState={{ checked: appetite === option.value }}
-                  hitSlop={8}
-                  style={[
-                    checkinStyles.pill,
-                    styles.appetitePill,
-                    appetite === option.value && checkinStyles.pillSelected,
-                  ]}
-                  onPress={() => setAppetite(option.value)}
-                >
-                  <Text
-                    style={[
-                      checkinStyles.pillLabel,
-                      appetite === option.value &&
-                        checkinStyles.pillLabelSelected,
-                    ]}
-                  >
-                    {option.label}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-          </View>
-
-          <ChokingQuestion
-            incident={yesNo.chokingIncident === true}
-            breathShortness={yesNo.breathShortness === true}
-            frequency={texts.chokingFrequency}
-            onToggleIncident={toggleChoking}
-            onToggleBreathShortness={() =>
-              setAnswer("breathShortness", yesNo.breathShortness !== true)
-            }
-            onChangeFrequency={(value) => setText("chokingFrequency", value)}
+        {error ? (
+          <FormError
+            testID="checkin-error"
+            style={styles.error}
+            message={error}
           />
+        ) : null}
 
-          <YesNoRow
-            field="hydrationGoal"
-            value={yesNo.hydrationGoal}
-            onChange={(value) => setAnswer("hydrationGoal", value)}
-          />
-          <YesNoRow
-            field="medsOnTime"
-            value={yesNo.medsOnTime}
-            onChange={(value) => setAnswer("medsOnTime", value)}
-          />
-        </View>
-      ) : null}
-
-      {step === 3 ? (
-        <View style={styles.stepContent}>
-          <MoodSelector value={mood} onChange={setMood} />
-          <StressLevelSlider value={stressLevel} onChange={setStressLevel} />
-
-          {["sunExposure", "selfExpression", "stimulation"].map((field) => (
-            <YesNoRow
-              key={field}
-              field={field}
-              value={yesNo[field]}
-              onChange={(value) => setAnswer(field, value)}
-            />
-          ))}
-        </View>
-      ) : null}
-
-      {step === 4 ? (
-        <View style={styles.stepContent}>
-          {["dailyBath", "oralHygiene", "groomedNails"].map((field) => (
-            <YesNoRow
-              key={field}
-              field={field}
-              value={yesNo[field]}
-              onChange={(value) => setAnswer(field, value)}
-            />
-          ))}
-        </View>
-      ) : null}
-
-      {step === 5 ? (
-        <View style={styles.stepContent}>
-          {LOGISTICS.map((section) => (
-            <View key={section.key} style={styles.blockField}>
-              <Text style={checkinStyles.questionLabel}>{section.label}</Text>
-              <TagListInput
-                testIDPrefix={`checkin-${section.key}`}
-                value={lists[section.key]}
-                onChange={(value) => setList(section.key, value)}
-                suggestions={
-                  section.key === "needsMedications" ? medicationNames : []
-                }
-                placeholder={section.placeholder}
-                addAccessibilityLabel={`Adicionar em ${section.label}`}
+        {step === 1 ? (
+          <Section title="Check-ins anteriores">
+            {loading ? (
+              <ActivityIndicator
+                testID="checkin-loading"
+                color={COLORS.primary}
               />
-            </View>
-          ))}
-        </View>
-      ) : null}
+            ) : null}
+            {!loading && history.length === 0 ? (
+              <Text testID="checkin-history-empty" style={styles.empty}>
+                Nenhum check-in registrado.
+              </Text>
+            ) : null}
+            {history.length > 0 ? (
+              <View testID="checkin-history" style={styles.history}>
+                {history.map((item, index) => (
+                  <View key={item.id}>
+                    {index > 0 ? <View style={styles.divider} /> : null}
+                    <ListRow
+                      testID={`checkin-history-item-${item.id}`}
+                      label={formatDay(item.date)}
+                      caption={`Humor: ${moodLabel(item.mood)} · Estresse: ${item.stressLevel}`}
+                      onPress={() =>
+                        navigation.navigate("CheckInDetail", {
+                          profileId,
+                          checkInId: item.id,
+                        })
+                      }
+                    />
+                  </View>
+                ))}
+              </View>
+            ) : null}
+          </Section>
+        ) : null}
+      </ScrollView>
 
-      {error ? (
-        <FormError
-          testID="checkin-error"
-          style={styles.error}
-          message={error}
-        />
-      ) : null}
-
-      <View style={styles.navRow}>
+      <ActionBar
+        testID="checkin-actions"
+        note={
+          step < steps.length && missing > 0 ? (
+            <Text testID="checkin-missing" style={styles.hint}>
+              {missing === 1
+                ? "Responda a pergunta que falta para continuar."
+                : `Responda as ${missing} perguntas que faltam para continuar.`}
+            </Text>
+          ) : null
+        }
+      >
         <PrimaryButton
           testID="checkin-back"
           title="Voltar"
           variant="outline"
-          style={styles.navButton}
           onPress={handleBack}
         />
         {step < steps.length ? (
           <PrimaryButton
             testID="checkin-next"
             title="Próximo"
-            style={styles.navButton}
             disabled={missing > 0}
             onPress={() => goToStep(step + 1)}
           />
@@ -603,204 +627,92 @@ export function WeeklyCheckInScreen({ navigation, route }: Props) {
           <PrimaryButton
             testID="checkin-submit"
             title="Concluir"
-            style={styles.navButton}
             loading={saving}
             onPress={handleSubmit}
           />
         )}
-      </View>
-
-      {step < steps.length && missing > 0 ? (
-        <Text testID="checkin-missing" style={styles.hint}>
-          {missing === 1
-            ? "Responda a pergunta que falta para continuar."
-            : `Responda as ${missing} perguntas que faltam para continuar.`}
-        </Text>
-      ) : null}
-
-      {step === 1 ? (
-        <View style={styles.historySection}>
-          <Text style={styles.sectionTitle} accessibilityRole="header">
-            Histórico
-          </Text>
-          {loading ? (
-            <ActivityIndicator
-              testID="checkin-loading"
-              color={COLORS.primary}
-            />
-          ) : null}
-          {!loading && history.length === 0 ? (
-            <Text testID="checkin-history-empty" style={styles.empty}>
-              Nenhum check-in registrado.
-            </Text>
-          ) : null}
-          <View testID="checkin-history" style={styles.history}>
-            {history.map((item) => (
-              <Pressable
-                key={item.id}
-                testID={`checkin-history-item-${item.id}`}
-                accessibilityRole="button"
-                style={styles.historyItem}
-                onPress={() =>
-                  navigation.navigate("CheckInDetail", {
-                    profileId,
-                    checkInId: item.id,
-                  })
-                }
-              >
-                <Text style={styles.historyDate}>{formatDay(item.date)}</Text>
-                <Text style={styles.historySummary}>
-                  Humor: {moodLabel(item.mood)} · Estresse: {item.stressLevel}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-        </View>
-      ) : null}
-    </ScrollView>
+      </ActionBar>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 20,
+  screen: {
+    flex: 1,
     backgroundColor: COLORS.white,
   },
-  stepHeader: {
-    gap: 12,
-    marginBottom: 16,
+  container: {
+    padding: SPACING.screen,
+    gap: SPACING.xl,
   },
-  stepTitles: {
-    gap: 2,
+  stepHeader: {
+    gap: SPACING.xs,
+  },
+  stepCaption: {
+    ...TYPE.label,
+    color: COLORS.primary,
   },
   title: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 20,
-    lineHeight: 28,
-    color: COLORS.heading,
+    ...TYPE.title,
   },
   stepSubtitle: {
-    fontFamily: FONTS.regular,
-    fontSize: 12,
-    color: COLORS.grey400,
-  },
-  stepContent: {
-    gap: 8,
-  },
-  hint: {
-    fontFamily: FONTS.regular,
-    fontSize: 13,
-    color: COLORS.grey500,
-    textAlign: "center",
-    marginTop: 8,
+    ...TYPE.caption,
+    marginBottom: SPACING.sm,
   },
   draftNotice: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 13,
+    ...TYPE.label,
     color: COLORS.primary,
-    marginBottom: 8,
   },
-  shortFormBox: {
-    borderWidth: 1,
-    borderColor: COLORS.grey300,
-    borderRadius: 8,
-    padding: 12,
-    gap: 4,
-    marginBottom: 8,
+  shortForm: {
+    gap: SPACING.xs,
   },
   shortFormHint: {
-    fontFamily: FONTS.regular,
-    fontSize: 12,
-    lineHeight: 17,
-    color: COLORS.grey500,
-    marginLeft: 32,
+    ...TYPE.caption,
+    marginLeft: 36,
   },
-  sectionTitle: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 16,
-    color: COLORS.heading,
-    marginTop: 16,
-    marginBottom: 4,
+  questions: {
+    gap: SPACING.xl,
+  },
+  sectionHint: {
+    ...TYPE.caption,
+  },
+  fieldLabel: {
+    ...TYPE.label,
   },
   blockField: {
-    gap: 4,
-  },
-  appetiteRow: {
-    flexDirection: "row",
-    gap: 10,
-  },
-  appetitePill: {
-    flex: 1,
-    alignItems: "center",
-  },
-  textArea: {
-    height: undefined,
-    minHeight: 90,
-    paddingVertical: 12,
-    textAlignVertical: "top",
+    gap: SPACING.sm,
   },
   vitalsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    alignItems: "stretch",
-    gap: 12,
+    gap: SPACING.md,
   },
   vitalField: {
-    flexBasis: "47%",
+    flexBasis: "45%",
     flexGrow: 1,
-    gap: 4,
-  },
-  vitalLabelZone: {
-    flexGrow: 1,
-    justifyContent: "flex-end",
-  },
-  vitalLabel: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 12,
-    lineHeight: 16,
-    color: COLORS.heading,
+    gap: SPACING.xs,
   },
   error: {
-    fontFamily: FONTS.semiBold,
+    ...TYPE.label,
     color: COLORS.danger,
     textAlign: "center",
-    marginTop: 12,
   },
-  navRow: {
-    flexDirection: "row",
-    gap: 12,
-    marginTop: 20,
-  },
-  navButton: {
-    flex: 1,
-  },
-  historySection: {
-    marginTop: 8,
-  },
-  empty: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 14,
-    color: COLORS.grey500,
+  hint: {
+    ...TYPE.caption,
     textAlign: "center",
   },
-  history: {
-    gap: 8,
-  },
-  historyItem: {
-    borderWidth: 1,
-    borderColor: COLORS.grey300,
-    borderRadius: 8,
-    padding: 12,
-    gap: 2,
-  },
-  historyDate: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 14,
-    color: COLORS.heading,
-  },
-  historySummary: {
-    fontFamily: FONTS.regular,
-    fontSize: 12,
+  empty: {
+    ...TYPE.body,
     color: COLORS.grey500,
+  },
+  history: {
+    borderWidth: 1,
+    borderColor: COLORS.cardBorder,
+    borderRadius: RADIUS.group,
+    overflow: "hidden",
+  },
+  divider: {
+    height: 1,
+    backgroundColor: COLORS.divider,
   },
 });

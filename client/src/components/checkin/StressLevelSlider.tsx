@@ -12,9 +12,9 @@ const LEVELS = [0, 1, 2, 3, 4, 5];
 
 const QUESTION = "Nível de estresse do idoso na semana";
 
-const TRACK = "#EDE7F9";
-const DOT = "#B9A8E3";
-const THUMB = "#5D4FA0";
+const TRACK = COLORS.chipBg;
+const DOT = COLORS.grey300;
+const THUMB = COLORS.primary;
 
 /**
  * "Nível de estresse predominante" card from the wizard's behavior step: a
