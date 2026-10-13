@@ -174,15 +174,17 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 <div class="ga">
   <header class="ga-head">
     <h1 id="titulo">Acessos ao GeronTON</h1>
-    <p class="ga-period">Últimas 4 semanas completas, de
+    <p class="ga-period">De
       <span class="dash-skeleton" data-source="resumo_periodo" data-field="inicio" data-row="0">—</span> a
-      <span class="dash-skeleton" data-source="resumo_periodo" data-field="fim" data-row="0">—</span></p>
+      <span class="dash-skeleton" data-source="resumo_periodo" data-field="fim" data-row="0">—</span>:
+      as últimas 4 semanas completas e a semana atual, ainda em andamento</p>
   </header>
 
   <section class="ga-source" id="origem" aria-label="Origem dos dados">
     <p class="ga-label">Origem dos dados</p>
     <p>Dados extraídos do banco de dados de produção do GeronTON (PostgreSQL no Heroku, tabela de acessos) em
-      <span class="dash-skeleton" data-source="resumo_periodo" data-field="extraido_em" data-row="0">—</span>, por consulta somente leitura.</p>    <p class="ga-note">Um acesso é um dia em que uma conta usou o aplicativo. Cada conta conta no máximo uma vez por dia.</p>
+      <span class="dash-skeleton" data-source="resumo_periodo" data-field="extraido_em" data-row="0">—</span>, por consulta somente leitura.</p>    <p class="ga-note">Um acesso é um dia em que uma conta usou o aplicativo. Cada conta conta no máximo uma vez por dia.
+      Duas contas usadas em 13/10 e excluídas depois continuam nos números: o acesso fica registrado sem a conta.</p>
   </section>
 
   <section class="ga-tiles" id="totais" aria-label="Totais do período">
@@ -201,13 +203,13 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     <div class="ga-card">
       <p class="ga-label">Média semanal</p>
       <p class="ga-big dash-skeleton" data-source="media_semanal" data-field="media" data-row="0">—</p>
-      <p class="ga-note">Acessos por semana</p>
+      <p class="ga-note">Acessos por semana completa</p>
     </div>
   </section>
 
   <section class="ga-card" id="grafico-semanas">
     <h2>Acessos por semana</h2>
-    <p class="ga-note">Semanas de segunda a domingo, no horário de Brasília</p>
+    <p class="ga-note">Semanas de segunda a domingo, no horário de Brasília. A barra mais clara é a semana em andamento.</p>
     <div class="ga-legend" aria-hidden="true">
       <span><i class="ga-swatch ga-sw-prof"></i>Profissionais</span>
       <span><i class="ga-swatch ga-sw-cuid"></i>Cuidadores</span>
@@ -241,7 +243,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 </script>
 <script>
   window.dash = (function () {
-    var datasets = {"acessos_semanais":[{"semana":"2026-09-14","acessos":15,"usuarios":4,"acessos_cuidadores":4,"acessos_profissionais":11,"acessos_contas_teste":15},{"semana":"2026-09-21","acessos":13,"usuarios":4,"acessos_cuidadores":2,"acessos_profissionais":11,"acessos_contas_teste":13},{"semana":"2026-09-28","acessos":16,"usuarios":4,"acessos_cuidadores":4,"acessos_profissionais":12,"acessos_contas_teste":16},{"semana":"2026-10-05","acessos":19,"usuarios":5,"acessos_cuidadores":3,"acessos_profissionais":16,"acessos_contas_teste":18}],"resumo_periodo":[{"inicio":"2026-09-14","fim":"2026-10-11","acessos":63,"usuarios":5,"cuidadores":2,"profissionais":3,"acessos_contas_teste":62,"extraido_em":"12/10/2026 às 17:15"}]};
+    var datasets = {"acessos_semanais":[{"semana":"2026-09-14","acessos":15,"usuarios":4,"acessos_cuidadores":4,"acessos_profissionais":11,"acessos_contas_teste":15},{"semana":"2026-09-21","acessos":13,"usuarios":4,"acessos_cuidadores":2,"acessos_profissionais":11,"acessos_contas_teste":13},{"semana":"2026-09-28","acessos":16,"usuarios":4,"acessos_cuidadores":4,"acessos_profissionais":12,"acessos_contas_teste":16},{"semana":"2026-10-05","acessos":19,"usuarios":5,"acessos_cuidadores":3,"acessos_profissionais":16,"acessos_contas_teste":18},{"semana":"2026-10-12","em_andamento":true,"acessos":9,"usuarios":9,"acessos_cuidadores":6,"acessos_profissionais":3,"acessos_contas_teste":0}],"resumo_periodo":[{"inicio":"2026-09-14","fim":"2026-10-13","fim_completas":"2026-10-11","acessos":72,"usuarios":14,"cuidadores":8,"profissionais":6,"acessos_contas_teste":62,"extraido_em":"13/10/2026 às 20:24"}]};
     var calcs = {};
     var handlers = [];
     var cores = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -270,10 +272,11 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
   dash.calc('media_semanal', {
     inputs: ['acessos_semanais'],
     title: 'Média de acessos por semana',
-    description: 'Soma dos acessos das semanas dividida pelo número de semanas, com uma casa decimal.',
+    description: 'Soma dos acessos das semanas completas dividida pelo número delas, com uma casa decimal. A semana em andamento fica de fora.',
     fn: (acessos_semanais) => {
-      const total = acessos_semanais.reduce((soma, semana) => soma + Number(semana.acessos), 0);
-      return [{ media: Math.round((total / acessos_semanais.length) * 10) / 10 }];
+      const completas = acessos_semanais.filter((semana) => !semana.em_andamento);
+      const total = completas.reduce((soma, semana) => soma + Number(semana.acessos), 0);
+      return [{ media: Math.round((total / completas.length) * 10) / 10 }];
     },
   });
 
@@ -284,6 +287,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     const dataCompleta = d3.utcFormat('%d/%m/%Y');
     const comoData = (iso) => new Date(`${iso}T00:00:00Z`);
     const fimDaSemana = (inicio) => d3.utcDay.offset(inicio, 6);
+    const intervalo = (s) => `${diaMes(comoData(s.semana))} a ${diaMes(fimDaSemana(comoData(s.semana)))}`;
 
     const formatos = {
       inicio: (v) => dataCompleta(comoData(v)),
@@ -340,6 +344,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       const semanas = d.data.map((s) => ({
         semana: s.semana,
         inicio: comoData(s.semana),
+        rotulo: intervalo(s),
+        parcial: Boolean(s.em_andamento),
         prof: Number(s.acessos_profissionais),
         cuid: Number(s.acessos_cuidadores),
         total: Number(s.acessos),
@@ -373,7 +379,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       svg.append('g').selectAll('text').data(semanas).join('text')
         .attr('class', 'ga-tick').attr('text-anchor', 'middle')
         .attr('x', (s) => x(s.semana) + x.bandwidth() / 2).attr('y', H - m.bottom + 18)
-        .text((s) => (curto ? diaMes(s.inicio) : `${diaMes(s.inicio)} a ${diaMes(fimDaSemana(s.inicio))}`));
+        .text((s) => (curto ? diaMes(s.inicio) : s.rotulo));
 
       const barras = svg.append('g');
       semanas.forEach((s) => {
@@ -381,9 +387,10 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         const yProf = y(s.prof);
         const yTotal = y(s.total);
         const temCuid = s.cuid > 0;
-        barras.append('path').attr('d', barra(x0, yProf, largura, y(0) - yProf, temCuid ? 0 : 4)).attr('fill', dash.colors[0]);
+        const opacidade = s.parcial ? 0.45 : 1;
+        barras.append('path').attr('d', barra(x0, yProf, largura, y(0) - yProf, temCuid ? 0 : 4)).attr('fill', dash.colors[0]).attr('fill-opacity', opacidade);
         if (temCuid) {
-          barras.append('path').attr('d', barra(x0, yTotal, largura, Math.max(0, yProf - yTotal - 2), 4)).attr('fill', dash.colors[1]);
+          barras.append('path').attr('d', barra(x0, yTotal, largura, Math.max(0, yProf - yTotal - 2), 4)).attr('fill', dash.colors[1]).attr('fill-opacity', opacidade);
         }
         barras.append('text').attr('class', 'ga-value').attr('text-anchor', 'middle')
           .attr('x', x0 + largura / 2).attr('y', yTotal - 6).text(numero.format(s.total));
@@ -410,7 +417,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       function mostrarDica(ev, s) {
         const cab = document.createElement('div');
         cab.className = 'ga-tip-head';
-        cab.textContent = `Semana de ${diaMes(s.inicio)} a ${diaMes(fimDaSemana(s.inicio))}`;
+        cab.textContent = `Semana de ${s.rotulo}${s.parcial ? ' (em andamento)' : ''}`;
         dica.replaceChildren(
           cab,
           linhaDica(dash.colors[0], 'Profissionais', s.prof),
@@ -441,9 +448,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       d.data.forEach((s) => {
         const tr = document.createElement('tr');
         tr.dataset.key = s.semana;
-        const inicio = comoData(s.semana);
         const semana = document.createElement('td');
-        semana.textContent = `${diaMes(inicio)} a ${diaMes(fimDaSemana(inicio))}`;
+        semana.textContent = `${intervalo(s)}${s.em_andamento ? ' (em andamento)' : ''}`;
         tr.append(semana);
         colunas.forEach((c) => {
           const td = document.createElement('td');
