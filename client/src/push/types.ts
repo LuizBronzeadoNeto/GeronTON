@@ -53,6 +53,11 @@ export interface PushModule {
   unregister(token?: string): Promise<string | null>;
   addForegroundListener(handler: (push: ForegroundPush) => void): () => void;
   /**
+   * Calls handler with a notification's data when the user taps it, including
+   * the tap that launched the app.
+   */
+  addOpenListener(handler: (data: Record<string, string>) => void): () => void;
+  /**
    * Warms whatever requestAndRegister would otherwise have to await. Called
    * once a session exists, so the gesture path can prompt immediately.
    */

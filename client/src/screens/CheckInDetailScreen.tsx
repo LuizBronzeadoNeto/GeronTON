@@ -20,6 +20,7 @@ import {
   moodLabel,
 } from "../constants/checkin";
 import { PrimaryButton } from "../components/PrimaryButton";
+import { formatDay } from "../utils/date";
 import { COLORS, FONTS } from "../theme";
 
 type Props = NativeStackScreenProps<AppStackParamList, "CheckInDetail">;
@@ -119,11 +120,13 @@ export function CheckInDetailScreen({ navigation, route }: Props) {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text testID="checkin-detail-title" style={styles.title}>
-        Check-in de {checkIn.date.slice(0, 10)}
+        Check-in de {formatDay(checkIn.date)}
       </Text>
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>{STEPS[0].title}</Text>
+        <Text style={styles.cardTitle} accessibilityRole="header">
+          {STEPS[0].title}
+        </Text>
         {["skinIssues", "bowelRegular", "sleepWell", "unstableGait"].map(
           (field) => (
             <DetailRow
@@ -147,13 +150,19 @@ export function CheckInDetailScreen({ navigation, route }: Props) {
         {VITALS.map((vital) => {
           const value = checkIn[vital.key as keyof CheckIn] as string | null;
           return value ? (
-            <DetailRow key={vital.key} label={vital.label} value={value} />
+            <DetailRow
+              key={vital.key}
+              label={`${vital.label} (${vital.unit})`}
+              value={value}
+            />
           ) : null;
         })}
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>{STEPS[1].title}</Text>
+        <Text style={styles.cardTitle} accessibilityRole="header">
+          {STEPS[1].title}
+        </Text>
         <DetailRow label="Apetite predominante" value={appetiteLabel} />
         <DetailRow
           label={YES_NO_QUESTIONS.chokingIncident}
@@ -181,7 +190,9 @@ export function CheckInDetailScreen({ navigation, route }: Props) {
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>{STEPS[2].title}</Text>
+        <Text style={styles.cardTitle} accessibilityRole="header">
+          {STEPS[2].title}
+        </Text>
         <DetailRow label="Humor predominante" value={moodLabel(checkIn.mood)} />
         <DetailRow
           label="Nível de estresse"
@@ -204,7 +215,9 @@ export function CheckInDetailScreen({ navigation, route }: Props) {
 
       {checkIn.shortForm ? null : (
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>{STEPS[3].title}</Text>
+          <Text style={styles.cardTitle} accessibilityRole="header">
+            {STEPS[3].title}
+          </Text>
           {["dailyBath", "oralHygiene", "groomedNails"].map((field) => (
             <DetailRow
               key={field}
@@ -217,7 +230,9 @@ export function CheckInDetailScreen({ navigation, route }: Props) {
 
       {checkIn.shortForm ? null : (
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>{STEPS[4].title}</Text>
+          <Text style={styles.cardTitle} accessibilityRole="header">
+            {STEPS[4].title}
+          </Text>
           {LOGISTICS.map((section) => {
             const items = checkIn[section.key as keyof CheckIn] as string[];
             return (

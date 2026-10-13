@@ -1,6 +1,5 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { COLORS, FONTS } from "../theme";
+import { Pressable, StyleSheet, View } from "react-native";
+import { COLORS, SPACING } from "../theme";
 
 interface Props {
   current: number;
@@ -9,11 +8,9 @@ interface Props {
 }
 
 /**
- * Wizard progress indicator, redesigned from the Figma's plain 1-5 number row:
- * completed steps become check-marked light-blue circles, the active step is a
- * filled primary circle and upcoming steps stay outlined, all joined by a
- * connector line that fills as the user advances. Completed steps are tappable
- * to jump back; upcoming steps are not.
+ * The wizard's progress as a segmented bar: one segment per step, filled up
+ * to the current one. Finished segments are tappable to go back to that step.
+ * A bar reads at a glance where five numbered circles asked to be counted.
  */
 export function StepIndicator({ current, total, onStepPress }: Props) {
   const steps = Array.from({ length: total }, (_, index) => index + 1);
@@ -25,36 +22,23 @@ export function StepIndicator({ current, total, onStepPress }: Props) {
         const isActive = step === current;
 
         return (
-          <View key={step} style={styles.stepWrapper}>
-            {step > 1 ? (
-              <View
-                style={[
-                  styles.connector,
-                  isDone || isActive ? styles.connectorDone : null,
-                ]}
-              />
-            ) : null}
-            <Pressable
-              testID={`checkin-step-${step}`}
-              accessibilityRole="button"
-              accessibilityLabel={`Etapa ${step} de ${total}`}
-              disabled={!isDone || !onStepPress}
+          <Pressable
+            key={step}
+            testID={`checkin-step-${step}`}
+            accessibilityRole="button"
+            accessibilityLabel={`Etapa ${step} de ${total}${isDone ? ", concluída" : isActive ? ", atual" : ""}`}
+            disabled={!isDone || !onStepPress}
+            hitSlop={{ top: 12, bottom: 12 }}
+            style={styles.slot}
+            onPress={() => onStepPress?.(step)}
+          >
+            <View
               style={[
-                styles.circle,
-                isDone && styles.circleDone,
-                isActive && styles.circleActive,
+                styles.segment,
+                (isDone || isActive) && styles.segmentFilled,
               ]}
-              onPress={() => onStepPress?.(step)}
-            >
-              {isDone ? (
-                <Ionicons name="checkmark" size={14} color={COLORS.primary} />
-              ) : (
-                <Text style={[styles.number, isActive && styles.numberActive]}>
-                  {step}
-                </Text>
-              )}
-            </Pressable>
-          </View>
+            />
+          </Pressable>
         );
       })}
     </View>
@@ -64,46 +48,18 @@ export function StepIndicator({ current, total, onStepPress }: Props) {
 const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
-    alignItems: "center",
-    alignSelf: "center",
+    gap: SPACING.xs,
   },
-  stepWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
+  slot: {
+    flex: 1,
+    paddingVertical: SPACING.xs,
   },
-  connector: {
-    width: 20,
-    height: 2,
-    backgroundColor: COLORS.grey300,
-    marginHorizontal: 4,
+  segment: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: COLORS.divider,
   },
-  connectorDone: {
+  segmentFilled: {
     backgroundColor: COLORS.primary,
-  },
-  circle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: COLORS.grey300,
-    backgroundColor: COLORS.white,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  circleDone: {
-    borderColor: COLORS.primary,
-    backgroundColor: COLORS.chipBg,
-  },
-  circleActive: {
-    borderColor: COLORS.primary,
-    backgroundColor: COLORS.primary,
-  },
-  number: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 12,
-    color: COLORS.grey500,
-  },
-  numberActive: {
-    color: COLORS.white,
   },
 });

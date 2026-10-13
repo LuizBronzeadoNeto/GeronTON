@@ -26,6 +26,18 @@ export function optionalText(value: unknown): string | null {
  * positive integer string, and null otherwise, so routes can respond 400
  * instead of passing NaN to Prisma (which would surface as a 500).
  */
+/**
+ * Reads a Brazilian phone (DDD + number) from free text, keeping the digits.
+ * Returns null when empty, and "invalid" unless it has 10 or 11 digits.
+ */
+export function readPhone(value: unknown): string | null | "invalid" {
+  if (value === undefined || value === null || value === "") return null;
+  if (typeof value !== "string") return "invalid";
+  const digits = value.replace(/\D/g, "");
+  if (digits === "") return null;
+  return digits.length === 10 || digits.length === 11 ? digits : "invalid";
+}
+
 export function parseId(raw: unknown): number | null {
   if (typeof raw !== "string") return null;
   const id = Number(raw);

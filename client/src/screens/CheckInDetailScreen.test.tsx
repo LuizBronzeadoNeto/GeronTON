@@ -1,5 +1,6 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { mockNavigationModule } from "../test-utils";
+import { formatDay } from "../utils/date";
 import {
   render,
   screen,
@@ -69,7 +70,9 @@ describe("CheckInDetailScreen", () => {
 
     await waitFor(() => expect(getCheckIn).toHaveBeenCalledWith(9, 4));
     expect(screen.getByTestId("checkin-detail-title")).toBeTruthy();
-    expect(screen.getByText("Check-in de 2026-06-15")).toBeTruthy();
+    expect(
+      screen.getByText(`Check-in de ${formatDay("2026-06-15T00:00:00.000Z")}`),
+    ).toBeTruthy();
     expect(screen.getByText("Febre, Dor, Tontura")).toBeTruthy();
     expect(screen.getByText("130/85")).toBeTruthy();
     expect(screen.getByText("Triste")).toBeTruthy();
@@ -134,6 +137,6 @@ describe("CheckInDetailScreen", () => {
       expect(screen.getByTestId("checkin-detail-short")).toBeTruthy(),
     );
     expect(screen.queryByText("Banho realizado todos os dias?")).toBeNull();
-    expect(screen.queryByText("Estoque e Logística")).toBeNull();
+    expect(screen.queryByText("Compras da semana")).toBeNull();
   });
 });

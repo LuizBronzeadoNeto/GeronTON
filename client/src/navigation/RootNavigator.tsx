@@ -1,11 +1,18 @@
 import { ActivityIndicator, StyleSheet, View } from "react-native";
-import { NavigationContainer } from "@react-navigation/native";
+import { DefaultTheme, NavigationContainer } from "@react-navigation/native";
+import { flushPendingNavigation, navigationRef } from "./navigationRef";
 import { useAuth } from "../context/AuthContext";
 import { usePushSync } from "../push/usePushSync";
 import { COLORS } from "../theme";
 import { AuthStack } from "./AuthStack";
 import { AppStack } from "./AppStack";
 import { ConsentScreen } from "../screens/ConsentScreen";
+
+/** White behind every screen, including the margins of the web column. */
+const THEME = {
+  ...DefaultTheme,
+  colors: { ...DefaultTheme.colors, background: COLORS.white },
+};
 
 /**
  * Top-level navigation. Swaps between the auth flow and the app depending on
@@ -42,7 +49,11 @@ export function RootNavigator() {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer
+      ref={navigationRef}
+      theme={THEME}
+      onReady={flushPendingNavigation}
+    >
       {user == null ? <AuthStack /> : <AppStack role={user.role} />}
     </NavigationContainer>
   );

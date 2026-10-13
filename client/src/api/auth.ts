@@ -1,4 +1,5 @@
 import { isAxiosError } from "axios";
+import { connectionErrorMessage } from "./errors";
 import { http } from "./http";
 import type { Role, User } from "../types/auth";
 
@@ -15,7 +16,9 @@ export async function login(email: string, password: string): Promise<User> {
     if (isAxiosError(err) && err.response?.status === 401) {
       throw new Error("Invalid credentials");
     }
-    throw err;
+    throw new Error(
+      connectionErrorMessage(err) ?? "Não foi possível entrar. Tente de novo.",
+    );
   }
 }
 
@@ -48,12 +51,11 @@ export async function register({
   try {
     await http.post(path, { email, password, crm, acceptedTerms });
   } catch (err) {
+    const connection = connectionErrorMessage(err);
+    if (connection) throw new Error(connection);
     if (isAxiosError(err)) {
       if (err.response?.status === 409) {
         throw new Error("Já existe uma conta com esse e-mail ou CRM.");
-      }
-      if (err.response?.status === 429) {
-        throw new Error("Muitas tentativas. Tente novamente mais tarde.");
       }
       if (err.response?.status === 400) {
         throw new Error("Verifique os dados informados.");

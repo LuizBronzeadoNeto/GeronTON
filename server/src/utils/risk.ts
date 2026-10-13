@@ -1,10 +1,25 @@
 import type { CheckIn, Intercorrence } from "@prisma/client";
+import { weeklyEventLabel } from "./labels.js";
 
 export type RiskLevel = "low" | "moderate" | "high" | "unknown";
 
 export interface RiskStatus {
   status: RiskLevel;
   score: number;
+  criticalEvents: string[];
+  /**
+   * Why the status is what it is, in plain words: the recent events and the
+   * check-in answers that added points, e.g. "Apetite ruim (+3)".
+   */
+  reasons: string[];
+}
+
+/**
+ * One check-in answer that added to the weekly score, and by how much.
+ */
+export interface RiskFactor {
+  label: string;
+  points: number;
 }
 
 /**
@@ -24,6 +39,7 @@ export interface ClinicalFlag {
 
 export interface CheckInEvaluation {
   score: number;
+  factors: RiskFactor[];
   flags: ClinicalFlag[];
   criticalEvents: string[];
 }
@@ -69,15 +85,29 @@ function weeklyEventPoints(event: string): number {
 /**
  * Acute-event types the interface maps as immediate high risk, mirroring the
  * weekly native critical tags (fever, shortness of breath, active bleeding,
- * acute confusion). Registering one of these elevates the elderly person to
- * critical status regardless of the severity the caregiver selected.
+ * acute confusion), plus chest pain and choking, which are emergencies
+ * whatever severity the caregiver picked. Registering one of these elevates
+ * the elderly person to critical status regardless of the severity selected.
  */
 export const CRITICAL_EVENT_TYPES: ReadonlySet<string> = new Set([
   "fever",
   "breathing_difficulties",
   "bleeding",
   "confusion",
+  "chest_pain",
+  "choking",
 ]);
+
+/**
+ * Whether an intercorrence counts as critical: the caregiver's own flag, or an
+ * event type that is critical whatever they selected.
+ */
+export function isCriticalIntercorrence(event: {
+  eventType: string;
+  isCritical: boolean;
+}): boolean {
+  return event.isCritical || CRITICAL_EVENT_TYPES.has(event.eventType);
+}
 
 const MODERATE_THRESHOLD = 6;
 const HIGH_THRESHOLD = 12;
@@ -91,6 +121,20 @@ const DIASTOLIC_HYPOTENSION_LIMIT = 60;
 const GLYCEMIA_DECOMPENSATION_LIMIT = 200;
 
 /**
+ * Below this both blood-pressure numbers are in cmHg, as in the spoken
+ * Brazilian "12 por 8".
+ */
+const CMHG_LIMIT = 30;
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * A weekly check-in older than this no longer describes how the elder is now,
+ * so it stops counting towards the risk status.
+ */
+export const STALE_CHECKIN_DAYS = 14;
+
+/**
  * Extracts the first numeric value from a free-text vital-sign entry ("95%",
  * "30,5 cm"), accepting a decimal comma. Returns null when there is none.
  */
@@ -101,19 +145,22 @@ function parseMeasurement(value: string | null): number | null {
 }
 
 /**
- * Extracts a systolic/diastolic pair from a free-text blood-pressure entry
- * ("140/90", "12x8"). Returns null unless both numbers are present.
+ * Extracts a systolic/diastolic pair in mmHg from a free-text blood-pressure
+ * entry ("140/90", "12x8", "12 por 8"). Readings written in cmHg are scaled to
+ * mmHg. Returns null unless both numbers are present.
  */
 function parsePressure(
   value: string | null,
 ): { systolic: number; diastolic: number } | null {
   if (!value) return null;
-  const match = value.match(/(\d+(?:[.,]\d+)?)\s*[/xX]\s*(\d+(?:[.,]\d+)?)/);
+  const match = value.match(
+    /(\d+(?:[.,]\d+)?)\s*(?:[/x]|por)\s*(\d+(?:[.,]\d+)?)/i,
+  );
   if (!match) return null;
-  return {
-    systolic: Number(match[1].replace(",", ".")),
-    diastolic: Number(match[2].replace(",", ".")),
-  };
+  const systolic = Number(match[1].replace(",", "."));
+  const diastolic = Number(match[2].replace(",", "."));
+  const scale = systolic < CMHG_LIMIT && diastolic < CMHG_LIMIT ? 10 : 1;
+  return { systolic: systolic * scale, diastolic: diastolic * scale };
 }
 
 /**
@@ -125,20 +172,26 @@ function parsePressure(
  * warning flags, without scoring.
  */
 function evaluateVitalSigns(checkIn: CheckIn): {
-  points: number;
+  factors: RiskFactor[];
   flags: ClinicalFlag[];
 } {
-  let points = 0;
+  const factors: RiskFactor[] = [];
   const flags: ClinicalFlag[] = [];
 
   const saturation = parseMeasurement(checkIn.saturation);
   if (saturation !== null && saturation < SATURATION_HYPOXIA_LIMIT) {
-    points += 4;
+    factors.push({
+      label: `Saturação abaixo de ${SATURATION_HYPOXIA_LIMIT}%`,
+      points: 4,
+    });
   }
 
   const calf = parseMeasurement(checkIn.calfCircumference);
   if (calf !== null && calf < CALF_SARCOPENIA_LIMIT_CM) {
-    points += 2;
+    factors.push({
+      label: `Panturrilha abaixo de ${CALF_SARCOPENIA_LIMIT_CM} cm`,
+      points: 2,
+    });
     flags.push({
       type: "sarcopenia_risk",
       message: `Panturrilha esquerda com ${checkIn.calfCircumference}, abaixo de ${CALF_SARCOPENIA_LIMIT_CM} cm`,
@@ -159,7 +212,7 @@ function evaluateVitalSigns(checkIn: CheckIn): {
         : `abaixo de ${SYSTOLIC_HYPOTENSION_LIMIT}/${DIASTOLIC_HYPOTENSION_LIMIT}`;
       flags.push({
         type: "clinical_warning",
-        message: `Pressão arterial ${checkIn.pressure}, ${limit}`,
+        message: `Pressão arterial ${pressure.systolic}/${pressure.diastolic}, ${limit}`,
       });
     }
   }
@@ -172,7 +225,7 @@ function evaluateVitalSigns(checkIn: CheckIn): {
     });
   }
 
-  return { points, flags };
+  return { factors, flags };
 }
 
 /**
@@ -184,34 +237,36 @@ function evaluateVitalSigns(checkIn: CheckIn): {
  * and the native-critical weekly events for the dashboard's visual flag.
  */
 export function evaluateCheckIn(checkIn: CheckIn): CheckInEvaluation {
-  let score = 0;
+  const factors: RiskFactor[] = [];
+  const add = (applies: boolean, points: number, label: string) => {
+    if (applies) factors.push({ label, points });
+  };
 
-  if (checkIn.skinIssues) score += 3;
-  if (!checkIn.bowelRegular) score += 2;
-  if (!checkIn.sleepWell) score += 2;
-  if (checkIn.unstableGait) score += 4;
-
+  add(checkIn.skinIssues, 3, "Mancha ou vermelhidão na pele");
+  add(!checkIn.bowelRegular, 2, "Intestino irregular");
+  add(!checkIn.sleepWell, 2, "Noites mal dormidas");
+  add(checkIn.unstableGait, 4, "Andando com mais dificuldade");
   for (const event of checkIn.weeklyEvents) {
-    score += weeklyEventPoints(event);
+    add(true, weeklyEventPoints(event), `${weeklyEventLabel(event)} na semana`);
   }
 
   const vitals = evaluateVitalSigns(checkIn);
-  score += vitals.points;
+  factors.push(...vitals.factors);
 
-  if (checkIn.appetite === "bad") score += 3;
-  else if (checkIn.appetite === "regular") score += 1;
-  if (checkIn.chokingIncident) score += 5;
-  if (!checkIn.hydrationGoal) score += 2;
-  if (!checkIn.medsOnTime) score += 3;
-
-  if (checkIn.mood === "sad" || checkIn.mood === "very_sad") score += 2;
-  else if (checkIn.mood === "neutral") score += 1;
-  if (!checkIn.sunExposure) score += 1;
-  if (!checkIn.selfExpression) score += 1;
-  if (!checkIn.stimulation) score += 1;
+  add(checkIn.appetite === "bad", 3, "Apetite ruim");
+  add(checkIn.appetite === "regular", 1, "Apetite regular");
+  add(checkIn.chokingIncident, 5, "Engasgo ao comer ou beber");
+  add(!checkIn.hydrationGoal, 2, "Não bebeu água suficiente");
+  add(!checkIn.medsOnTime, 3, "Remédios fora do horário ou recusados");
+  add(checkIn.mood === "sad" || checkIn.mood === "very_sad", 2, "Humor triste");
+  add(checkIn.mood === "neutral", 1, "Humor neutro");
+  add(!checkIn.sunExposure, 1, "Não tomou sol nem saiu do quarto");
+  add(!checkIn.selfExpression, 1, "Dificuldade para se expressar");
+  add(!checkIn.stimulation, 1, "Sem estímulos na semana");
 
   return {
-    score,
+    score: factors.reduce((sum, factor) => sum + factor.points, 0),
+    factors,
     flags: vitals.flags,
     criticalEvents: checkIn.weeklyEvents.filter((event) =>
       CRITICAL_WEEKLY_EVENTS.has(event),
@@ -237,15 +292,25 @@ function levelFromScore(score: number): RiskLevel {
  * override ("low" floor).
  */
 function acuteEventFloor(recentIntercorrences: Intercorrence[]): RiskLevel {
-  if (
-    recentIntercorrences.some(
-      (event) => event.isCritical || CRITICAL_EVENT_TYPES.has(event.eventType),
-    )
-  ) {
+  if (recentIntercorrences.some(isCriticalIntercorrence)) {
     return "high";
   }
   return recentIntercorrences.length > 0 ? "moderate" : "low";
 }
+
+/**
+ * The acute-event part of the explanation, matching acuteEventFloor.
+ */
+function acuteReason(recentIntercorrences: Intercorrence[]): string | null {
+  if (recentIntercorrences.some(isCriticalIntercorrence)) {
+    return "Intercorrência crítica nos últimos 30 dias";
+  }
+  return recentIntercorrences.length > 0
+    ? "Intercorrência nos últimos 30 dias"
+    : null;
+}
+
+const NO_RECENT_CHECKIN = "Sem check-in nas últimas 2 semanas";
 
 const LEVEL_ORDER: Record<RiskLevel, number> = {
   unknown: 0,
@@ -259,19 +324,35 @@ const LEVEL_ORDER: Record<RiskLevel, number> = {
  * recent intercorrences (the caller decides the window, typically 30 days). The
  * weekly score maps to a state (0–5 low, 6–11 moderate, 12+ high) and acute
  * events act as a floor on top of it: a critical one forces "high", any other
- * forces at least "moderate", and the more severe status always prevails. With
- * no check-in and no intercorrences there is nothing to assess and the status
- * is "unknown".
+ * forces at least "moderate", and the more severe status always prevails. A
+ * check-in older than STALE_CHECKIN_DAYS is ignored, so a family that stopped
+ * reporting does not keep showing an old "stable". With no recent check-in and
+ * no intercorrences there is nothing to assess and the status is "unknown".
+ * The reasons explain the result: the acute events first (the caller's window
+ * is 30 days), then each check-in answer that added points.
  */
 export function computeRiskStatus(
   latestCheckIn: CheckIn | null,
   recentIntercorrences: Intercorrence[],
+  now = new Date(),
 ): RiskStatus {
-  if (!latestCheckIn && recentIntercorrences.length === 0) {
-    return { status: "unknown", score: 0 };
+  const checkIn =
+    latestCheckIn &&
+    now.getTime() - latestCheckIn.date.getTime() <= STALE_CHECKIN_DAYS * DAY_MS
+      ? latestCheckIn
+      : null;
+
+  if (!checkIn && recentIntercorrences.length === 0) {
+    return {
+      status: "unknown",
+      score: 0,
+      criticalEvents: [],
+      reasons: [NO_RECENT_CHECKIN],
+    };
   }
 
-  const score = latestCheckIn ? evaluateCheckIn(latestCheckIn).score : 0;
+  const evaluation = checkIn ? evaluateCheckIn(checkIn) : null;
+  const score = evaluation?.score ?? 0;
   const weeklyLevel = levelFromScore(score);
   const acuteLevel = acuteEventFloor(recentIntercorrences);
   const status =
@@ -279,5 +360,19 @@ export function computeRiskStatus(
       ? acuteLevel
       : weeklyLevel;
 
-  return { status, score };
+  const reasons = [
+    acuteReason(recentIntercorrences),
+    ...(evaluation
+      ? evaluation.factors.map(
+          (factor) => `${factor.label} (+${factor.points})`,
+        )
+      : [NO_RECENT_CHECKIN]),
+  ].filter((reason): reason is string => reason !== null);
+
+  return {
+    status,
+    score,
+    criticalEvents: evaluation?.criticalEvents ?? [],
+    reasons,
+  };
 }

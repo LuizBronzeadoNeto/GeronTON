@@ -179,6 +179,23 @@ describe("ProfileIdentificationScreen", () => {
     ).toBe(true);
   });
 
+  it("explains a CPF with wrong check digits", async () => {
+    jest.mocked(verifyProfileCpf).mockRejectedValue(
+      Object.assign(new Error("Bad Request"), {
+        isAxiosError: true,
+        response: { status: 400 },
+      }),
+    );
+    renderScreen();
+    fillIdentity();
+
+    fireEvent.press(screen.getByTestId("profile-identification-submit"));
+
+    expect(
+      await screen.findByText("CPF inválido. Confira os números digitados."),
+    ).toBeTruthy();
+  });
+
   it("reports a failed verification without moving on", async () => {
     jest.mocked(verifyProfileCpf).mockRejectedValue(new Error("boom"));
     const { navigation } = renderScreen();

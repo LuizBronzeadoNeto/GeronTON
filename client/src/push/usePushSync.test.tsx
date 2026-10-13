@@ -1,15 +1,28 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { Text } from "react-native";
-import { act, render, screen, waitFor } from "@testing-library/react-native";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { usePushSync } from "./usePushSync";
 import { NotificationProvider } from "../context/NotificationContext";
 import { useAuth } from "../context/AuthContext";
-import { addForegroundListener, prepare, syncExisting } from "./";
+import {
+  addForegroundListener,
+  addOpenListener,
+  prepare,
+  syncExisting,
+} from "./";
+import { openProfile } from "../navigation/navigationRef";
 import type { ForegroundPush } from "./types";
 
 jest.mock("../context/AuthContext");
 jest.mock("./");
+jest.mock("../navigation/navigationRef", () => ({ openProfile: jest.fn() }));
 
 const INITIAL_METRICS = {
   frame: { x: 0, y: 0, width: 390, height: 844 },
@@ -36,6 +49,7 @@ function signedIn() {
     user: { id: 1, role: "cuidador", token: "jwt" },
     isSigningIn: false,
     isRestoring: false,
+    sessionExpired: false,
     signIn: jest.fn<() => Promise<void>>(),
     signOut: jest.fn(),
     acceptConsent: jest.fn(async () => {}),
@@ -47,6 +61,7 @@ function signedOut() {
     user: null,
     isSigningIn: false,
     isRestoring: false,
+    sessionExpired: false,
     signIn: jest.fn<() => Promise<void>>(),
     signOut: jest.fn(),
     acceptConsent: jest.fn(async () => {}),
@@ -60,6 +75,11 @@ beforeEach(() => {
     .mocked(addForegroundListener)
     .mockReset()
     .mockReturnValue(() => {});
+  jest
+    .mocked(addOpenListener)
+    .mockReset()
+    .mockReturnValue(() => {});
+  jest.mocked(openProfile).mockReset();
 });
 
 describe("usePushSync", () => {
@@ -113,6 +133,56 @@ describe("usePushSync", () => {
       expect(screen.getByTestId("app-notification")).toBeTruthy(),
     );
     expect(screen.getByText("Maria Silva: Queda")).toBeTruthy();
+  });
+
+  it("opens the elder when a notification is tapped", () => {
+    let tapped: ((data: Record<string, string>) => void) | undefined;
+    jest.mocked(addOpenListener).mockImplementation((handler) => {
+      tapped = handler;
+      return () => {};
+    });
+    signedIn();
+    renderHook();
+
+    tapped?.({ profileId: "42" });
+
+    expect(openProfile).toHaveBeenCalledWith(42);
+  });
+
+  it("ignores a tapped notification without a profile", () => {
+    let tapped: ((data: Record<string, string>) => void) | undefined;
+    jest.mocked(addOpenListener).mockImplementation((handler) => {
+      tapped = handler;
+      return () => {};
+    });
+    signedIn();
+    renderHook();
+
+    tapped?.({});
+
+    expect(openProfile).not.toHaveBeenCalled();
+  });
+
+  it("opens the elder when the in-app toast is tapped", () => {
+    let arrived: ((push: ForegroundPush) => void) | undefined;
+    jest.mocked(addForegroundListener).mockImplementation((handler) => {
+      arrived = handler;
+      return () => {};
+    });
+    signedIn();
+    renderHook();
+
+    act(() =>
+      arrived?.({
+        title: "Intercorrência crítica",
+        body: "Maria: Queda",
+        critical: true,
+        data: { profileId: "7" },
+      }),
+    );
+    fireEvent.press(screen.getByTestId("app-notification-open"));
+
+    expect(openProfile).toHaveBeenCalledWith(7);
   });
 
   it("removes the listener when the component goes away", async () => {

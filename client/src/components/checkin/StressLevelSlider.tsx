@@ -10,9 +10,11 @@ interface Props {
 
 const LEVELS = [0, 1, 2, 3, 4, 5];
 
-const TRACK = "#EDE7F9";
-const DOT = "#B9A8E3";
-const THUMB = "#5D4FA0";
+const QUESTION = "Nível de estresse do idoso na semana";
+
+const TRACK = COLORS.chipBg;
+const DOT = COLORS.grey300;
+const THUMB = COLORS.primary;
 
 /**
  * "Nível de estresse predominante" card from the wizard's behavior step: a
@@ -39,12 +41,19 @@ export function StressLevelSlider({ value, onChange }: Props) {
 
   return (
     <View style={checkinStyles.blockRow}>
-      <Text style={checkinStyles.questionLabel}>
-        Nível de estresse predominante
-      </Text>
+      <Text style={checkinStyles.questionLabel}>{QUESTION}</Text>
       <View
         ref={trackRef}
         style={styles.area}
+        accessible
+        accessibilityRole="adjustable"
+        accessibilityLabel={QUESTION}
+        accessibilityValue={{ min: 0, max: 5, now: value }}
+        accessibilityActions={[{ name: "increment" }, { name: "decrement" }]}
+        onAccessibilityAction={(event) => {
+          const delta = event.nativeEvent.actionName === "increment" ? 1 : -1;
+          onChange(Math.min(5, Math.max(0, value + delta)));
+        }}
         onTouchStart={(event) => handleTouch(event.nativeEvent.pageX)}
         onTouchMove={(event) => handleTouch(event.nativeEvent.pageX)}
       >
@@ -78,11 +87,24 @@ export function StressLevelSlider({ value, onChange }: Props) {
           ))}
         </View>
       </View>
+      <View style={styles.ends}>
+        <Text style={styles.endLabel}>Nenhum</Text>
+        <Text style={styles.endLabel}>Muito alto</Text>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  ends: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  endLabel: {
+    fontFamily: FONTS.regular,
+    fontSize: 12,
+    color: COLORS.grey500,
+  },
   area: {
     position: "relative",
     paddingTop: 2,

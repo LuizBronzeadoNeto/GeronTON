@@ -149,9 +149,23 @@ describe("GET /triagem", () => {
     expect(mine(res.body).map((entry) => entry.id)).toEqual([
       highId,
       moderateId,
-      stableId,
       unknownId,
+      stableId,
     ]);
+  });
+
+  it("carries the date of the latest check-in", async () => {
+    const checkIn = await createCheckIn(stableId);
+
+    const res = await getTriage();
+    const entries = res.body as { id: number; lastCheckInAt: string | null }[];
+
+    expect(entries.find((entry) => entry.id === stableId)?.lastCheckInAt).toBe(
+      checkIn.date,
+    );
+    expect(
+      entries.find((entry) => entry.id === unknownId)?.lastCheckInAt,
+    ).toBeNull();
   });
 
   it("carries each profile's risk and critical weekly events", async () => {
@@ -166,6 +180,11 @@ describe("GET /triagem", () => {
       status: "moderate",
       score: 9,
       criticalEvents: ["fever"],
+      reasons: [
+        "Febre na semana (+5)",
+        "Dor na semana (+2)",
+        "Tosse na semana (+2)",
+      ],
     });
   });
 

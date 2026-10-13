@@ -41,7 +41,8 @@ export const RISK_LEVELS: Record<RiskLevel, RiskLevelPresentation> = {
     label: "Sem dados",
     color: COLORS.grey500,
     bg: "#EEEEEE",
-    description: "Nenhum check-in ou intercorrência registrada ainda.",
+    description:
+      "Sem check-in nas últimas 2 semanas nem intercorrência recente. Vale confirmar com a família como o idoso está.",
   },
 };
 
@@ -51,6 +52,6 @@ export const RISK_LEVELS: Record<RiskLevel, RiskLevelPresentation> = {
 export const RISK_LEVEL_ORDER: RiskLevel[] = [
   "high",
   "moderate",
-  "low",
   "unknown",
+  "low",
 ];

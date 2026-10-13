@@ -203,3 +203,38 @@ export function addForegroundListener(
 
   return () => subscription.remove();
 }
+
+/** The launch notification is handled once per app run, not on every sign-in. */
+let launchResponseHandled = false;
+
+/**
+ * Taps on a notification, whether the app was open or launched by the tap.
+ */
+export function addOpenListener(
+  handler: (data: Record<string, string>) => void,
+): () => void {
+  if (!launchResponseHandled) {
+    launchResponseHandled = true;
+    void Notifications.getLastNotificationResponseAsync().then((response) => {
+      if (response) {
+        handler(
+          (response.notification.request.content.data ?? {}) as Record<
+            string,
+            string
+          >,
+        );
+      }
+    });
+  }
+
+  const subscription = Notifications.addNotificationResponseReceivedListener(
+    (response) =>
+      handler(
+        (response.notification.request.content.data ?? {}) as Record<
+          string,
+          string
+        >,
+      ),
+  );
+  return () => subscription.remove();
+}

@@ -67,7 +67,7 @@ describe("MedicationInventoryScreen", () => {
     await waitFor(() =>
       expect(screen.getByTestId("medication-item-1")).toBeTruthy(),
     );
-    expect(screen.getByText("Medicação de Uso Contínuo")).toBeTruthy();
+    expect(screen.getByText("Medicação de uso contínuo")).toBeTruthy();
     expect(screen.getByTestId("medication-add")).toBeTruthy();
   });
 

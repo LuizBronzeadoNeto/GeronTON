@@ -1,10 +1,10 @@
 import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
-  FlatList,
+  ScrollView,
   StyleSheet,
   Text,
+  View,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -16,7 +16,8 @@ import {
 } from "../api/intercorrences";
 import { ProfileHeader } from "../components/ProfileHeader";
 import { IntercorrenceRow } from "../components/IntercorrenceRow";
-import { COLORS, FONTS } from "../theme";
+import { COLORS, RADIUS, SPACING, TYPE } from "../theme";
+import { confirmDestructive } from "../utils/confirm";
 
 type Props = NativeStackScreenProps<AppStackParamList, "IntercorrenceList">;
 
@@ -54,92 +55,94 @@ export function IntercorrenceListScreen({ route }: Props) {
   );
 
   function confirmDelete(id: number) {
-    Alert.alert(
+    confirmDestructive(
       "Remover intercorrência",
       "Tem certeza que deseja remover este registro?",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Remover",
-          style: "destructive",
-          onPress: async () => {
-            const previous = intercorrences;
-            setIntercorrences((old) => old.filter((item) => item.id !== id));
-            try {
-              await deleteIntercorrence(profileId, id);
-            } catch {
-              setIntercorrences(previous);
-              setError("Não foi possível remover a intercorrência.");
-            }
-          },
-        },
-      ],
+      async () => {
+        const previous = intercorrences;
+        setIntercorrences((old) => old.filter((item) => item.id !== id));
+        try {
+          await deleteIntercorrence(profileId, id);
+        } catch {
+          setIntercorrences(previous);
+          setError("Não foi possível remover a intercorrência.");
+        }
+      },
     );
   }
 
   return (
-    <FlatList
+    <ScrollView
       testID="intercorrence-list"
-      style={styles.list}
-      contentContainerStyle={styles.content}
-      data={intercorrences}
-      keyExtractor={(item) => String(item.id)}
-      ListHeaderComponent={
-        <>
-          <ProfileHeader profileId={profileId} />
-          <Text style={styles.title}>Histórico de intercorrências</Text>
-          {loading ? (
-            <ActivityIndicator
-              testID="intercorrence-list-loading"
-              color={COLORS.primary}
-            />
-          ) : null}
-          {error ? (
-            <Text testID="intercorrence-list-error" style={styles.error}>
-              {error}
-            </Text>
-          ) : null}
-        </>
-      }
-      ListEmptyComponent={
-        loading ? null : (
-          <Text testID="intercorrence-list-empty" style={styles.empty}>
-            Nenhuma intercorrência registrada.
-          </Text>
-        )
-      }
-      renderItem={({ item }) => (
-        <IntercorrenceRow
-          intercorrence={item}
-          testIDPrefix="history"
-          onDelete={() => confirmDelete(item.id)}
+      style={styles.screen}
+      contentContainerStyle={styles.container}
+    >
+      <ProfileHeader profileId={profileId} />
+      <Text style={styles.title} accessibilityRole="header">
+        Histórico de intercorrências
+      </Text>
+      {loading ? (
+        <ActivityIndicator
+          testID="intercorrence-list-loading"
+          color={COLORS.primary}
         />
-      )}
-    />
+      ) : null}
+      {error ? (
+        <Text testID="intercorrence-list-error" style={styles.error}>
+          {error}
+        </Text>
+      ) : null}
+      {!loading && intercorrences.length === 0 ? (
+        <Text testID="intercorrence-list-empty" style={styles.empty}>
+          Nenhuma intercorrência registrada.
+        </Text>
+      ) : null}
+      {intercorrences.length > 0 ? (
+        <View style={styles.list}>
+          {intercorrences.map((item, index) => (
+            <View key={item.id}>
+              {index > 0 ? <View style={styles.divider} /> : null}
+              <IntercorrenceRow
+                intercorrence={item}
+                testIDPrefix="history"
+                onDelete={() => confirmDelete(item.id)}
+              />
+            </View>
+          ))}
+        </View>
+      ) : null}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  list: {
+  screen: {
+    flex: 1,
     backgroundColor: COLORS.white,
   },
-  content: {
-    padding: 20,
-    gap: 14,
+  container: {
+    padding: SPACING.screen,
+    gap: SPACING.lg,
   },
   title: {
-    fontFamily: FONTS.extraBold,
-    fontSize: 18,
-    color: COLORS.heading,
+    ...TYPE.title,
+  },
+  list: {
+    borderWidth: 1,
+    borderColor: COLORS.cardBorder,
+    borderRadius: RADIUS.group,
+    overflow: "hidden",
+  },
+  divider: {
+    height: 1,
+    backgroundColor: COLORS.divider,
   },
   empty: {
-    fontFamily: FONTS.regular,
-    fontSize: 13,
+    ...TYPE.body,
     color: COLORS.grey500,
   },
   error: {
-    fontFamily: FONTS.semiBold,
+    ...TYPE.label,
     color: COLORS.danger,
-    textAlign: "center",
   },
 });

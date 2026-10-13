@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
-  FlatList,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -13,7 +13,8 @@ import { listProfiles, type Profile } from "../api/profiles";
 import { ProfileCard } from "../components/ProfileCard";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { RiskLegend } from "../components/RiskLegend";
-import { COLORS, FONTS } from "../theme";
+import { Section } from "../components/Section";
+import { COLORS, RADIUS, SPACING, TYPE } from "../theme";
 
 type Props = NativeStackScreenProps<AppStackParamList, "ProfileList">;
 
@@ -52,14 +53,11 @@ export function ProfileListScreen({ navigation }: Props) {
   );
 
   return (
-    <View testID="profile-list" style={styles.container}>
-      <PrimaryButton
-        testID="profile-add"
-        title="+ Novo idoso"
-        size="small"
-        onPress={() => navigation.navigate("ProfileIdentification")}
-      />
-
+    <ScrollView
+      testID="profile-list"
+      style={styles.screen}
+      contentContainerStyle={styles.container}
+    >
       {loading ? (
         <ActivityIndicator
           testID="profile-list-loading"
@@ -72,57 +70,69 @@ export function ProfileListScreen({ navigation }: Props) {
         </Text>
       ) : null}
 
-      <FlatList
-        data={profiles}
-        keyExtractor={(item) => String(item.id)}
-        contentContainerStyle={styles.listContent}
-        ListFooterComponent={loading ? null : <RiskLegend />}
-        ListFooterComponentStyle={styles.legendFooter}
-        ListEmptyComponent={
-          loading ? null : (
+      {!loading ? (
+        <Section title="Idosos">
+          {profiles.length === 0 ? (
             <Text testID="profile-list-empty" style={styles.empty}>
               Você ainda não registrou nenhum idoso.
             </Text>
-          )
-        }
-        renderItem={({ item }) => (
-          <ProfileCard
-            profile={item}
-            testIDPrefix="profile"
-            onOpen={() =>
-              navigation.navigate("ProfileDetail", { profileId: item.id })
-            }
+          ) : (
+            <View style={styles.list}>
+              {profiles.map((item, index) => (
+                <View key={item.id}>
+                  {index > 0 ? <View style={styles.divider} /> : null}
+                  <ProfileCard
+                    profile={item}
+                    testIDPrefix="profile"
+                    onOpen={() =>
+                      navigation.navigate("ProfileDetail", {
+                        profileId: item.id,
+                      })
+                    }
+                  />
+                </View>
+              ))}
+            </View>
+          )}
+          <PrimaryButton
+            testID="profile-add"
+            title="Adicionar idoso"
+            variant="outline"
+            onPress={() => navigation.navigate("ProfileIdentification")}
           />
-        )}
-      />
-    </View>
+        </Section>
+      ) : null}
+
+      {!loading ? <RiskLegend /> : null}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
     backgroundColor: COLORS.white,
-    paddingHorizontal: 13,
-    paddingTop: 16,
-    gap: 16,
   },
-  listContent: {
-    gap: 12,
-    paddingBottom: 24,
+  container: {
+    padding: SPACING.screen,
+    gap: SPACING.xl,
   },
-  legendFooter: {
-    marginTop: 12,
+  list: {
+    borderWidth: 1,
+    borderColor: COLORS.cardBorder,
+    borderRadius: RADIUS.group,
+    overflow: "hidden",
+  },
+  divider: {
+    height: 1,
+    backgroundColor: COLORS.divider,
   },
   empty: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 14,
-    color: COLORS.primary,
-    textAlign: "center",
-    marginTop: 24,
+    ...TYPE.body,
+    color: COLORS.grey500,
   },
   error: {
-    fontFamily: FONTS.semiBold,
+    ...TYPE.label,
     color: COLORS.danger,
     textAlign: "center",
   },

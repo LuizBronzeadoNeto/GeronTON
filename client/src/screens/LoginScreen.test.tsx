@@ -1,5 +1,6 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import {
+  act,
   render,
   screen,
   fireEvent,
@@ -9,6 +10,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider } from "../context/AuthContext";
 import { LoginScreen } from "./LoginScreen";
 import { login } from "../api/auth";
+import * as http from "../api/http";
 
 jest.mock("../api/auth");
 
@@ -54,6 +56,18 @@ describe("LoginScreen", () => {
     expect(screen.getByTestId("login-password")).toBeTruthy();
     expect(screen.getByTestId("login-submit")).toBeTruthy();
     expect(screen.getByText("Entrar")).toBeTruthy();
+    expect(screen.queryByText("Esqueceu a senha?")).toBeNull();
+  });
+
+  it("explains that the session expired after the API rejects the token", async () => {
+    const register = jest.spyOn(http, "setOnUnauthorized");
+    renderLogin();
+    const expire = register.mock.calls.find(([handler]) => handler)?.[0];
+
+    act(() => expire?.());
+
+    expect(await screen.findByTestId("login-session-expired")).toBeTruthy();
+    register.mockRestore();
   });
 
   it("captures typed credentials", () => {
@@ -74,7 +88,9 @@ describe("LoginScreen", () => {
 
     await waitFor(() => expect(screen.getByTestId("login-error")).toBeTruthy());
     expect(screen.getByText("E-mail ou Senha incorretos")).toBeTruthy();
-    expect(screen.getByText("Tente novamente, ou altere a senha")).toBeTruthy();
+    expect(
+      screen.getByText("Confira o e-mail e a senha e tente de novo."),
+    ).toBeTruthy();
   });
 
   it("dismisses the error toast when its close button is pressed", async () => {

@@ -140,6 +140,30 @@ describe("GET /perfis/:id/detalhes", () => {
     expect(second.body.alerts).toEqual([]);
   });
 
+  it("lists the contacts a professional recorded, with their notes", async () => {
+    await createCheckIn({ calfCircumference: "29", glycemia: "300" });
+    const open = (await getDetails()).body.alerts;
+
+    await request(app)
+      .put(`/perfis/${perfilId}/alertas/${open[0].id}`)
+      .set("Authorization", `Bearer ${professionalToken}`)
+      .send({
+        resolved: true,
+        signalConfirmed: false,
+        note: "Família disse que está tudo bem",
+      });
+
+    const res = await getDetails();
+    expect(res.body.recentContacts).toHaveLength(1);
+    expect(res.body.recentContacts[0]).toMatchObject({
+      id: open[0].id,
+      signalConfirmed: false,
+      resolutionNote: "Família disse que está tudo bem",
+      resolvedBy: { email: "profissional@demo.com" },
+    });
+    expect(res.body.recentContacts[0].resolvedBy.password).toBeUndefined();
+  });
+
   it("is accessible to professionals", async () => {
     const res = await getDetails(professionalToken);
 

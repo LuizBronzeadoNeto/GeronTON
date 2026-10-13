@@ -12,6 +12,8 @@ export interface Profile {
   scholarship: string;
   medicalConditions: string[];
   notes: string | null;
+  /** Family contact phone, digits only (DDD + number). */
+  contactPhone: string | null;
   caregiverId: number;
 }
 
@@ -24,6 +26,7 @@ export interface ProfileInput {
   scholarship: string;
   medicalConditions: string[];
   notes: string | null;
+  contactPhone: string | null;
 }
 
 /**
@@ -55,6 +58,8 @@ export interface ProfileDetails {
   profile: Profile;
   latestCheckIn: CheckIn | null;
   alerts: Alert[];
+  /** The last family contacts professionals recorded, newest first. */
+  recentContacts: Alert[];
 }
 
 export async function getProfileDetails(id: number): Promise<ProfileDetails> {

@@ -5,8 +5,10 @@ import {
   screen,
   fireEvent,
   waitFor,
+  within,
 } from "@testing-library/react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { KeyboardAvoidingView } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { IntercorrenceFormScreen } from "./IntercorrenceFormScreen";
 import { NotificationProvider } from "../context/NotificationContext";
@@ -54,13 +56,15 @@ describe("IntercorrenceFormScreen", () => {
     jest
       .mocked(createIntercorrence)
       .mockReset()
-      .mockResolvedValue(makeIntercorrence());
+      .mockResolvedValue({ ...makeIntercorrence(), teamNotified: false });
     jest.mocked(getProfile).mockReset().mockResolvedValue(MOCK_PROFILE);
     mockRiskApi();
   });
 
   it("keeps submit disabled until event type and severity are chosen", () => {
     renderScreen();
+
+    expect(screen.getByTestId("emergency-callout")).toBeTruthy();
 
     expect(
       screen.getByTestId("intercorrence-submit").props.accessibilityState
@@ -77,6 +81,24 @@ describe("IntercorrenceFormScreen", () => {
     ).toBe(false);
   });
 
+  it("keeps Registrar in the action bar and severity as large answers", () => {
+    renderScreen();
+
+    const bar = screen.getByTestId("intercorrence-actions");
+    expect(within(bar).getByTestId("intercorrence-submit")).toBeTruthy();
+    fireEvent.press(screen.getByTestId("intercorrence-severity-Crítico"));
+    expect(
+      screen.getByTestId("intercorrence-severity-Crítico").props
+        .accessibilityState.checked,
+    ).toBe(true);
+  });
+
+  it("lifts the form and its action bar above the keyboard", () => {
+    renderScreen();
+
+    expect(screen.UNSAFE_getAllByType(KeyboardAvoidingView)).toHaveLength(1);
+  });
+
   it("registers the intercorrence and opens the confirmation", async () => {
     const created = makeIntercorrence({
       id: 33,
@@ -85,7 +107,9 @@ describe("IntercorrenceFormScreen", () => {
       isCritical: true,
       description: "Durante o almoço",
     });
-    jest.mocked(createIntercorrence).mockResolvedValue(created);
+    jest
+      .mocked(createIntercorrence)
+      .mockResolvedValue({ ...created, teamNotified: true });
     const { navigation } = renderScreen(9);
 
     fireEvent.press(screen.getByTestId("intercorrence-eventType"));
@@ -109,15 +133,20 @@ describe("IntercorrenceFormScreen", () => {
     await waitFor(() =>
       expect(navigation.replace).toHaveBeenCalledWith(
         "IntercorrenceConfirmation",
-        { profileId: 9, intercorrence: created },
+        {
+          profileId: 9,
+          intercorrence: { ...created, teamNotified: true },
+          teamNotified: true,
+        },
       ),
     );
   });
 
   it("raises the in-app notification, critical when the event is critical", async () => {
-    jest
-      .mocked(createIntercorrence)
-      .mockResolvedValue(makeIntercorrence({ isCritical: true }));
+    jest.mocked(createIntercorrence).mockResolvedValue({
+      ...makeIntercorrence({ isCritical: true }),
+      teamNotified: false,
+    });
     renderScreen();
 
     fireEvent.press(screen.getByTestId("intercorrence-eventType"));

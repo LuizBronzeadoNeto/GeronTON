@@ -48,21 +48,21 @@ function intercorrence(isCritical: boolean, eventType = "fall"): Intercorrence {
  */
 describe("computeRiskStatus — no data", () => {
   it("is unknown with no check-in and no intercorrences", () => {
-    expect(computeRiskStatus(null, [])).toEqual({
+    expect(computeRiskStatus(null, [])).toMatchObject({
       status: "unknown",
       score: 0,
     });
   });
 
   it("is low (not unknown) with a clean check-in and no intercorrences", () => {
-    expect(computeRiskStatus(checkIn(), [])).toEqual({
+    expect(computeRiskStatus(checkIn(), [])).toMatchObject({
       status: "low",
       score: 0,
     });
   });
 
   it("applies the acute-event floor when there is no check-in", () => {
-    expect(computeRiskStatus(null, [intercorrence(false)])).toEqual({
+    expect(computeRiskStatus(null, [intercorrence(false)])).toMatchObject({
       status: "moderate",
       score: 0,
     });
@@ -176,7 +176,9 @@ describe("evaluateCheckIn — vital-sign outlier filter", () => {
 
 describe("computeRiskStatus — threshold boundaries (check-in only)", () => {
   it("score 5 is low, score 6 is moderate", () => {
-    expect(computeRiskStatus(checkIn({ chokingIncident: true }), [])).toEqual({
+    expect(
+      computeRiskStatus(checkIn({ chokingIncident: true }), []),
+    ).toMatchObject({
       status: "low",
       score: 5,
     });
@@ -186,7 +188,7 @@ describe("computeRiskStatus — threshold boundaries (check-in only)", () => {
         checkIn({ chokingIncident: true, appetite: "regular" }),
         [],
       ),
-    ).toEqual({ status: "moderate", score: 6 });
+    ).toMatchObject({ status: "moderate", score: 6 });
   });
 
   it("score 11 is moderate, score 12 is high", () => {
@@ -200,7 +202,7 @@ describe("computeRiskStatus — threshold boundaries (check-in only)", () => {
         }),
         [],
       ),
-    ).toEqual({ status: "moderate", score: 11 });
+    ).toMatchObject({ status: "moderate", score: 11 });
 
     expect(
       computeRiskStatus(
@@ -211,20 +213,20 @@ describe("computeRiskStatus — threshold boundaries (check-in only)", () => {
         }),
         [],
       ),
-    ).toEqual({ status: "high", score: 12 });
+    ).toMatchObject({ status: "high", score: 12 });
   });
 });
 
 describe("computeRiskStatus — acute-event floor", () => {
   it("a non-critical intercorrence forces at least moderate without scoring", () => {
-    expect(computeRiskStatus(checkIn(), [intercorrence(false)])).toEqual({
+    expect(computeRiskStatus(checkIn(), [intercorrence(false)])).toMatchObject({
       status: "moderate",
       score: 0,
     });
   });
 
   it("a critical intercorrence forces high", () => {
-    expect(computeRiskStatus(checkIn(), [intercorrence(true)])).toEqual({
+    expect(computeRiskStatus(checkIn(), [intercorrence(true)])).toMatchObject({
       status: "high",
       score: 0,
     });
@@ -233,7 +235,7 @@ describe("computeRiskStatus — acute-event floor", () => {
   it("intrinsically critical event types force high regardless of severity", () => {
     expect(
       computeRiskStatus(checkIn(), [intercorrence(false, "fever")]),
-    ).toEqual({ status: "high", score: 0 });
+    ).toMatchObject({ status: "high", score: 0 });
   });
 
   it("keeps the more severe status when the weekly score is already high", () => {
@@ -246,7 +248,7 @@ describe("computeRiskStatus — acute-event floor", () => {
         }),
         [intercorrence(false)],
       ),
-    ).toEqual({ status: "high", score: 12 });
+    ).toMatchObject({ status: "high", score: 12 });
   });
 });
 
@@ -279,9 +281,100 @@ describe("computeRiskStatus — worst case", () => {
       stimulation: false,
     });
 
-    expect(computeRiskStatus(worst, [])).toEqual({
+    expect(computeRiskStatus(worst, [])).toMatchObject({
       status: "high",
       score: 67,
     });
+  });
+});
+
+describe("evaluateCheckIn — blood pressure in cmHg", () => {
+  it.each(["12x8", "12/8", "12 por 8"])("reads %s as 120/80", (pressure) => {
+    expect(evaluateCheckIn(checkIn({ pressure })).flags).toEqual([]);
+  });
+
+  it("reads 13,5x9 as 135/90 without a flag", () => {
+    expect(evaluateCheckIn(checkIn({ pressure: "13,5x9" })).flags).toEqual([]);
+  });
+
+  it("still flags a real low reading written in cmHg", () => {
+    const { flags } = evaluateCheckIn(checkIn({ pressure: "8x5" }));
+    expect(flags).toEqual([
+      expect.objectContaining({
+        type: "clinical_warning",
+        message: "Pressão arterial 80/50, abaixo de 90/60",
+      }),
+    ]);
+  });
+});
+
+describe("computeRiskStatus — critical event types", () => {
+  it.each(["chest_pain", "choking"])("%s forces high", (eventType) => {
+    expect(
+      computeRiskStatus(checkIn(), [intercorrence(false, eventType)]).status,
+    ).toBe("high");
+  });
+});
+
+describe("computeRiskStatus — stale check-ins", () => {
+  const now = new Date("2026-10-13T12:00:00Z");
+  const old = checkIn({
+    date: new Date("2026-09-20T12:00:00Z"),
+    unstableGait: true,
+    chokingIncident: true,
+    medsOnTime: false,
+  });
+
+  it("ignores a check-in older than 14 days", () => {
+    expect(computeRiskStatus(old, [], now)).toEqual({
+      status: "unknown",
+      score: 0,
+      criticalEvents: [],
+      reasons: ["Sem check-in nas últimas 2 semanas"],
+    });
+  });
+
+  it("keeps the acute-event floor when the check-in is stale", () => {
+    expect(computeRiskStatus(old, [intercorrence(true)], now).status).toBe(
+      "high",
+    );
+  });
+
+  it("uses a check-in from 13 days ago", () => {
+    const recent = checkIn({ ...old, date: new Date("2026-09-30T12:00:00Z") });
+    expect(computeRiskStatus(recent, [], now)).toMatchObject({
+      status: "high",
+      score: 12,
+    });
+  });
+});
+
+describe("risk reasons", () => {
+  it("lists what added points to the weekly score", () => {
+    const { factors } = evaluateCheckIn(
+      checkIn({ unstableGait: true, appetite: "bad", weeklyEvents: ["fever"] }),
+    );
+    expect(factors).toEqual([
+      { label: "Andando com mais dificuldade", points: 4 },
+      { label: "Febre na semana", points: 5 },
+      { label: "Apetite ruim", points: 3 },
+    ]);
+  });
+
+  it("explains the status with the check-in and the recent events", () => {
+    const { reasons } = computeRiskStatus(checkIn({ unstableGait: true }), [
+      intercorrence(true),
+    ]);
+    expect(reasons).toEqual([
+      "Intercorrência crítica nos últimos 30 dias",
+      "Andando com mais dificuldade (+4)",
+    ]);
+  });
+
+  it("says when there is no recent check-in", () => {
+    expect(computeRiskStatus(null, [intercorrence(false)]).reasons).toEqual([
+      "Intercorrência nos últimos 30 dias",
+      "Sem check-in nas últimas 2 semanas",
+    ]);
   });
 });

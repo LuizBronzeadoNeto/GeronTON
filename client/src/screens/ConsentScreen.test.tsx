@@ -35,6 +35,7 @@ describe("ConsentScreen", () => {
       user: { id: 1, role: "cuidador", token: "t", consentRequired: true },
       isSigningIn: false,
       isRestoring: false,
+      sessionExpired: false,
       signIn: jest.fn(async () => {}),
       signOut,
       acceptConsent,

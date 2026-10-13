@@ -1,7 +1,8 @@
 import { StyleSheet, Text, View } from "react-native";
 import { RISK_LEVELS, RISK_LEVEL_ORDER } from "../constants/risk";
 import { StatusPill } from "./StatusPill";
-import { COLORS, FONTS } from "../theme";
+import { Section } from "./Section";
+import { SPACING, TYPE } from "../theme";
 
 /**
  * Interface legend explaining the risk levels: one row per level with its
@@ -12,53 +13,44 @@ import { COLORS, FONTS } from "../theme";
  */
 export function RiskLegend() {
   return (
-    <View testID="risk-legend" style={styles.card}>
-      <Text style={styles.title}>O que cada cor quer dizer</Text>
-      {RISK_LEVEL_ORDER.map((level) => {
-        const presentation = RISK_LEVELS[level];
-        return (
-          <View key={level} testID={`risk-legend-${level}`} style={styles.row}>
-            <View style={styles.pillColumn}>
-              <StatusPill
-                label={presentation.label}
-                color={presentation.color}
-                backgroundColor={presentation.bg}
-              />
+    <View testID="risk-legend">
+      <Section title="O que cada cor quer dizer" grouped>
+        {RISK_LEVEL_ORDER.map((level) => {
+          const presentation = RISK_LEVELS[level];
+          return (
+            <View
+              key={level}
+              testID={`risk-legend-${level}`}
+              style={styles.row}
+            >
+              <View style={styles.pillColumn}>
+                <StatusPill
+                  label={presentation.label}
+                  color={presentation.color}
+                  backgroundColor={presentation.bg}
+                />
+              </View>
+              <Text style={styles.description}>{presentation.description}</Text>
             </View>
-            <Text style={styles.description}>{presentation.description}</Text>
-          </View>
-        );
-      })}
+          );
+        })}
+      </Section>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    borderWidth: 1,
-    borderColor: COLORS.grey300,
-    borderRadius: 12,
-    padding: 16,
-    gap: 10,
-  },
-  title: {
-    fontFamily: FONTS.extraBold,
-    fontSize: 14,
-    color: COLORS.heading,
-  },
   row: {
     flexDirection: "row",
     alignItems: "flex-start",
-    gap: 10,
+    gap: SPACING.md,
+    padding: SPACING.lg,
   },
   pillColumn: {
-    width: 86,
+    width: 100,
   },
   description: {
+    ...TYPE.caption,
     flex: 1,
-    fontFamily: FONTS.regular,
-    fontSize: 12,
-    lineHeight: 17,
-    color: COLORS.grey500,
   },
 });

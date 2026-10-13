@@ -20,6 +20,12 @@ export interface Intercorrence {
   description: string;
 }
 
+/**
+ * The created intercorrence plus whether a critical event reached a linked
+ * professional.
+ */
+export type CreatedIntercorrence = Intercorrence & { teamNotified: boolean };
+
 export interface IntercorrenceInput {
   eventType: EventType;
   isCritical: boolean;
@@ -44,8 +50,8 @@ export async function listIntercorrences(
 export async function createIntercorrence(
   profileId: number,
   input: IntercorrenceInput,
-): Promise<Intercorrence> {
-  const { data } = await http.post<Intercorrence>(
+): Promise<CreatedIntercorrence> {
+  const { data } = await http.post<CreatedIntercorrence>(
     `/perfis/${profileId}/intercorrencias`,
     input,
   );

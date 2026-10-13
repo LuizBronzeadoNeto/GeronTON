@@ -23,6 +23,7 @@ function mockRole(role: Role) {
     user: { id: 1, role, token: "jwt" },
     isSigningIn: false,
     isRestoring: false,
+    sessionExpired: false,
     signIn: jest.fn<() => Promise<void>>(),
     signOut: jest.fn(),
     acceptConsent: jest.fn(async () => {}),

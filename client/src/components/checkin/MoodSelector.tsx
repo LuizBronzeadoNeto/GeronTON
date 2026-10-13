@@ -20,13 +20,18 @@ export function MoodSelector({ value, onChange }: Props) {
   return (
     <View style={checkinStyles.blockRow}>
       <Text style={checkinStyles.questionLabel}>Humor predominante</Text>
-      <View style={styles.moodRow}>
+      <View
+        style={styles.moodRow}
+        accessibilityRole="radiogroup"
+        accessibilityLabel="Humor predominante"
+      >
         {MOOD_OPTIONS.map((option) => (
           <Pressable
             key={option.value}
             testID={`checkin-mood-${option.value}`}
-            accessibilityRole="button"
-            accessibilityState={{ selected: value === option.value }}
+            accessibilityRole="radio"
+            accessibilityLabel={option.label}
+            accessibilityState={{ checked: value === option.value }}
             style={[
               styles.moodOption,
               value === option.value && styles.moodOptionSelected,
@@ -42,9 +47,7 @@ export function MoodSelector({ value, onChange }: Props) {
               size={30}
               color={option.color}
             />
-            <Text style={[styles.moodLabel, { color: option.color }]}>
-              {option.label}
-            </Text>
+            <Text style={styles.moodLabel}>{option.label}</Text>
           </Pressable>
         ))}
       </View>
@@ -59,18 +62,23 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   moodOption: {
+    flex: 1,
     alignItems: "center",
     gap: 4,
-    borderRadius: 12,
-    padding: 6,
-    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 2,
+    borderWidth: 1,
+    borderColor: COLORS.grey300,
+    borderRadius: 8,
   },
   moodOptionSelected: {
     backgroundColor: COLORS.chipBg,
+    borderColor: COLORS.primary,
   },
   moodLabel: {
     fontFamily: FONTS.semiBold,
-    fontSize: 9,
+    fontSize: 11,
+    color: COLORS.text,
     textAlign: "center",
   },
 });

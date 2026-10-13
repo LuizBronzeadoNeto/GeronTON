@@ -16,6 +16,7 @@ function riskFor(profileId: number, status: RiskLevel): RiskStatus {
     status,
     score: 0,
     criticalEvents: [],
+    reasons: [],
     evaluatedAt: "2026-07-01T00:00:00Z",
   };
 }
@@ -46,6 +47,13 @@ describe("RiskStatusBadge", () => {
       expect(screen.getByText(label)).toBeTruthy();
     },
   );
+
+  it("renders a status it is given without requesting it", () => {
+    render(<RiskStatusBadge profileId={3} status="moderate" />);
+
+    expect(screen.getByText("Atenção")).toBeTruthy();
+    expect(getRiskStatus).not.toHaveBeenCalled();
+  });
 
   it("requests the status for the given profile", async () => {
     render(<RiskStatusBadge profileId={9} />);

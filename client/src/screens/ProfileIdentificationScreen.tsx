@@ -2,11 +2,17 @@ import { useState } from "react";
 import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { AppStackParamList } from "../types/navigation";
+import { isAxiosError } from "axios";
+import { connectionErrorMessage } from "../api/errors";
 import { linkProfile, verifyProfileCpf } from "../api/profiles";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { brDateToIso, maskBrDate } from "../utils/date";
 import { cpfToDigits, maskCpf } from "../utils/cpf";
-import { COLORS, FONTS } from "../theme";
+import { ActionBar } from "../components/ActionBar";
+import { formStyles } from "../components/formStyles";
+import { COLORS, SPACING } from "../theme";
+import { FormError } from "../components/FormError";
+import { FormScreen } from "../components/FormScreen";
 
 type Props = NativeStackScreenProps<AppStackParamList, "ProfileIdentification">;
 
@@ -56,8 +62,13 @@ export function ProfileIdentificationScreen({ navigation }: Props) {
       }
 
       setError("Não foi possível confirmar os dados do idoso.");
-    } catch {
-      setError("Não foi possível verificar o CPF.");
+    } catch (err) {
+      setError(
+        isAxiosError(err) && err.response?.status === 400
+          ? "CPF inválido. Confira os números digitados."
+          : (connectionErrorMessage(err) ??
+              "Não foi possível verificar o CPF."),
+      );
     } finally {
       setChecking(false);
     }
@@ -98,156 +109,117 @@ export function ProfileIdentificationScreen({ navigation }: Props) {
 
   if (found) {
     return (
-      <View testID="profile-identification-found" style={styles.foundContainer}>
-        <Text style={styles.foundTitle}>Idoso encontrado no sistema</Text>
-        <Text style={styles.foundHint}>
-          Este CPF já está cadastrado. Ao vincular, você passa a acompanhar este
-          idoso junto com quem já o acompanha.
-        </Text>
-
-        {error ? (
-          <Text testID="profile-identification-error" style={styles.error}>
-            {error}
+      <View testID="profile-identification-found" style={formStyles.screen}>
+        <View style={styles.foundContent}>
+          <Text style={formStyles.title} accessibilityRole="header">
+            Idoso encontrado no sistema
           </Text>
-        ) : null}
+          <Text style={formStyles.intro}>
+            Este CPF já está cadastrado. Ao vincular, você passa a acompanhar
+            este idoso junto com quem já o acompanha.
+          </Text>
+          {error ? (
+            <FormError
+              testID="profile-identification-error"
+              style={formStyles.error}
+              message={error}
+            />
+          ) : null}
+        </View>
 
-        <PrimaryButton
-          testID="profile-identification-link"
-          title="Vincular idoso"
-          onPress={handleLink}
-          loading={linking}
-          style={styles.action}
-        />
-
-        <PrimaryButton
-          testID="profile-identification-back"
-          title="Corrigir dados"
-          variant="outline"
-          onPress={() => {
-            setFound(false);
-            setError(null);
-          }}
-          disabled={linking}
-        />
+        <ActionBar testID="profile-identification-actions">
+          <PrimaryButton
+            testID="profile-identification-back"
+            title="Corrigir dados"
+            variant="outline"
+            onPress={() => {
+              setFound(false);
+              setError(null);
+            }}
+            disabled={linking}
+          />
+          <PrimaryButton
+            testID="profile-identification-link"
+            title="Vincular idoso"
+            onPress={handleLink}
+            loading={linking}
+          />
+        </ActionBar>
       </View>
     );
   }
 
   return (
-    <ScrollView
-      testID="profile-identification"
-      contentContainerStyle={styles.container}
-      keyboardShouldPersistTaps="handled"
-    >
-      <Text style={styles.title}>Identificação</Text>
-      <Text style={styles.hint}>
-        Informe o CPF e a data de nascimento do idoso para começar.
-      </Text>
-
-      <Text style={styles.label}>CPF</Text>
-      <TextInput
-        testID="profile-identification-cpf"
-        style={styles.input}
-        placeholder="000.000.000-00"
-        placeholderTextColor={COLORS.grey400}
-        keyboardType="numeric"
-        value={cpf}
-        onChangeText={handleChange((value) => setCpf(maskCpf(value)))}
-      />
-
-      <Text style={styles.label}>Data de Nascimento</Text>
-      <TextInput
-        testID="profile-identification-birthDate"
-        style={styles.input}
-        placeholder="DD/MM/AAAA"
-        placeholderTextColor={COLORS.grey400}
-        keyboardType="numeric"
-        value={birthDate}
-        onChangeText={handleChange((value) => setBirthDate(maskBrDate(value)))}
-      />
-
-      {error ? (
-        <Text testID="profile-identification-error" style={styles.error}>
-          {error}
+    <FormScreen>
+      <ScrollView
+        testID="profile-identification"
+        contentContainerStyle={formStyles.container}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Text style={formStyles.title} accessibilityRole="header">
+          Identificação
         </Text>
-      ) : null}
+        <Text style={formStyles.intro}>
+          Informe o CPF e a data de nascimento do idoso para começar.
+        </Text>
 
-      <PrimaryButton
-        testID="profile-identification-submit"
-        title="Continuar"
-        onPress={handleVerify}
-        disabled={!canSubmit}
-        loading={checking}
-        style={styles.action}
-      />
-    </ScrollView>
+        <View style={formStyles.field}>
+          <Text style={formStyles.label}>CPF</Text>
+          <TextInput
+            testID="profile-identification-cpf"
+            style={formStyles.input}
+            placeholder="000.000.000-00"
+            placeholderTextColor={COLORS.grey400}
+            accessibilityLabel="CPF"
+            keyboardType="numeric"
+            value={cpf}
+            onChangeText={handleChange((value) => setCpf(maskCpf(value)))}
+          />
+        </View>
+
+        <View style={formStyles.field}>
+          <Text style={formStyles.label}>Data de nascimento</Text>
+          <TextInput
+            testID="profile-identification-birthDate"
+            style={formStyles.input}
+            placeholder="DD/MM/AAAA"
+            placeholderTextColor={COLORS.grey400}
+            accessibilityLabel="Data de nascimento"
+            keyboardType="numeric"
+            value={birthDate}
+            onChangeText={handleChange((value) =>
+              setBirthDate(maskBrDate(value)),
+            )}
+          />
+        </View>
+
+        {error ? (
+          <FormError
+            testID="profile-identification-error"
+            style={formStyles.error}
+            message={error}
+          />
+        ) : null}
+      </ScrollView>
+
+      <ActionBar testID="profile-identification-actions">
+        <PrimaryButton
+          testID="profile-identification-submit"
+          title="Continuar"
+          onPress={handleVerify}
+          disabled={!canSubmit}
+          loading={checking}
+        />
+      </ActionBar>
+    </FormScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 20,
-    gap: 8,
-    backgroundColor: COLORS.white,
-  },
-  foundContainer: {
+  foundContent: {
     flex: 1,
-    padding: 20,
-    gap: 12,
     justifyContent: "center",
-    backgroundColor: COLORS.white,
-  },
-  title: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 20,
-    lineHeight: 28,
-    color: COLORS.heading,
-  },
-  foundTitle: {
-    fontFamily: FONTS.extraBold,
-    fontSize: 20,
-    lineHeight: 28,
-    color: COLORS.heading,
-    textAlign: "center",
-  },
-  hint: {
-    fontFamily: FONTS.regular,
-    fontSize: 14,
-    lineHeight: 22,
-    color: COLORS.grey500,
-    marginBottom: 8,
-  },
-  foundHint: {
-    fontFamily: FONTS.regular,
-    fontSize: 14,
-    lineHeight: 22,
-    color: COLORS.grey500,
-    textAlign: "center",
-  },
-  label: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 14,
-    lineHeight: 22,
-    color: COLORS.heading,
-  },
-  input: {
-    height: 50,
-    borderWidth: 1,
-    borderColor: COLORS.grey300,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    fontFamily: FONTS.semiBold,
-    fontSize: 14,
-    color: COLORS.heading,
-  },
-  error: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 14,
-    lineHeight: 22,
-    color: COLORS.danger,
-    textAlign: "center",
-  },
-  action: {
-    marginTop: 16,
+    padding: SPACING.screen,
+    gap: SPACING.md,
   },
 });

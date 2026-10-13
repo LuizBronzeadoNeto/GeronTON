@@ -21,6 +21,8 @@ interface AuthContextValue {
   user: User | null;
   isSigningIn: boolean;
   isRestoring: boolean;
+  /** True after the API rejected the stored token, until the next sign-in. */
+  sessionExpired: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => void;
   /** Records consent to the current term and lets the user into the app. */
@@ -67,12 +69,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [isRestoring, setIsRestoring] = useState(true);
+  const [sessionExpired, setSessionExpired] = useState(false);
 
   const signOut = useCallback(() => {
     setAuthToken(null);
     setUser(null);
     void endSession();
   }, []);
+
+  const expireSession = useCallback(() => {
+    setSessionExpired(true);
+    signOut();
+  }, [signOut]);
 
   useEffect(() => {
     let active = true;
@@ -96,20 +104,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    setOnUnauthorized(signOut);
+    setOnUnauthorized(expireSession);
 
     return () => {
       setOnUnauthorized(null);
     };
-  }, [signOut]);
+  }, [expireSession]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
       isSigningIn,
       isRestoring,
+      sessionExpired,
       async signIn(email, password) {
         setIsSigningIn(true);
+        setSessionExpired(false);
         try {
           const signedIn = await loginRequest(email, password);
           setAuthToken(signedIn.token);
@@ -128,7 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await saveSession(updated);
       },
     }),
-    [user, isSigningIn, isRestoring, signOut],
+    [user, isSigningIn, isRestoring, sessionExpired, signOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

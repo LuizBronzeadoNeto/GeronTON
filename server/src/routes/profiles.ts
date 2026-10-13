@@ -3,7 +3,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 import { authMiddleware } from "../middleware/authenticateUser.js";
 import { loadProfile } from "../middleware/loadProfile.js";
-import { missingFields, optionalText } from "../utils/validation.js";
+import { missingFields, optionalText, readPhone } from "../utils/validation.js";
 import { isValidCpf, normalizeCpf } from "../utils/cpf.js";
 import medicationsRouter from "./medications.js";
 import routinesRouter from "./routines.js";
@@ -66,6 +66,13 @@ router.post("/", async (req: Request, res: Response) => {
     return res.status(400).json({ error: "birthDate must be a valid date" });
   }
 
+  const contactPhone = readPhone(body.contactPhone);
+  if (contactPhone === "invalid") {
+    return res
+      .status(400)
+      .json({ error: "contactPhone must have DDD + number (10 or 11 digits)" });
+  }
+
   const caregiverId =
     user.role === "profissional" && typeof body.caregiverId === "number"
       ? body.caregiverId
@@ -99,6 +106,7 @@ router.post("/", async (req: Request, res: Response) => {
             ? body.medicalConditions.map(String)
             : [],
           notes: optionalText(body.notes),
+          contactPhone,
           caregiverId,
         },
       });
@@ -243,10 +251,15 @@ router.get("/:id", loadProfile, (req: Request, res: Response) => {
   return res.json(req.profile);
 });
 
+/** How many recorded family contacts the detail view lists. */
+const RECENT_CONTACTS = 5;
+
 /**
  * GET /perfis/:id/detalhes — the elder's detail view in a single call: the
- * profile, its latest weekly check-in (null when none was recorded yet) and
- * its open alerts, newest first. Existence and access are enforced by
+ * profile, its latest weekly check-in (null when none was recorded yet), its
+ * open alerts, newest first, and the last family contacts a professional
+ * recorded (alerts they resolved, with verdict and note). Only the resolver's
+ * id and e-mail are included. Existence and access are enforced by
  * loadProfile.
  */
 router.get(
@@ -255,7 +268,7 @@ router.get(
   async (req: Request, res: Response) => {
     const profileId = req.profile!.id;
 
-    const [latestCheckIn, alerts] = await Promise.all([
+    const [latestCheckIn, alerts, recentContacts] = await Promise.all([
       prisma.checkIn.findFirst({
         where: { profileId },
         orderBy: { date: "desc" },
@@ -264,9 +277,20 @@ router.get(
         where: { profileId, resolvedAt: null },
         orderBy: { createdAt: "desc" },
       }),
+      prisma.alert.findMany({
+        where: { profileId, resolvedById: { not: null } },
+        orderBy: { resolvedAt: "desc" },
+        take: RECENT_CONTACTS,
+        include: { resolvedBy: { select: { id: true, email: true } } },
+      }),
     ]);
 
-    return res.json({ profile: req.profile, latestCheckIn, alerts });
+    return res.json({
+      profile: req.profile,
+      latestCheckIn,
+      alerts,
+      recentContacts,
+    });
   },
 );
 
@@ -283,6 +307,16 @@ router.put("/:id", loadProfile, async (req: Request, res: Response) => {
   if (body.scholarship !== undefined) data.scholarship = body.scholarship;
   if (body.sex !== undefined) data.sex = optionalText(body.sex);
   if (body.notes !== undefined) data.notes = optionalText(body.notes);
+
+  if (body.contactPhone !== undefined) {
+    const contactPhone = readPhone(body.contactPhone);
+    if (contactPhone === "invalid") {
+      return res.status(400).json({
+        error: "contactPhone must have DDD + number (10 or 11 digits)",
+      });
+    }
+    data.contactPhone = contactPhone;
+  }
 
   if (body.medicalConditions !== undefined) {
     if (!Array.isArray(body.medicalConditions)) {

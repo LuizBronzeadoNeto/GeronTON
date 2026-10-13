@@ -19,7 +19,9 @@ export function CaregiverHomeScreen({ navigation }: Props) {
   return (
     <View testID="caregiver-home" style={styles.container}>
       <Text style={styles.logo}>GeronTON</Text>
-      <Text style={styles.title}>Área do Cuidador</Text>
+      <Text style={styles.title} accessibilityRole="header">
+        Área do Cuidador
+      </Text>
       <Text style={styles.subtitle}>
         Acompanhe os idosos sob seu cuidado: cadastro, check-ins semanais,
         medicações e rotinas.

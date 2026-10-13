@@ -19,6 +19,8 @@ export interface Alert {
   resolvedAt: string | null;
   /** Whether the signal turned out to be real. Null until a person resolves it. */
   signalConfirmed?: boolean | null;
+  /** What the professional noted about the contact, if anything. */
+  resolutionNote?: string | null;
   resolvedBy?: { id: number; email: string } | null;
 }
 
@@ -58,10 +60,11 @@ export async function resolveAlert(
   profileId: number,
   alertId: number,
   signalConfirmed: boolean,
+  note = "",
 ): Promise<Alert> {
   const { data } = await http.put<Alert>(
     `/perfis/${profileId}/alertas/${alertId}`,
-    { resolved: true, signalConfirmed },
+    { resolved: true, signalConfirmed, note },
   );
   return data;
 }

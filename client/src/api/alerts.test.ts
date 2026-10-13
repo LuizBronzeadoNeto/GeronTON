@@ -48,11 +48,12 @@ describe("alerts api", () => {
     const resolved = makeAlert({ resolvedAt: "2026-07-09T10:00:00.000Z" });
     mockedPut.mockResolvedValue({ data: resolved } as never);
 
-    const alert = await resolveAlert(5, 31, false);
+    const alert = await resolveAlert(5, 31, false, "Liguei, sem resposta");
 
     expect(mockedPut).toHaveBeenCalledWith("/perfis/5/alertas/31", {
       resolved: true,
       signalConfirmed: false,
+      note: "Liguei, sem resposta",
     });
     expect(alert.resolvedAt).not.toBeNull();
   });

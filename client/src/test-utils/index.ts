@@ -44,6 +44,7 @@ export function makeProfile(overrides: Partial<Profile> = {}): Profile {
     scholarship: "Superior completo",
     medicalConditions: [],
     notes: null,
+    contactPhone: null,
     caregiverId: 1,
     ...overrides,
   };
@@ -61,6 +62,7 @@ export function makeRiskStatus(
     status: "low",
     score: 0,
     criticalEvents: [],
+    reasons: [],
     evaluatedAt: "2026-06-15T00:00:00.000Z",
     ...overrides,
   };
@@ -82,6 +84,7 @@ export function makeTriageEntry(
       weeksObserved: 1,
       checkedInThisWeek: false,
     },
+    lastCheckInAt: null,
     ...overrides,
   };
 }
@@ -97,6 +100,7 @@ export function makeProfileDetails(
     profile: makeProfile(),
     latestCheckIn: makeCheckIn(),
     alerts: [],
+    recentContacts: [],
     ...overrides,
   };
 }

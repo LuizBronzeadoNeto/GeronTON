@@ -4,7 +4,7 @@ import type { Intercorrence } from "../api/intercorrences";
 import { eventTypeLabel } from "../constants/intercorrence";
 import { SeverityPill } from "./SeverityPill";
 import { formatTimestamp } from "../utils/date";
-import { COLORS, FONTS } from "../theme";
+import { COLORS, SPACING, TYPE } from "../theme";
 
 interface Props {
   intercorrence: Intercorrence;
@@ -13,10 +13,11 @@ interface Props {
 }
 
 /**
- * History row for an intercorrence, shared by the profile hub's "Histórico
- * recente" card and the full history screen: event-type title with the
- * free-text description, a trash button (the caller confirms and deletes) and
- * the severity pill over the registration timestamp.
+ * History row for an intercorrence, shared by the elder screen's "Histórico
+ * recente" and the full history screen: the event type with its severity
+ * pill, the date and the description on the left, and the remove action at
+ * the far right edge, where a destructive action is expected (the caller
+ * confirms and deletes).
  */
 export function IntercorrenceRow({
   intercorrence,
@@ -29,9 +30,13 @@ export function IntercorrenceRow({
       style={styles.row}
     >
       <View style={styles.info}>
-        <Text style={styles.title}>
-          {eventTypeLabel(intercorrence.eventType)}
-        </Text>
+        <View style={styles.titleRow}>
+          <Text style={styles.title}>
+            {eventTypeLabel(intercorrence.eventType)}
+          </Text>
+          <SeverityPill isCritical={intercorrence.isCritical} />
+        </View>
+        <Text style={styles.date}>{formatTimestamp(intercorrence.date)}</Text>
         {intercorrence.description !== "" ? (
           <Text style={styles.description} numberOfLines={2}>
             {intercorrence.description}
@@ -45,12 +50,8 @@ export function IntercorrenceRow({
         style={styles.deleteButton}
         onPress={onDelete}
       >
-        <Ionicons name="trash-outline" size={16} color={COLORS.danger} />
+        <Ionicons name="trash-outline" size={20} color={COLORS.grey500} />
       </Pressable>
-      <View style={styles.meta}>
-        <SeverityPill isCritical={intercorrence.isCritical} />
-        <Text style={styles.date}>{formatTimestamp(intercorrence.date)}</Text>
-      </View>
     </View>
   );
 }
@@ -58,39 +59,38 @@ export function IntercorrenceRow({
 const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
+    alignItems: "flex-start",
+    gap: SPACING.sm,
+    paddingVertical: SPACING.md,
+    paddingLeft: SPACING.lg,
+    paddingRight: SPACING.xs,
+    backgroundColor: COLORS.white,
   },
   info: {
     flex: 1,
     gap: 2,
   },
-  title: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 14,
-    color: COLORS.heading,
-  },
-  description: {
-    fontFamily: FONTS.regular,
-    fontSize: 12,
-    color: COLORS.grey400,
-  },
-  deleteButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: COLORS.danger,
+  titleRow: {
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    flexWrap: "wrap",
+    gap: SPACING.sm,
   },
-  meta: {
-    alignItems: "flex-end",
-    gap: 4,
+  title: {
+    ...TYPE.bodyStrong,
   },
   date: {
-    fontFamily: FONTS.regular,
-    fontSize: 10,
-    color: COLORS.grey400,
+    ...TYPE.caption,
+  },
+  description: {
+    ...TYPE.body,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  deleteButton: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

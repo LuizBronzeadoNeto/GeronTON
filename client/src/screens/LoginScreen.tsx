@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -24,21 +24,27 @@ type Props = NativeStackScreenProps<AuthStackParamList, "Login">;
  * a sign-up footer. On success the AuthProvider stores the user, which flips
  * RootNavigator to the app stack; on failure a dismissible error toast floats
  * over the top of the form. "Cadastre-se agora!" opens the sign-up screen;
- * "Esqueceu a senha?" is still visual-only, as no reset flow exists.
+ * There is no password reset flow yet, so no "Esqueceu a senha?" link is
+ * shown rather than one that does nothing.
  */
 export function LoginScreen({ navigation }: Props) {
-  const { signIn, isSigningIn } = useAuth();
+  const { signIn, isSigningIn, sessionExpired } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const passwordRef = useRef<TextInput>(null);
 
   async function handleSubmit() {
     setError(null);
     try {
       await signIn(email.trim(), password);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Não foi possível entrar. Tente de novo.",
+      );
     }
   }
 
@@ -57,10 +63,21 @@ export function LoginScreen({ navigation }: Props) {
           Insira seus dados para acessar a plataforma
         </Text>
 
+        {sessionExpired ? (
+          <Text testID="login-session-expired" style={styles.sessionExpired}>
+            Sua sessão expirou. Entre de novo para continuar.
+          </Text>
+        ) : null}
+
         <Text style={styles.label}>E-mail</Text>
         <TextInput
           testID="login-email"
           style={styles.input}
+          accessibilityLabel="E-mail"
+          autoComplete="email"
+          textContentType="emailAddress"
+          returnKeyType="next"
+          onSubmitEditing={() => passwordRef.current?.focus()}
           placeholder="Digite seu e-mail"
           placeholderTextColor={COLORS.grey400}
           autoCapitalize="none"
@@ -73,8 +90,16 @@ export function LoginScreen({ navigation }: Props) {
         <Text style={styles.label}>Senha</Text>
         <View style={styles.passwordField}>
           <TextInput
+            ref={passwordRef}
             testID="login-password"
             style={[styles.input, styles.passwordInput]}
+            accessibilityLabel="Senha"
+            autoComplete="current-password"
+            textContentType="password"
+            returnKeyType="go"
+            onSubmitEditing={() => {
+              if (canSubmit) void handleSubmit();
+            }}
             placeholder="Digite sua senha"
             placeholderTextColor={COLORS.grey400}
             secureTextEntry={!showPassword}
@@ -100,11 +125,11 @@ export function LoginScreen({ navigation }: Props) {
           </Pressable>
         </View>
 
-        <Text style={styles.forgotLink}>Esqueceu a senha?</Text>
-
         <Pressable
           testID="login-submit"
           accessibilityRole="button"
+          accessibilityLabel="Entrar"
+          accessibilityState={{ disabled: !canSubmit, busy: isSigningIn }}
           style={[styles.button, !canSubmit && styles.buttonDisabled]}
           disabled={!canSubmit}
           onPress={handleSubmit}
@@ -139,7 +164,7 @@ export function LoginScreen({ navigation }: Props) {
             }
             message={
               error === "Invalid credentials"
-                ? "Tente novamente, ou altere a senha"
+                ? "Confira o e-mail e a senha e tente de novo."
                 : error
             }
             onDismiss={() => setError(null)}
@@ -191,6 +216,15 @@ const styles = StyleSheet.create({
     color: COLORS.heading,
     marginBottom: 6,
   },
+  sessionExpired: {
+    fontFamily: FONTS.semiBold,
+    fontSize: 13,
+    color: COLORS.heading,
+    backgroundColor: COLORS.chipBg,
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
   input: {
     height: 50,
     borderWidth: 1,
@@ -212,14 +246,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 16,
     top: 13,
-  },
-  forgotLink: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 14,
-    color: COLORS.primary,
-    textDecorationLine: "underline",
-    marginTop: -8,
-    marginBottom: 24,
   },
   toastWrapper: {
     position: "absolute",

@@ -1,25 +1,28 @@
-import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import type { Profile } from "../api/profiles";
+import type { RiskLevel } from "../api/risk";
 import type { WeeklyAdherence } from "../api/triage";
-import { listCheckIns } from "../api/checkins";
 import { WEEKLY_EVENTS } from "../constants/checkin";
+import { RISK_LEVELS } from "../constants/risk";
 import { RiskStatusBadge } from "./RiskStatusBadge";
-import { ageInYears } from "../utils/date";
-import { COLORS, FONTS } from "../theme";
+import { ageInYears, daysSince, formatDay } from "../utils/date";
+import { COLORS, FONTS, SPACING, TYPE } from "../theme";
 
 interface Props {
   profile: Profile;
   testIDPrefix: string;
   onOpen: () => void;
-  showLastCheckIn?: boolean;
+  /** The risk status, when the caller already has it (skips a request). */
+  riskStatus?: RiskLevel;
+  /** Shows the last check-in line; null means there has been none. */
+  lastCheckInAt?: string | null;
   criticalEvents?: string[];
   adherence?: WeeklyAdherence;
 }
 
 /**
- * Display labels for the critical weekly events flagged on a triage card,
+ * Display labels for the critical weekly events flagged on a triage row,
  * using the check-in wizard's labels; unknown keys fall back to themselves.
  */
 function criticalEventsSummary(events: string[]): string {
@@ -31,80 +34,67 @@ function criticalEventsSummary(events: string[]): string {
 }
 
 /**
- * "Último check-in: <date>" line for a triage card. Fetches the profile's most
- * recent check-in and shows the design's "-----" placeholder when there is
- * none (or the fetch fails).
+ * "Último check-in" line of a triage row, with how long ago it was so a
+ * silent family stands out without opening the profile.
  */
-function LastCheckInLine({ profileId }: { profileId: number }) {
-  const [date, setDate] = useState<string | null | undefined>(undefined);
-
-  useEffect(() => {
-    let active = true;
-    listCheckIns(profileId)
-      .then((checkIns) => {
-        if (active) setDate(checkIns[0]?.date ?? null);
-      })
-      .catch(() => {
-        if (active) setDate(null);
-      });
-    return () => {
-      active = false;
-    };
-  }, [profileId]);
-
-  if (date === undefined) return null;
-
-  return (
-    <Text style={styles.cardLine}>
-      Último check-in: {date ? date.slice(0, 10) : "-----"}
-    </Text>
-  );
+function lastCheckInText(iso: string | null): string {
+  if (!iso) return "Nenhum check-in ainda";
+  const days = daysSince(iso);
+  const ago = days === 0 ? "hoje" : days === 1 ? "há 1 dia" : `há ${days} dias`;
+  return `Último check-in: ${formatDay(iso)} (${ago})`;
 }
 
 /**
- * Elderly-profile card from the Figma design, shared by the caregiver's "Meus
- * idosos" list and the professional's "Painel de triagem": avatar initial,
- * name with the risk pill, age (plus optionally the last check-in date) and a
- * chevron. When the latest check-in reported critical weekly events
- * (criticalEvents), a red warning line flags them, per the screening
- * algorithm's visual-flag requirement. Tapping the card opens the elder's
- * detail hub, where the per-profile actions live.
+ * One elder in a list (the caregiver's "Meus idosos" and the professional's
+ * triage panel), drawn as a row of a grouped section: name with the risk pill,
+ * age, optionally the last check-in and adherence, and a chevron. When the
+ * status is known, a thin rule in the risk colour runs down the left edge, so
+ * the urgency of the whole list can be scanned down one side. Critical weekly
+ * events get a red line of their own, per the screening algorithm's
+ * visual-flag requirement.
  */
 export function ProfileCard({
   profile,
   testIDPrefix,
   onOpen,
-  showLastCheckIn = false,
+  riskStatus,
+  lastCheckInAt,
   criticalEvents = [],
   adherence,
 }: Props) {
+  const testID = `${testIDPrefix}-item-${profile.id}`;
+
   return (
     <Pressable
-      testID={`${testIDPrefix}-item-${profile.id}`}
+      testID={testID}
       accessibilityRole="button"
-      style={styles.card}
+      style={({ pressed }) => [styles.row, pressed && styles.pressed]}
       onPress={onOpen}
     >
-      <View style={styles.avatar}>
-        <Text style={styles.avatarInitial}>
-          {profile.firstName.charAt(0).toUpperCase()}
-        </Text>
-      </View>
-      <View style={styles.cardInfo}>
+      {riskStatus ? (
+        <View
+          testID={`${testID}-accent`}
+          style={[
+            styles.accent,
+            { backgroundColor: RISK_LEVELS[riskStatus].color },
+          ]}
+        />
+      ) : null}
+      <View style={styles.info}>
         <View style={styles.nameRow}>
-          <Text style={styles.name} numberOfLines={1}>
+          <Text style={styles.name}>
             {profile.firstName} {profile.lastName}
           </Text>
-          <RiskStatusBadge profileId={profile.id} />
+          <RiskStatusBadge profileId={profile.id} status={riskStatus} />
         </View>
-        <Text style={styles.cardLine}>
-          {ageInYears(profile.birthDate)} anos
-        </Text>
-        {showLastCheckIn ? <LastCheckInLine profileId={profile.id} /> : null}
+        <Text style={styles.line}>{ageInYears(profile.birthDate)} anos</Text>
+        {lastCheckInAt !== undefined ? (
+          <Text style={styles.line}>{lastCheckInText(lastCheckInAt)}</Text>
+        ) : null}
         {adherence ? (
           <Text
             testID={`${testIDPrefix}-adherence-${profile.id}`}
-            style={styles.cardLine}
+            style={styles.line}
           >
             Check-in em {adherence.weeksWithCheckIn} de{" "}
             {adherence.weeksObserved}{" "}
@@ -112,15 +102,12 @@ export function ProfileCard({
           </Text>
         ) : null}
         {criticalEvents.length > 0 ? (
-          <View
+          <Text
             testID={`${testIDPrefix}-critical-${profile.id}`}
-            style={styles.criticalRow}
+            style={styles.criticalLine}
           >
-            <Ionicons name="warning" size={12} color={COLORS.danger} />
-            <Text style={styles.criticalLine} numberOfLines={2}>
-              Evento crítico na semana: {criticalEventsSummary(criticalEvents)}
-            </Text>
-          </View>
+            Evento crítico na semana: {criticalEventsSummary(criticalEvents)}
+          </Text>
         ) : null}
       </View>
       <Ionicons name="chevron-forward" size={20} color={COLORS.grey400} />
@@ -129,57 +116,45 @@ export function ProfileCard({
 }
 
 const styles = StyleSheet.create({
-  card: {
+  row: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-    borderWidth: 1,
-    borderColor: COLORS.primary,
-    borderRadius: 12,
-    padding: 12,
+    gap: SPACING.md,
+    paddingVertical: SPACING.md,
+    paddingLeft: SPACING.lg + 4,
+    paddingRight: SPACING.md,
+    backgroundColor: COLORS.white,
   },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: COLORS.primary,
-    alignItems: "center",
-    justifyContent: "center",
+  pressed: {
+    backgroundColor: COLORS.surface,
   },
-  avatarInitial: {
-    fontFamily: FONTS.extraBold,
-    fontSize: 16,
-    color: COLORS.white,
+  accent: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 4,
   },
-  cardInfo: {
+  info: {
     flex: 1,
     gap: 2,
   },
   nameRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    flexWrap: "wrap",
+    gap: SPACING.sm,
   },
   name: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 16,
-    color: COLORS.heading,
+    ...TYPE.bodyStrong,
     flexShrink: 1,
   },
-  cardLine: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 12,
-    color: COLORS.grey500,
-  },
-  criticalRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
+  line: {
+    ...TYPE.caption,
   },
   criticalLine: {
-    flex: 1,
+    ...TYPE.caption,
     fontFamily: FONTS.semiBold,
-    fontSize: 12,
     color: COLORS.danger,
   },
 });

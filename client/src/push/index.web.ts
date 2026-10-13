@@ -13,6 +13,9 @@ import type {
 
 const SERVICE_WORKER_URL = "/sw.js";
 const FOREGROUND_MESSAGE = "geronton-push";
+const OPEN_MESSAGE = "geronton-push-open";
+/** Query parameter the service worker uses when it has to open a new window. */
+const OPEN_PARAM = "perfil";
 
 /**
  * Both are memoised for the lifetime of the page. The key is fetched once so
@@ -274,4 +277,39 @@ export function addForegroundListener(
   return () => {
     navigator.serviceWorker.removeEventListener("message", listener);
   };
+}
+
+/**
+ * Taps on a notification. An open window hears about them from the service
+ * worker; a window the tap opened finds the profile in its URL, which is then
+ * cleaned so a reload does not open it again.
+ */
+export function addOpenListener(
+  handler: (data: Record<string, string>) => void,
+): () => void {
+  if (typeof window === "undefined") return () => {};
+
+  const params = new URLSearchParams(window.location.search);
+  const profileId = params.get(OPEN_PARAM);
+  if (profileId) {
+    params.delete(OPEN_PARAM);
+    const query = params.toString();
+    window.history.replaceState(
+      null,
+      "",
+      `${window.location.pathname}${query ? `?${query}` : ""}`,
+    );
+    handler({ profileId });
+  }
+
+  if (!("serviceWorker" in navigator)) return () => {};
+
+  const listener = (event: MessageEvent) => {
+    const message = event.data as
+      | { type?: string; data?: Record<string, string> }
+      | undefined;
+    if (message?.type === OPEN_MESSAGE && message.data) handler(message.data);
+  };
+  navigator.serviceWorker.addEventListener("message", listener);
+  return () => navigator.serviceWorker.removeEventListener("message", listener);
 }

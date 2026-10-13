@@ -20,11 +20,16 @@ import type { AppStackParamList } from "../types/navigation";
 import { listTriage } from "../api/triage";
 import { listCheckIns } from "../api/checkins";
 import { listDashboardAlerts } from "../api/alerts";
+import { getRiskStatus } from "../api/risk";
+import { getPermission, getSupport } from "../push";
+import { StyleSheet } from "react-native";
+import { RISK_LEVELS } from "../constants/risk";
 
 jest.mock("../api/triage");
 jest.mock("../api/checkins");
 jest.mock("../api/risk");
 jest.mock("../api/alerts");
+jest.mock("../push");
 jest.mock("@react-navigation/native", () => mockNavigationModule());
 
 const MOCK_ENTRY = makeTriageEntry({
@@ -65,6 +70,7 @@ function renderScreen() {
 
 describe("ProfessionalHomeScreen", () => {
   beforeEach(() => {
+    jest.mocked(getSupport).mockReturnValue("unsupported");
     jest.mocked(listTriage).mockReset().mockResolvedValue([MOCK_ENTRY]);
     jest.mocked(listCheckIns).mockReset().mockResolvedValue([]);
     jest.mocked(listDashboardAlerts).mockReset().mockResolvedValue([]);
@@ -82,8 +88,76 @@ describe("ProfessionalHomeScreen", () => {
       expect(screen.getByTestId("risk-badge-label-1")).toBeTruthy(),
     );
     await waitFor(() =>
-      expect(screen.getByText("Último check-in: -----")).toBeTruthy(),
+      expect(screen.getByText("Nenhum check-in ainda")).toBeTruthy(),
     );
+  });
+
+  it("renders the triage status without fetching each card", async () => {
+    renderScreen();
+
+    await screen.findByTestId("risk-badge-1");
+    expect(getRiskStatus).not.toHaveBeenCalled();
+    expect(listCheckIns).not.toHaveBeenCalled();
+  });
+
+  it("asks to enable notifications above the elder list", async () => {
+    jest.mocked(getSupport).mockReturnValue("available");
+    jest.mocked(getPermission).mockResolvedValue("default");
+    renderScreen();
+
+    await screen.findByTestId("enable-notifications-card");
+    await screen.findByTestId("professional-item-1");
+    const tree = JSON.stringify(screen.toJSON());
+    expect(tree.indexOf('"enable-notifications-card"')).toBeLessThan(
+      tree.indexOf('"professional-item-1"'),
+    );
+  });
+
+  it("marks each elder with a rule in their risk colour", async () => {
+    renderScreen();
+
+    const accent = await screen.findByTestId("professional-item-1-accent");
+    expect(StyleSheet.flatten(accent.props.style).backgroundColor).toBe(
+      RISK_LEVELS.high.color,
+    );
+  });
+
+  it("keeps the filters on one horizontally scrolling row", async () => {
+    renderScreen();
+
+    const filters = await screen.findByTestId("professional-filters");
+    expect(filters.props.horizontal).toBe(true);
+  });
+
+  it("filters the list by risk level", async () => {
+    jest.mocked(listTriage).mockResolvedValue([
+      makeTriageEntry({
+        id: 1,
+        risk: { status: "high", score: 14, criticalEvents: [] },
+      }),
+      makeTriageEntry({ id: 2 }),
+    ]);
+    renderScreen();
+    await screen.findByTestId("professional-item-2");
+
+    fireEvent.press(screen.getByTestId("professional-filter-high"));
+
+    expect(screen.getByTestId("professional-item-1")).toBeTruthy();
+    expect(screen.queryByTestId("professional-item-2")).toBeNull();
+  });
+
+  it("says how long ago the last check-in was", async () => {
+    const fiveDaysAgo = new Date(
+      Date.now() - 5 * 24 * 60 * 60 * 1000,
+    ).toISOString();
+    jest
+      .mocked(listTriage)
+      .mockResolvedValue([
+        makeTriageEntry({ id: 1, lastCheckInAt: fiveDaysAgo }),
+      ]);
+    renderScreen();
+
+    expect(await screen.findByText(/há 5 dias/)).toBeTruthy();
   });
 
   it("keeps the backend's clinical-priority ordering", async () => {
@@ -101,7 +175,7 @@ describe("ProfessionalHomeScreen", () => {
       expect(screen.getByTestId("professional-item-2")).toBeTruthy(),
     );
 
-    const cards = screen.getAllByTestId(/^professional-item-/);
+    const cards = screen.getAllByTestId(/^professional-item-\d+$/);
     expect(cards.map((card) => card.props.testID)).toEqual([
       "professional-item-2",
       "professional-item-1",

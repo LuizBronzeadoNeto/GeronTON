@@ -1,21 +1,24 @@
 import { useState } from "react";
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { ScrollView, Text, TextInput, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { AppStackParamList } from "../types/navigation";
 import { createIntercorrence } from "../api/intercorrences";
-import { EVENT_TYPE_OPTIONS, eventTypeLabel } from "../constants/intercorrence";
+import {
+  EVENT_TYPE_OPTIONS,
+  eventTypeLabel,
+  isCriticalEvent,
+} from "../constants/intercorrence";
 import { useNotification } from "../context/NotificationContext";
+import { EmergencyCallout } from "../components/EmergencyCallout";
 import { ProfileHeader } from "../components/ProfileHeader";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { SelectField } from "../components/SelectField";
-import { COLORS, FONTS } from "../theme";
+import { ActionBar } from "../components/ActionBar";
+import { AnswerGroup } from "../components/AnswerGroup";
+import { formStyles } from "../components/formStyles";
+import { COLORS } from "../theme";
+import { FormError } from "../components/FormError";
+import { FormScreen } from "../components/FormScreen";
 
 type Props = NativeStackScreenProps<AppStackParamList, "IntercorrenceForm">;
 
@@ -62,11 +65,12 @@ export function IntercorrenceFormScreen({ navigation, route }: Props) {
           ? "Intercorrência crítica registrada"
           : "Intercorrência registrada",
         message: `${eventTypeLabel(eventType)} adicionada ao histórico do idoso.`,
-        critical: isCritical,
+        critical: isCriticalEvent({ eventType, isCritical }),
       });
       navigation.replace("IntercorrenceConfirmation", {
         profileId,
         intercorrence,
+        teamNotified: intercorrence.teamNotified,
       });
     } catch {
       setError("Não foi possível registrar a intercorrência.");
@@ -75,137 +79,71 @@ export function IntercorrenceFormScreen({ navigation, route }: Props) {
   }
 
   return (
-    <ScrollView
-      testID="intercorrence-form"
-      contentContainerStyle={styles.container}
-      keyboardShouldPersistTaps="handled"
-    >
-      <ProfileHeader profileId={profileId} />
+    <FormScreen>
+      <ScrollView
+        testID="intercorrence-form"
+        contentContainerStyle={formStyles.container}
+        keyboardShouldPersistTaps="handled"
+      >
+        <ProfileHeader profileId={profileId} />
 
-      <Text style={styles.title}>Registrar intercorrência</Text>
-
-      <SelectField
-        testID="intercorrence-eventType"
-        label="Tipo de evento"
-        value={eventLabel}
-        options={EVENT_TYPE_OPTIONS.map((option) => option.label)}
-        onSelect={setEventLabel}
-      />
-
-      <Text style={styles.label}>Gravidade</Text>
-      <View style={styles.segmented}>
-        {SEVERITIES.map((severity) => {
-          const selected = isCritical === severity.isCritical;
-          return (
-            <Pressable
-              key={severity.label}
-              testID={`intercorrence-severity-${severity.label}`}
-              accessibilityRole="button"
-              style={[styles.segment, selected && styles.segmentSelected]}
-              onPress={() => setIsCritical(severity.isCritical)}
-            >
-              <Text
-                style={[
-                  styles.segmentLabel,
-                  selected && styles.segmentLabelSelected,
-                ]}
-              >
-                {severity.label}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
-
-      <Text style={styles.label}>Descrição</Text>
-      <TextInput
-        testID="intercorrence-description"
-        style={styles.textArea}
-        placeholder="O que aconteceu, quando, sintomas associados, o que foi feito..."
-        placeholderTextColor={COLORS.grey400}
-        value={description}
-        onChangeText={setDescription}
-        multiline
-      />
-
-      {error ? (
-        <Text testID="intercorrence-error" style={styles.error}>
-          {error}
+        <Text style={formStyles.title} accessibilityRole="header">
+          Registrar intercorrência
         </Text>
-      ) : null}
 
-      <PrimaryButton
-        testID="intercorrence-submit"
-        title="Registrar"
-        style={styles.submit}
-        onPress={handleSubmit}
-        disabled={!canSubmit}
-      />
-    </ScrollView>
+        <EmergencyCallout />
+
+        <SelectField
+          testID="intercorrence-eventType"
+          label="Tipo de evento"
+          value={eventLabel}
+          options={EVENT_TYPE_OPTIONS.map((option) => option.label)}
+          onSelect={setEventLabel}
+        />
+
+        <AnswerGroup
+          question="Gravidade"
+          value={isCritical}
+          onChange={setIsCritical}
+          options={SEVERITIES.map((severity) => ({
+            value: severity.isCritical,
+            label: severity.label,
+            testID: `intercorrence-severity-${severity.label}`,
+          }))}
+        />
+
+        <View style={formStyles.field}>
+          <Text style={formStyles.label}>Descrição</Text>
+          <TextInput
+            testID="intercorrence-description"
+            accessibilityLabel="Descrição"
+            style={[formStyles.input, formStyles.textArea]}
+            placeholder="O que aconteceu, quando, sintomas associados, o que foi feito..."
+            placeholderTextColor={COLORS.grey400}
+            value={description}
+            onChangeText={setDescription}
+            multiline
+          />
+        </View>
+
+        {error ? (
+          <FormError
+            testID="intercorrence-error"
+            style={formStyles.error}
+            message={error}
+          />
+        ) : null}
+      </ScrollView>
+
+      <ActionBar testID="intercorrence-actions">
+        <PrimaryButton
+          testID="intercorrence-submit"
+          title="Registrar"
+          loading={saving}
+          onPress={handleSubmit}
+          disabled={!canSubmit}
+        />
+      </ActionBar>
+    </FormScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    padding: 20,
-    gap: 10,
-    backgroundColor: COLORS.white,
-  },
-  title: {
-    fontFamily: FONTS.extraBold,
-    fontSize: 22,
-    color: COLORS.heading,
-    marginBottom: 4,
-  },
-  label: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 14,
-    lineHeight: 22,
-    color: COLORS.heading,
-  },
-  segmented: {
-    flexDirection: "row",
-    borderWidth: 1,
-    borderColor: COLORS.grey300,
-    borderRadius: 8,
-    overflow: "hidden",
-  },
-  segment: {
-    flex: 1,
-    height: 48,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: COLORS.white,
-  },
-  segmentSelected: {
-    backgroundColor: COLORS.primary,
-  },
-  segmentLabel: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 14,
-    color: COLORS.heading,
-  },
-  segmentLabelSelected: {
-    color: COLORS.white,
-  },
-  textArea: {
-    minHeight: 120,
-    borderWidth: 1,
-    borderColor: COLORS.grey300,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontFamily: FONTS.semiBold,
-    fontSize: 14,
-    color: COLORS.heading,
-    textAlignVertical: "top",
-  },
-  error: {
-    fontFamily: FONTS.semiBold,
-    color: COLORS.danger,
-    textAlign: "center",
-  },
-  submit: {
-    marginTop: 8,
-  },
-});

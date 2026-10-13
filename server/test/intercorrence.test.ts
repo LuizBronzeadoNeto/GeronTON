@@ -8,7 +8,7 @@ import {
 } from "@jest/globals";
 import request from "supertest";
 import app from "../src/app.js";
-import { grantProfileAccess, makeCpf } from "./helpers.js";
+import { grantProfileAccess, makeCpf, signUpProfessional } from "./helpers.js";
 import { prisma } from "../src/lib/prisma.js";
 
 let token: string;
@@ -16,6 +16,7 @@ let perfilId: number;
 const createdIds: number[] = [];
 
 const PROFILE_MARKER = "TestIntercorrencia";
+const PRO_EMAIL = "intercorrencia-pro@test.com";
 
 /**
  * Creates its own profile rather than reusing whichever one happens to be in
@@ -48,6 +49,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await prisma.profile.deleteMany({ where: { id: perfilId ?? -1 } });
+  await prisma.user.deleteMany({ where: { email: PRO_EMAIL } });
   await prisma.$disconnect();
 });
 
@@ -61,6 +63,35 @@ afterEach(async () => {
 });
 
 describe("POST /perfis/:perfilId/intercorrencias", () => {
+  it("reports that nobody was notified when no professional is linked", async () => {
+    const res = await request(app)
+      .post(`/perfis/${perfilId}/intercorrencias`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ eventType: "fall", isCritical: true });
+    createdIds.push(res.body.id);
+
+    expect(res.status).toBe(201);
+    expect(res.body.teamNotified).toBe(false);
+  });
+
+  it("reports the team was notified only for critical events", async () => {
+    await signUpProfessional(PRO_EMAIL, "77020-PB");
+    await grantProfileAccess(perfilId, PRO_EMAIL);
+
+    const critical = await request(app)
+      .post(`/perfis/${perfilId}/intercorrencias`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ eventType: "chest_pain", isCritical: false });
+    const mild = await request(app)
+      .post(`/perfis/${perfilId}/intercorrencias`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ eventType: "fall", isCritical: false });
+    createdIds.push(critical.body.id, mild.body.id);
+
+    expect(critical.body.teamNotified).toBe(true);
+    expect(mild.body.teamNotified).toBe(false);
+  });
+
   it("creates an intercorrence with valid data", async () => {
     const res = await request(app)
       .post(`/perfis/${perfilId}/intercorrencias`)

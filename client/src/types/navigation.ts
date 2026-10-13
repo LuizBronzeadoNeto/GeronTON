@@ -19,6 +19,7 @@ export type AppStackParamList = {
   IntercorrenceConfirmation: {
     profileId: number;
     intercorrence: Intercorrence;
+    teamNotified: boolean;
   };
   IntercorrenceList: { profileId: number };
   WeeklyCheckIn: { profileId: number };
@@ -28,5 +29,6 @@ export type AppStackParamList = {
   RoutineRegistration: { profileId: number };
   MissedSignalForm: { profileId: number };
   SignalReport: undefined;
+  Account: undefined;
   PrivacyPolicy: undefined;
 };

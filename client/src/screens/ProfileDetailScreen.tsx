@@ -2,7 +2,6 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -34,18 +33,26 @@ import {
   WEEKLY_EVENTS,
   moodLabel,
 } from "../constants/checkin";
+import { isCriticalEvent } from "../constants/intercorrence";
 import { useAuth } from "../context/AuthContext";
 import { AlertCard } from "../components/AlertCard";
 import { IntercorrenceRow } from "../components/IntercorrenceRow";
+import { FamilyContactCard } from "../components/FamilyContactCard";
+import { ListRow } from "../components/ListRow";
+import { PrimaryButton } from "../components/PrimaryButton";
+import { Section } from "../components/Section";
+import { RiskReasons } from "../components/RiskReasons";
 import { RiskStatusBadge } from "../components/RiskStatusBadge";
 import { SeverityPill } from "../components/SeverityPill";
-import { ageInYears, isoToBrDate } from "../utils/date";
-import { COLORS, FONTS } from "../theme";
+import { ageInYears, formatDay, isoToBrDate } from "../utils/date";
+import { COLORS, RADIUS, SPACING, TYPE } from "../theme";
+import { confirmDestructive } from "../utils/confirm";
 
 type Props = NativeStackScreenProps<AppStackParamList, "ProfileDetail">;
 
 const CRITICAL_WINDOW_DAYS = 14;
 const RECENT_HISTORY_LIMIT = 5;
+const RECENT_CONTACTS_LIMIT = 5;
 
 /**
  * Whether any critical intercorrence happened within the warning window, for
@@ -54,7 +61,8 @@ const RECENT_HISTORY_LIMIT = 5;
 function hasRecentCriticalEvent(intercorrences: Intercorrence[]): boolean {
   const windowStart = Date.now() - CRITICAL_WINDOW_DAYS * 24 * 60 * 60 * 1000;
   return intercorrences.some(
-    (item) => item.isCritical && new Date(item.date).getTime() >= windowStart,
+    (item) =>
+      isCriticalEvent(item) && new Date(item.date).getTime() >= windowStart,
   );
 }
 
@@ -101,6 +109,7 @@ export function ProfileDetailScreen({ navigation, route }: Props) {
   const [intercorrences, setIntercorrences] = useState<Intercorrence[]>([]);
   const [latestCheckIn, setLatestCheckIn] = useState<CheckIn | null>(null);
   const [alerts, setAlerts] = useState<ClinicalAlert[]>([]);
+  const [recentContacts, setRecentContacts] = useState<ClinicalAlert[]>([]);
   const [missedSignals, setMissedSignals] = useState<MissedSignal[]>([]);
   const [hasRecentCritical, setHasRecentCritical] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -116,6 +125,7 @@ export function ProfileDetailScreen({ navigation, route }: Props) {
           setProfile(details.profile);
           setLatestCheckIn(details.latestCheckIn);
           setAlerts(details.alerts);
+          setRecentContacts(details.recentContacts);
           setIntercorrences(intercorrenceData);
           setHasRecentCritical(hasRecentCriticalEvent(intercorrenceData));
         })
@@ -140,11 +150,23 @@ export function ProfileDetailScreen({ navigation, route }: Props) {
     }, [profileId, isProfessional]),
   );
 
-  async function handleResolveAlert(alertId: number, signalConfirmed: boolean) {
+  async function handleResolveAlert(
+    alertId: number,
+    signalConfirmed: boolean,
+    note: string,
+  ) {
     const previous = alerts;
     setAlerts((old) => old.filter((item) => item.id !== alertId));
     try {
-      await resolveAlert(profileId, alertId, signalConfirmed);
+      const resolved = await resolveAlert(
+        profileId,
+        alertId,
+        signalConfirmed,
+        note,
+      );
+      setRecentContacts((old) =>
+        [resolved, ...old].slice(0, RECENT_CONTACTS_LIMIT),
+      );
     } catch {
       setAlerts(previous);
       setError("Não foi possível resolver o alerta.");
@@ -167,50 +189,36 @@ export function ProfileDetailScreen({ navigation, route }: Props) {
   }
 
   function confirmDeleteMissedSignal(id: number) {
-    Alert.alert(
+    confirmDestructive(
       "Remover registro",
       "Tem certeza que deseja remover este sinal não detectado?",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Remover",
-          style: "destructive",
-          onPress: async () => {
-            const previous = missedSignals;
-            setMissedSignals((old) => old.filter((item) => item.id !== id));
-            try {
-              await deleteMissedSignal(profileId, id);
-            } catch {
-              setMissedSignals(previous);
-              setError("Não foi possível remover o registro.");
-            }
-          },
-        },
-      ],
+      async () => {
+        const previous = missedSignals;
+        setMissedSignals((old) => old.filter((item) => item.id !== id));
+        try {
+          await deleteMissedSignal(profileId, id);
+        } catch {
+          setMissedSignals(previous);
+          setError("Não foi possível remover o registro.");
+        }
+      },
     );
   }
 
   function confirmDeleteIntercorrence(id: number) {
-    Alert.alert(
+    confirmDestructive(
       "Remover intercorrência",
       "Tem certeza que deseja remover este registro?",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Remover",
-          style: "destructive",
-          onPress: async () => {
-            const previous = intercorrences;
-            setIntercorrences((old) => old.filter((item) => item.id !== id));
-            try {
-              await deleteIntercorrence(profileId, id);
-            } catch {
-              setIntercorrences(previous);
-              setError("Não foi possível remover a intercorrência.");
-            }
-          },
-        },
-      ],
+      async () => {
+        const previous = intercorrences;
+        setIntercorrences((old) => old.filter((item) => item.id !== id));
+        try {
+          await deleteIntercorrence(profileId, id);
+        } catch {
+          setIntercorrences(previous);
+          setError("Não foi possível remover a intercorrência.");
+        }
+      },
     );
   }
 
@@ -237,65 +245,50 @@ export function ProfileDetailScreen({ navigation, route }: Props) {
       testID="profile-detail"
       contentContainerStyle={styles.container}
     >
-      <View style={styles.nameRow}>
-        <Text style={styles.name} numberOfLines={1}>
+      <View style={styles.header}>
+        <Text style={styles.name} accessibilityRole="header">
           {profile.firstName} {profile.lastName}
         </Text>
-        <RiskStatusBadge profileId={profileId} />
+        <View style={styles.metaRow}>
+          <Text style={styles.subtitle}>
+            {ageInYears(profile.birthDate)} anos
+          </Text>
+          <RiskStatusBadge profileId={profileId} />
+        </View>
+        {hasRecentCritical ? (
+          <Text testID="profile-detail-critical" style={styles.criticalLine}>
+            Evento crítico nas últimas 2 semanas
+          </Text>
+        ) : null}
       </View>
-      <Text style={styles.subtitle}>{ageInYears(profile.birthDate)} anos</Text>
-      {hasRecentCritical ? (
-        <Text testID="profile-detail-critical" style={styles.criticalLine}>
-          Evento crítico nas últimas 2 semanas
-        </Text>
-      ) : null}
+      <RiskReasons profileId={profileId} />
 
       <View style={styles.actions}>
-        <Pressable
+        <PrimaryButton
           testID="detail-checkin"
-          accessibilityRole="button"
-          style={[styles.actionButton, styles.actionPrimary]}
+          title="Fazer check-in da semana"
           onPress={() => navigation.navigate("WeeklyCheckIn", { profileId })}
-        >
-          <Text style={styles.actionPrimaryLabel}>+ Check-in semanal</Text>
-        </Pressable>
-        <Pressable
-          testID="detail-intercorrence"
-          accessibilityRole="button"
-          style={[styles.actionButton, styles.actionDanger]}
-          onPress={() =>
-            navigation.navigate("IntercorrenceForm", { profileId })
-          }
-        >
-          <Ionicons name="warning-outline" size={14} color={COLORS.white} />
-          <Text style={styles.actionPrimaryLabel}>Intercorrência</Text>
-        </Pressable>
-        <Pressable
-          testID="detail-routine"
-          accessibilityRole="button"
-          style={[styles.actionButton, styles.actionOutline]}
-          onPress={() =>
-            navigation.navigate("RoutineRegistration", { profileId })
-          }
-        >
-          <Ionicons
-            name="document-text-outline"
-            size={14}
-            color={COLORS.heading}
+        />
+        <View style={styles.actionRow}>
+          <PrimaryButton
+            testID="detail-intercorrence"
+            title="Intercorrência"
+            variant="danger"
+            style={styles.halfAction}
+            onPress={() =>
+              navigation.navigate("IntercorrenceForm", { profileId })
+            }
           />
-          <Text style={styles.actionOutlineLabel}>Rotina</Text>
-        </Pressable>
-        <Pressable
-          testID="detail-medication"
-          accessibilityRole="button"
-          style={[styles.actionButton, styles.actionOutline]}
-          onPress={() =>
-            navigation.navigate("MedicationInventory", { profileId })
-          }
-        >
-          <Ionicons name="medkit-outline" size={14} color={COLORS.heading} />
-          <Text style={styles.actionOutlineLabel}>Medicação</Text>
-        </Pressable>
+          <PrimaryButton
+            testID="detail-medication"
+            title="Medicação"
+            variant="outline"
+            style={styles.halfAction}
+            onPress={() =>
+              navigation.navigate("MedicationInventory", { profileId })
+            }
+          />
+        </View>
       </View>
 
       {error ? (
@@ -305,8 +298,7 @@ export function ProfileDetailScreen({ navigation, route }: Props) {
       ) : null}
 
       {alerts.length > 0 ? (
-        <View testID="detail-alerts" style={styles.alertsSection}>
-          <Text style={styles.cardTitle}>Sinais para contato</Text>
+        <Section testID="detail-alerts" title="Sinais para contato">
           {alerts.map((alert) => (
             <AlertCard
               key={alert.id}
@@ -314,191 +306,103 @@ export function ProfileDetailScreen({ navigation, route }: Props) {
               alert={alert}
               onResolve={
                 isProfessional
-                  ? (signalConfirmed) =>
-                      handleResolveAlert(alert.id, signalConfirmed)
+                  ? (signalConfirmed, note) =>
+                      handleResolveAlert(alert.id, signalConfirmed, note)
                   : undefined
               }
             />
           ))}
-        </View>
+        </Section>
       ) : null}
 
-      {isProfessional ? (
-        <View testID="detail-missed" style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Sinais não detectados</Text>
-            <Pressable
-              testID="detail-missed-add"
-              accessibilityRole="button"
-              accessibilityLabel="Registrar sinal não detectado"
-              onPress={() =>
-                navigation.navigate("MissedSignalForm", { profileId })
-              }
-            >
-              <Text style={styles.linkLabel}>+ Registrar</Text>
-            </Pressable>
-          </View>
-          {missedSignals.length === 0 ? (
-            <Text testID="detail-missed-empty" style={styles.emptyLine}>
-              Algo aconteceu e o sistema não avisou? Registre aqui.
-            </Text>
-          ) : (
-            missedSignals.map((item) => (
-              <View
-                key={item.id}
-                testID={`detail-missed-${item.id}`}
-                style={styles.missedRow}
-              >
-                <View style={styles.missedHeader}>
-                  <Text style={styles.baselineValue}>
-                    {isoToBrDate(item.occurredAt)}
-                  </Text>
-                  <SeverityPill isCritical={item.severity === "critical"} />
-                  {item.reportedById === user?.id ? (
-                    <Pressable
-                      testID={`detail-missed-delete-${item.id}`}
-                      accessibilityRole="button"
-                      accessibilityLabel="Remover registro"
-                      style={styles.missedDelete}
-                      onPress={() => confirmDeleteMissedSignal(item.id)}
-                    >
-                      <Ionicons
-                        name="trash-outline"
-                        size={16}
-                        color={COLORS.grey500}
-                      />
-                    </Pressable>
-                  ) : null}
-                </View>
-                <Text style={styles.missedDescription}>{item.description}</Text>
-              </View>
-            ))
-          )}
-        </View>
+      <FamilyContactCard phone={profile.contactPhone} notes={profile.notes} />
+
+      {isProfessional && recentContacts.length > 0 ? (
+        <Section testID="detail-contacts" title="Contatos registrados" grouped>
+          {recentContacts.map((contact) => (
+            <View key={contact.id} style={styles.groupItem}>
+              <Text style={styles.itemMeta}>
+                {contact.resolvedAt ? formatDay(contact.resolvedAt) : ""} ·{" "}
+                {contact.resolvedBy?.email ?? "Equipe"}
+              </Text>
+              <Text style={styles.itemText}>{contact.message}</Text>
+              <Text style={styles.itemVerdict}>
+                {contact.signalConfirmed
+                  ? "Sinal confirmado"
+                  : "Sinal não se confirmou"}
+              </Text>
+              {contact.resolutionNote ? (
+                <Text style={styles.itemText}>{contact.resolutionNote}</Text>
+              ) : null}
+            </View>
+          ))}
+        </Section>
       ) : null}
 
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle}>Último check-in</Text>
-          {latestCheckIn ? (
-            <Pressable
-              testID="detail-last-checkin-open"
-              accessibilityRole="button"
-              accessibilityLabel="Ver check-in completo"
-              onPress={() =>
-                navigation.navigate("CheckInDetail", {
-                  profileId,
-                  checkInId: latestCheckIn.id,
-                })
+      <Section
+        testID={latestCheckIn ? "detail-last-checkin" : undefined}
+        title="Último check-in"
+        grouped={latestCheckIn !== null}
+        action={
+          latestCheckIn
+            ? {
+                label: "Ver completo",
+                accessibilityLabel: "Ver check-in completo",
+                testID: "detail-last-checkin-open",
+                onPress: () =>
+                  navigation.navigate("CheckInDetail", {
+                    profileId,
+                    checkInId: latestCheckIn.id,
+                  }),
               }
-            >
-              <Text style={styles.linkLabel}>Ver completo</Text>
-            </Pressable>
-          ) : null}
-        </View>
+            : undefined
+        }
+      >
         {latestCheckIn ? (
-          <View testID="detail-last-checkin" style={styles.summaryRows}>
-            <View style={styles.baselineRow}>
-              <Text style={styles.baselineLabel}>Data</Text>
-              <Text style={styles.baselineValue}>
-                {isoToBrDate(latestCheckIn.date)}
-              </Text>
-            </View>
-            <View style={styles.baselineRow}>
-              <Text style={styles.baselineLabel}>Humor predominante</Text>
-              <Text style={styles.baselineValue}>
-                {moodLabel(latestCheckIn.mood)}
-              </Text>
-            </View>
-            <View style={styles.baselineRow}>
-              <Text style={styles.baselineLabel}>Apetite predominante</Text>
-              <Text style={styles.baselineValue}>
-                {appetiteLabel(latestCheckIn)}
-              </Text>
-            </View>
-            <View style={styles.baselineRow}>
-              <Text style={styles.baselineLabel}>Eventos na semana</Text>
-              <Text style={styles.baselineValue}>
-                {weeklyEventsSummary(latestCheckIn)}
-              </Text>
-            </View>
-          </View>
+          [
+            <ListRow
+              key="date"
+              label="Data"
+              value={formatDay(latestCheckIn.date)}
+            />,
+            <ListRow
+              key="mood"
+              label="Humor"
+              value={moodLabel(latestCheckIn.mood)}
+            />,
+            <ListRow
+              key="appetite"
+              label="Apetite"
+              value={appetiteLabel(latestCheckIn)}
+            />,
+            <ListRow
+              key="events"
+              label="Eventos na semana"
+              value={weeklyEventsSummary(latestCheckIn)}
+            />,
+          ]
         ) : (
           <Text testID="detail-last-checkin-empty" style={styles.emptyLine}>
             Nenhum check-in registrado.
           </Text>
         )}
-      </View>
+      </Section>
 
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Linha de base</Text>
-        <View style={styles.baselineRow}>
-          <Text style={styles.baselineLabel}>Nascimento</Text>
-          <Text style={styles.baselineValue}>
-            {isoToBrDate(profile.birthDate)}
-          </Text>
-        </View>
-        <View style={styles.baselineRow}>
-          <Text style={styles.baselineLabel}>Sexo</Text>
-          <Text style={styles.baselineValue}>{profile.sex ?? "—"}</Text>
-        </View>
-        <View style={styles.baselineRow}>
-          <Text style={styles.baselineLabel}>Escolaridade</Text>
-          <Text style={styles.baselineValue}>{profile.scholarship}</Text>
-        </View>
-      </View>
-
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle}>Condições</Text>
-          <Pressable
-            testID="detail-edit"
-            accessibilityRole="button"
-            accessibilityLabel="Editar idoso"
-            style={styles.editButton}
-            onPress={() => navigation.navigate("ProfileForm", { profileId })}
-          >
-            <Ionicons name="pencil" size={16} color={COLORS.warning} />
-          </Pressable>
-        </View>
-        {profile.medicalConditions.length === 0 ? (
-          <Text style={styles.emptyLine}>Nenhuma condição registrada.</Text>
-        ) : (
-          <View style={styles.chipGrid}>
-            {profile.medicalConditions.map((condition) => (
-              <Pressable
-                key={condition}
-                testID={`detail-condition-remove-${condition}`}
-                accessibilityRole="button"
-                accessibilityLabel={`Remover ${condition}`}
-                style={styles.chip}
-                onPress={() => removeCondition(condition)}
-              >
-                <Text style={styles.chipLabel}>
-                  {condition} <Text style={styles.chipRemove}>×</Text>
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-        )}
-      </View>
-
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle}>Histórico recente</Text>
-          {intercorrences.length > 0 ? (
-            <Pressable
-              testID="detail-history-all"
-              accessibilityRole="button"
-              accessibilityLabel="Ver todas as intercorrências"
-              onPress={() =>
-                navigation.navigate("IntercorrenceList", { profileId })
+      <Section
+        title="Histórico recente"
+        grouped={intercorrences.length > 0}
+        action={
+          intercorrences.length > 0
+            ? {
+                label: "Ver todas",
+                accessibilityLabel: "Ver todas as intercorrências",
+                testID: "detail-history-all",
+                onPress: () =>
+                  navigation.navigate("IntercorrenceList", { profileId }),
               }
-            >
-              <Text style={styles.linkLabel}>Ver todas</Text>
-            </Pressable>
-          ) : null}
-        </View>
+            : undefined
+        }
+      >
         {intercorrences.length === 0 ? (
           <Text testID="detail-history-empty" style={styles.emptyLine}>
             Nenhuma intercorrência registrada.
@@ -515,183 +419,214 @@ export function ProfileDetailScreen({ navigation, route }: Props) {
               />
             ))
         )}
-      </View>
+      </Section>
+
+      <Section title="Cuidados" grouped>
+        <ListRow
+          testID="detail-routine"
+          label="Rotina e aspectos relevantes"
+          caption="Hábitos, preferências e cuidados do dia a dia"
+          onPress={() =>
+            navigation.navigate("RoutineRegistration", { profileId })
+          }
+        />
+      </Section>
+
+      <Section
+        testID="detail-baseline"
+        title="Dados do idoso"
+        grouped
+        action={{
+          label: "Editar",
+          accessibilityLabel: "Editar idoso",
+          testID: "detail-edit",
+          onPress: () => navigation.navigate("ProfileForm", { profileId }),
+        }}
+      >
+        <ListRow label="Nascimento" value={isoToBrDate(profile.birthDate)} />
+        <ListRow label="Sexo" value={profile.sex ?? "—"} />
+        <ListRow label="Escolaridade" value={profile.scholarship} />
+      </Section>
+
+      <Section title="Condições">
+        {profile.medicalConditions.length === 0 ? (
+          <Text style={styles.emptyLine}>Nenhuma condição registrada.</Text>
+        ) : (
+          <View style={styles.chipGrid}>
+            {profile.medicalConditions.map((condition) => (
+              <Pressable
+                key={condition}
+                testID={`detail-condition-remove-${condition}`}
+                accessibilityRole="button"
+                accessibilityLabel={`Remover ${condition}`}
+                hitSlop={8}
+                style={styles.chip}
+                onPress={() => removeCondition(condition)}
+              >
+                <Text style={styles.chipLabel}>{condition}</Text>
+                <Ionicons name="close" size={16} color={COLORS.primary} />
+              </Pressable>
+            ))}
+          </View>
+        )}
+      </Section>
+
+      {isProfessional ? (
+        <Section
+          testID="detail-missed"
+          title="Sinais não detectados"
+          grouped={missedSignals.length > 0}
+          action={{
+            label: "+ Registrar",
+            accessibilityLabel: "Registrar sinal não detectado",
+            testID: "detail-missed-add",
+            onPress: () =>
+              navigation.navigate("MissedSignalForm", { profileId }),
+          }}
+        >
+          {missedSignals.length === 0 ? (
+            <Text testID="detail-missed-empty" style={styles.emptyLine}>
+              Algo aconteceu e o sistema não avisou? Registre aqui.
+            </Text>
+          ) : (
+            missedSignals.map((item) => (
+              <View
+                key={item.id}
+                testID={`detail-missed-${item.id}`}
+                style={styles.missedItem}
+              >
+                <View style={styles.missedText}>
+                  <View style={styles.missedHeader}>
+                    <Text style={styles.itemMeta}>
+                      {isoToBrDate(item.occurredAt)}
+                    </Text>
+                    <SeverityPill isCritical={item.severity === "critical"} />
+                  </View>
+                  <Text style={styles.itemText}>{item.description}</Text>
+                </View>
+                {item.reportedById === user?.id ? (
+                  <Pressable
+                    testID={`detail-missed-delete-${item.id}`}
+                    accessibilityRole="button"
+                    accessibilityLabel="Remover registro"
+                    style={styles.deleteButton}
+                    onPress={() => confirmDeleteMissedSignal(item.id)}
+                  >
+                    <Ionicons
+                      name="trash-outline"
+                      size={20}
+                      color={COLORS.grey500}
+                    />
+                  </Pressable>
+                ) : null}
+              </View>
+            ))
+          )}
+        </Section>
+      ) : null}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
-    gap: 12,
+    padding: SPACING.screen,
+    gap: SPACING.xl,
     backgroundColor: COLORS.white,
   },
   loading: {
     flex: 1,
   },
-  nameRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
+  header: {
+    gap: SPACING.xs,
   },
   name: {
-    fontFamily: FONTS.extraBold,
-    fontSize: 24,
-    color: COLORS.heading,
-    flexShrink: 1,
+    ...TYPE.title,
+  },
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.sm,
   },
   subtitle: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 12,
-    color: COLORS.grey500,
+    ...TYPE.caption,
   },
   criticalLine: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 12,
-    color: COLORS.grey500,
+    ...TYPE.label,
+    color: COLORS.danger,
   },
   actions: {
+    gap: SPACING.sm,
+  },
+  actionRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-    marginTop: 8,
+    gap: SPACING.sm,
   },
-  alertsSection: {
-    gap: 8,
+  halfAction: {
+    flex: 1,
+    paddingHorizontal: SPACING.sm,
   },
-  actionButton: {
+  groupItem: {
+    gap: 2,
+    padding: SPACING.lg,
+  },
+  itemMeta: {
+    ...TYPE.label,
+  },
+  itemText: {
+    ...TYPE.body,
+  },
+  itemVerdict: {
+    ...TYPE.caption,
+    fontFamily: TYPE.label.fontFamily,
+  },
+  missedItem: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    height: 36,
-    borderRadius: 8,
-    paddingHorizontal: 12,
+    alignItems: "flex-start",
+    paddingVertical: SPACING.md,
+    paddingLeft: SPACING.lg,
+    paddingRight: SPACING.xs,
   },
-  actionPrimary: {
-    backgroundColor: COLORS.primary,
-  },
-  actionDanger: {
-    backgroundColor: COLORS.danger,
-  },
-  actionOutline: {
-    borderWidth: 1,
-    borderColor: COLORS.grey300,
-    backgroundColor: COLORS.white,
-  },
-  actionPrimaryLabel: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 13,
-    color: COLORS.white,
-  },
-  actionOutlineLabel: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 13,
-    color: COLORS.heading,
-  },
-  card: {
-    borderWidth: 1,
-    borderColor: COLORS.grey300,
-    borderRadius: 12,
-    padding: 16,
-    gap: 10,
-  },
-  cardHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  cardTitle: {
-    fontFamily: FONTS.extraBold,
-    fontSize: 18,
-    color: COLORS.heading,
-  },
-  editButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: COLORS.warning,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  linkLabel: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 13,
-    color: COLORS.primary,
-  },
-  summaryRows: {
-    gap: 10,
-  },
-  baselineRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  baselineLabel: {
-    fontFamily: FONTS.regular,
-    fontSize: 14,
-    color: COLORS.grey400,
-  },
-  baselineValue: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 14,
-    color: COLORS.heading,
-    textAlign: "right",
-    flexShrink: 1,
-  },
-  chipGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-  },
-  chip: {
-    borderWidth: 1,
-    borderColor: COLORS.primary,
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    backgroundColor: COLORS.chipBg,
-  },
-  chipLabel: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 13,
-    color: COLORS.primary,
-  },
-  chipRemove: {
-    fontSize: 12,
-    color: COLORS.grey500,
-  },
-  missedRow: {
-    gap: 4,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.grey300,
-    paddingTop: 8,
+  missedText: {
+    flex: 1,
+    gap: SPACING.xs,
   },
   missedHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: SPACING.sm,
   },
-  missedDelete: {
-    marginLeft: "auto",
-    padding: 4,
+  deleteButton: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  missedDescription: {
-    fontFamily: FONTS.regular,
-    fontSize: 13,
-    color: COLORS.heading,
+  chipGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: SPACING.sm,
+  },
+  chip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.xs,
+    minHeight: 40,
+    paddingLeft: SPACING.md,
+    paddingRight: SPACING.sm,
+    borderRadius: RADIUS.control,
+    backgroundColor: COLORS.chipBg,
+  },
+  chipLabel: {
+    ...TYPE.label,
+    color: COLORS.primary,
   },
   emptyLine: {
-    fontFamily: FONTS.regular,
-    fontSize: 13,
+    ...TYPE.body,
     color: COLORS.grey500,
   },
   error: {
-    fontFamily: FONTS.semiBold,
+    ...TYPE.label,
     color: COLORS.danger,
-    textAlign: "center",
-    padding: 12,
   },
 });

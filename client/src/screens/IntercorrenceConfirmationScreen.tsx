@@ -2,7 +2,8 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { AppStackParamList } from "../types/navigation";
-import { eventTypeLabel } from "../constants/intercorrence";
+import { eventTypeLabel, isCriticalEvent } from "../constants/intercorrence";
+import { EmergencyCallout } from "../components/EmergencyCallout";
 import { SeverityPill } from "../components/SeverityPill";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { formatTimestamp } from "../utils/date";
@@ -17,11 +18,14 @@ type Props = NativeStackScreenProps<
  * Confirmation shown right after an intercorrence is registered (the form is
  * replaced by this screen, so back returns to the elder's hub): a success
  * badge, the recorded event's summary (type, severity, timestamp, description)
- * and, for critical events, an urgency notice that the care team is flagged.
+ * and, for critical events, whether the care team was notified (only when a
+ * professional is linked to the elder) plus the SAMU 192 callout, since the
+ * team does not watch the app around the clock.
  * From here the caregiver returns to the profile or opens the full history.
  */
 export function IntercorrenceConfirmationScreen({ navigation, route }: Props) {
-  const { profileId, intercorrence } = route.params;
+  const { profileId, intercorrence, teamNotified } = route.params;
+  const critical = isCriticalEvent(intercorrence);
 
   return (
     <ScrollView
@@ -31,19 +35,25 @@ export function IntercorrenceConfirmationScreen({ navigation, route }: Props) {
       <View style={styles.badge}>
         <Ionicons name="checkmark" size={36} color={COLORS.success} />
       </View>
-      <Text style={styles.title}>Intercorrência registrada</Text>
+      <Text style={styles.title} accessibilityRole="header">
+        Intercorrência registrada
+      </Text>
       <Text style={styles.subtitle}>
         O evento foi adicionado ao histórico do idoso.
       </Text>
 
-      {intercorrence.isCritical ? (
-        <View testID="confirmation-critical" style={styles.criticalNotice}>
-          <Ionicons name="warning-outline" size={18} color={COLORS.danger} />
-          <Text style={styles.criticalText}>
-            Evento grave: a equipe de saúde vai receber um sinal para entrar em
-            contato com você.
-          </Text>
-        </View>
+      {critical ? (
+        <>
+          <View testID="confirmation-critical" style={styles.criticalNotice}>
+            <Ionicons name="warning-outline" size={18} color={COLORS.danger} />
+            <Text style={styles.criticalText}>
+              {teamNotified
+                ? "Evento grave: a equipe de saúde que acompanha o idoso foi avisada pelo app."
+                : "Evento grave: nenhum profissional de saúde acompanha este idoso pelo app ainda, então ninguém foi avisado."}
+            </Text>
+          </View>
+          <EmergencyCallout />
+        </>
       ) : null}
 
       <View style={styles.card}>

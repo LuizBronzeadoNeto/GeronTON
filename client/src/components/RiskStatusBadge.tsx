@@ -9,6 +9,11 @@ import { StatusPill } from "./StatusPill";
 
 interface Props {
   profileId: number;
+  /**
+   * A status the caller already has, e.g. from /triagem. When given, the badge
+   * shows it and makes no request.
+   */
+  status?: RiskLevel;
 }
 
 /**
@@ -19,19 +24,20 @@ interface Props {
  * is invalidated by a mutation elsewhere in the app. Renders nothing while
  * loading and falls back to "Sem dados" on fetch errors.
  */
-export function RiskStatusBadge({ profileId }: Props) {
-  const [status, setStatus] = useState<RiskLevel | null>(null);
+export function RiskStatusBadge({ profileId, status: knownStatus }: Props) {
+  const [fetched, setFetched] = useState<RiskLevel | null>(null);
 
   useEffect(() => {
+    if (knownStatus) return;
     let active = true;
 
     const load = () => {
       getRiskStatus(profileId)
         .then((risk) => {
-          if (active) setStatus(risk.status);
+          if (active) setFetched(risk.status);
         })
         .catch(() => {
-          if (active) setStatus("unknown");
+          if (active) setFetched("unknown");
         });
     };
 
@@ -44,8 +50,9 @@ export function RiskStatusBadge({ profileId }: Props) {
       active = false;
       unsubscribe();
     };
-  }, [profileId]);
+  }, [profileId, knownStatus]);
 
+  const status = knownStatus ?? fetched;
   if (!status) return null;
 
   const level = RISK_LEVELS[status];
