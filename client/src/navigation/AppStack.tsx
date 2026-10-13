@@ -9,6 +9,7 @@ import { Ionicons } from "@expo/vector-icons";
 import type { AppStackParamList } from "../types/navigation";
 import type { Role } from "../types/auth";
 import { COLORS, FONTS } from "../theme";
+import { WEB_CONTENT } from "./webContent";
 import { CaregiverHomeScreen } from "../screens/CaregiverHomeScreen";
 import { ProfessionalHomeScreen } from "../screens/ProfessionalHomeScreen";
 import { ProfileListScreen } from "../screens/ProfileListScreen";
@@ -103,6 +104,7 @@ export function AppStack({ role }: { role: Role }) {
         contentStyle: {
           backgroundColor: COLORS.white,
           paddingBottom: Platform.OS === "web" ? 0 : insets.bottom,
+          ...WEB_CONTENT,
         },
       }}
     >

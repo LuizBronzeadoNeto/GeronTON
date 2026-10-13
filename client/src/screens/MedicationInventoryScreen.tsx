@@ -1,8 +1,8 @@
 import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
-  FlatList,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -17,7 +17,8 @@ import {
   type Medication,
 } from "../api/medications";
 import { PrimaryButton } from "../components/PrimaryButton";
-import { COLORS, FONTS } from "../theme";
+import { ProfileHeader } from "../components/ProfileHeader";
+import { COLORS, RADIUS, SPACING, TYPE } from "../theme";
 import { confirmDestructive } from "../utils/confirm";
 
 type Props = NativeStackScreenProps<AppStackParamList, "MedicationInventory">;
@@ -74,18 +75,16 @@ export function MedicationInventoryScreen({ route, navigation }: Props) {
   }
 
   return (
-    <View testID="medication-inventory" style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title} accessibilityRole="header">
-          Medicação de Uso Contínuo
-        </Text>
-        <PrimaryButton
-          testID="medication-add"
-          title="+ Adicionar"
-          size="small"
-          onPress={() => navigation.navigate("MedicationForm", { profileId })}
-        />
-      </View>
+    <ScrollView
+      testID="medication-inventory"
+      style={styles.screen}
+      contentContainerStyle={styles.container}
+    >
+      <ProfileHeader profileId={profileId} />
+
+      <Text style={styles.title} accessibilityRole="header">
+        Medicação de uso contínuo
+      </Text>
 
       {loading ? (
         <ActivityIndicator testID="medication-loading" color={COLORS.primary} />
@@ -97,123 +96,122 @@ export function MedicationInventoryScreen({ route, navigation }: Props) {
         </Text>
       ) : null}
 
-      <FlatList
-        data={medications}
-        keyExtractor={(item) => String(item.id)}
-        contentContainerStyle={styles.listContent}
-        ListEmptyComponent={
-          loading ? null : (
-            <Text testID="medication-empty" style={styles.empty}>
-              Nenhum medicamento cadastrado.
-            </Text>
-          )
-        }
-        renderItem={({ item }) => (
-          <View testID={`medication-item-${item.id}`} style={styles.item}>
-            <Pressable
-              accessibilityRole="button"
-              style={styles.itemContent}
-              onPress={() =>
-                navigation.navigate("MedicationForm", {
-                  profileId,
-                  medicationId: item.id,
-                })
-              }
-            >
-              <Text style={styles.itemName}>{item.name}</Text>
-              <Text style={styles.itemDetails}>
-                {item.dosage} · {item.frequency}
-              </Text>
-              {item.notes ? (
-                <Text style={styles.itemNotes}>{item.notes}</Text>
-              ) : null}
-            </Pressable>
-            <Pressable
-              testID={`medication-delete-${item.id}`}
-              accessibilityRole="button"
-              accessibilityLabel="Remover medicamento"
-              hitSlop={8}
-              style={styles.deleteButton}
-              onPress={() => handleDelete(item.id)}
-            >
-              <Ionicons name="trash-outline" size={18} color={COLORS.danger} />
-            </Pressable>
-          </View>
-        )}
+      {!loading && medications.length === 0 ? (
+        <Text testID="medication-empty" style={styles.empty}>
+          Nenhum medicamento cadastrado.
+        </Text>
+      ) : null}
+
+      {medications.length > 0 ? (
+        <View style={styles.list}>
+          {medications.map((item, index) => (
+            <View key={item.id}>
+              {index > 0 ? <View style={styles.divider} /> : null}
+              <View testID={`medication-item-${item.id}`} style={styles.item}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityHint="Abre para editar"
+                  style={styles.itemContent}
+                  onPress={() =>
+                    navigation.navigate("MedicationForm", {
+                      profileId,
+                      medicationId: item.id,
+                    })
+                  }
+                >
+                  <Text style={styles.itemName}>{item.name}</Text>
+                  <Text style={styles.itemDetails}>
+                    {item.dosage} · {item.frequency}
+                  </Text>
+                  {item.notes ? (
+                    <Text style={styles.itemNotes}>{item.notes}</Text>
+                  ) : null}
+                </Pressable>
+                <Pressable
+                  testID={`medication-delete-${item.id}`}
+                  accessibilityRole="button"
+                  accessibilityLabel="Remover medicamento"
+                  style={styles.deleteButton}
+                  onPress={() => handleDelete(item.id)}
+                >
+                  <Ionicons
+                    name="trash-outline"
+                    size={20}
+                    color={COLORS.grey500}
+                  />
+                </Pressable>
+              </View>
+            </View>
+          ))}
+        </View>
+      ) : null}
+
+      <PrimaryButton
+        testID="medication-add"
+        title="Adicionar medicamento"
+        variant="outline"
+        onPress={() => navigation.navigate("MedicationForm", { profileId })}
       />
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
     backgroundColor: COLORS.white,
-    padding: 20,
-    gap: 12,
   },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
+  container: {
+    padding: SPACING.screen,
+    gap: SPACING.lg,
   },
   title: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 20,
-    lineHeight: 28,
-    color: COLORS.heading,
-    flexShrink: 1,
+    ...TYPE.title,
   },
-  listContent: {
-    gap: 8,
-    paddingBottom: 24,
+  list: {
+    borderWidth: 1,
+    borderColor: COLORS.cardBorder,
+    borderRadius: RADIUS.group,
+    overflow: "hidden",
   },
-  empty: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 14,
-    color: COLORS.grey500,
-    textAlign: "center",
-    marginTop: 24,
-  },
-  error: {
-    fontFamily: FONTS.semiBold,
-    color: COLORS.danger,
-    textAlign: "center",
+  divider: {
+    height: 1,
+    backgroundColor: COLORS.divider,
   },
   item: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-    borderWidth: 1,
-    borderColor: COLORS.grey300,
-    borderRadius: 8,
-    padding: 12,
+    paddingLeft: SPACING.lg,
+    paddingRight: SPACING.xs,
   },
   itemContent: {
     flex: 1,
+    gap: 2,
+    paddingVertical: SPACING.md,
   },
   itemName: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 16,
-    color: COLORS.heading,
+    ...TYPE.bodyStrong,
   },
   itemDetails: {
-    fontFamily: FONTS.regular,
-    fontSize: 13,
-    color: COLORS.grey500,
-    marginTop: 2,
+    ...TYPE.caption,
   },
   itemNotes: {
-    fontFamily: FONTS.regular,
-    fontSize: 12,
-    color: COLORS.grey400,
-    marginTop: 4,
+    ...TYPE.body,
+    fontSize: 14,
+    lineHeight: 20,
   },
   deleteButton: {
-    width: 32,
-    height: 32,
+    width: 44,
+    height: 44,
     alignItems: "center",
     justifyContent: "center",
+  },
+  empty: {
+    ...TYPE.body,
+    color: COLORS.grey500,
+  },
+  error: {
+    ...TYPE.label,
+    color: COLORS.danger,
   },
 });
