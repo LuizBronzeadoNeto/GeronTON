@@ -13,6 +13,7 @@ import {
   screen,
   fireEvent,
   waitFor,
+  within,
 } from "@testing-library/react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ProfileDetailScreen } from "./ProfileDetailScreen";
@@ -293,6 +294,16 @@ describe("ProfileDetailScreen", () => {
       expect(resolveAlert).toHaveBeenCalledWith(7, 31, true, ""),
     );
     expect(screen.queryByTestId("detail-alert-31")).toBeNull();
+  });
+
+  it("leads with one main action and names its sections plainly", async () => {
+    renderScreen();
+
+    const checkIn = await screen.findByTestId("detail-checkin");
+    expect(within(checkIn).getByText("Fazer check-in da semana")).toBeTruthy();
+    expect(screen.getByTestId("detail-baseline")).toBeTruthy();
+    expect(screen.getByText("Dados do idoso")).toBeTruthy();
+    expect(screen.queryByText("Linha de base")).toBeNull();
   });
 
   it("lists the recorded family contacts for professionals", async () => {

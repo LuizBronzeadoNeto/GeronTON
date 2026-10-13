@@ -5,7 +5,12 @@ import { COLORS, RADIUS, SPACING, TYPE } from "../theme";
 interface Props {
   title: string;
   /** A link on the heading's right, e.g. "Ver todos". */
-  action?: { label: string; onPress: () => void; testID?: string };
+  action?: {
+    label: string;
+    onPress: () => void;
+    testID?: string;
+    accessibilityLabel?: string;
+  };
   /** Draws the children as one bordered group with dividers between rows. */
   grouped?: boolean;
   testID?: string;
@@ -31,6 +36,7 @@ export function Section({ title, action, grouped, testID, children }: Props) {
           <Pressable
             testID={action.testID}
             accessibilityRole="button"
+            accessibilityLabel={action.accessibilityLabel ?? action.label}
             hitSlop={12}
             onPress={action.onPress}
           >

@@ -1,6 +1,7 @@
-import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { COLORS, FONTS } from "../theme";
+import { Linking, StyleSheet, Text, View } from "react-native";
+import { PrimaryButton } from "./PrimaryButton";
+import { Section } from "./Section";
+import { SPACING, TYPE } from "../theme";
 
 interface Props {
   phone: string | null;
@@ -21,100 +22,63 @@ function formatPhone(digits: string): string {
  */
 export function FamilyContactCard({ phone, notes }: Props) {
   return (
-    <View testID="family-contact" style={styles.card}>
-      <Text style={styles.title} accessibilityRole="header">
-        Contato da família
-      </Text>
+    <Section testID="family-contact" title="Contato da família">
       {phone ? (
         <>
           <Text style={styles.phone}>{formatPhone(phone)}</Text>
           <View style={styles.actions}>
-            <Pressable
+            <PrimaryButton
               testID="family-call"
-              accessibilityRole="button"
-              accessibilityLabel={`Ligar para ${formatPhone(phone)}`}
+              title="Ligar"
+              variant="outline"
               style={styles.action}
               onPress={() => void Linking.openURL(`tel:+55${phone}`)}
-            >
-              <Ionicons name="call-outline" size={16} color={COLORS.white} />
-              <Text style={styles.actionLabel}>Ligar</Text>
-            </Pressable>
-            <Pressable
+            />
+            <PrimaryButton
               testID="family-whatsapp"
-              accessibilityRole="button"
-              accessibilityLabel={`Abrir WhatsApp com ${formatPhone(phone)}`}
-              style={[styles.action, styles.whatsapp]}
+              title="WhatsApp"
+              variant="outline"
+              style={styles.action}
               onPress={() => void Linking.openURL(`https://wa.me/55${phone}`)}
-            >
-              <Ionicons name="logo-whatsapp" size={16} color={COLORS.white} />
-              <Text style={styles.actionLabel}>WhatsApp</Text>
-            </Pressable>
+            />
           </View>
         </>
       ) : (
         <Text style={styles.body}>
-          Nenhum telefone cadastrado. Edite o idoso para adicionar o telefone da
-          família.
+          Nenhum telefone cadastrado. Toque em Editar, em Dados do idoso, para
+          adicionar o telefone da família.
         </Text>
       )}
       {notes ? (
-        <>
+        <View style={styles.notes}>
           <Text style={styles.notesTitle}>Observações</Text>
           <Text style={styles.body}>{notes}</Text>
-        </>
+        </View>
       ) : null}
-    </View>
+    </Section>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    borderWidth: 1,
-    borderColor: COLORS.grey300,
-    borderRadius: 12,
-    padding: 16,
-    gap: 10,
-  },
-  title: {
-    fontFamily: FONTS.extraBold,
-    fontSize: 18,
-    color: COLORS.heading,
-  },
   phone: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 16,
-    color: COLORS.text,
+    ...TYPE.bodyStrong,
+    fontSize: 18,
+    lineHeight: 24,
   },
   actions: {
     flexDirection: "row",
-    gap: 8,
+    gap: SPACING.sm,
   },
   action: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    minHeight: 44,
-    paddingHorizontal: 16,
-    borderRadius: 22,
-    backgroundColor: COLORS.primary,
+    flex: 1,
   },
-  whatsapp: {
-    backgroundColor: COLORS.green,
-  },
-  actionLabel: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 14,
-    color: COLORS.white,
+  notes: {
+    gap: SPACING.xs,
   },
   notesTitle: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 13,
-    color: COLORS.heading,
+    ...TYPE.label,
   },
   body: {
-    fontFamily: FONTS.regular,
-    fontSize: 13,
-    lineHeight: 18,
-    color: COLORS.text,
+    ...TYPE.body,
   },
 });
