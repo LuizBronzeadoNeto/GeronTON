@@ -29,6 +29,16 @@ describe("login", () => {
     });
   });
 
+  it("rejects with a Portuguese message when the server is unreachable", async () => {
+    mockedPost.mockRejectedValue(
+      Object.assign(new Error("Network Error"), { isAxiosError: true }),
+    );
+
+    await expect(login("x@y.com", "senha")).rejects.toThrow(
+      "Sem conexão com o servidor. Verifique a internet e tente de novo.",
+    );
+  });
+
   it("rejects with 'Invalid credentials' on a 401", async () => {
     mockedPost.mockRejectedValue(
       Object.assign(new Error("Request failed with status code 401"), {
@@ -42,9 +52,11 @@ describe("login", () => {
     );
   });
 
-  it("rethrows other errors untouched", async () => {
-    mockedPost.mockRejectedValue(new Error("Network Error"));
+  it("falls back to a Portuguese message for other errors", async () => {
+    mockedPost.mockRejectedValue(new Error("Something odd"));
 
-    await expect(login("x@y.com", "pw")).rejects.toThrow("Network Error");
+    await expect(login("x@y.com", "pw")).rejects.toThrow(
+      "Não foi possível entrar. Tente de novo.",
+    );
   });
 });

@@ -22,10 +22,18 @@ export function setOnUnauthorized(handler: (() => void) | null): void {
 }
 
 /**
+ * A weak mobile connection must fail visibly instead of spinning forever.
+ */
+const REQUEST_TIMEOUT_MS = 15_000;
+
+/**
  * Axios instance for the backend. A request interceptor attaches the current
  * bearer token (see setAuthToken) so the token-protected routes can be reached.
  */
-export const http = axios.create({ baseURL: BASE_URL });
+export const http = axios.create({
+  baseURL: BASE_URL,
+  timeout: REQUEST_TIMEOUT_MS,
+});
 
 http.interceptors.request.use((config) => {
   if (authToken) {

@@ -74,7 +74,9 @@ describe("LoginScreen", () => {
 
     await waitFor(() => expect(screen.getByTestId("login-error")).toBeTruthy());
     expect(screen.getByText("E-mail ou Senha incorretos")).toBeTruthy();
-    expect(screen.getByText("Tente novamente, ou altere a senha")).toBeTruthy();
+    expect(
+      screen.getByText("Confira o e-mail e a senha e tente de novo."),
+    ).toBeTruthy();
   });
 
   it("dismisses the error toast when its close button is pressed", async () => {

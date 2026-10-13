@@ -38,7 +38,11 @@ export function LoginScreen({ navigation }: Props) {
     try {
       await signIn(email.trim(), password);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Não foi possível entrar. Tente de novo.",
+      );
     }
   }
 
@@ -139,7 +143,7 @@ export function LoginScreen({ navigation }: Props) {
             }
             message={
               error === "Invalid credentials"
-                ? "Tente novamente, ou altere a senha"
+                ? "Confira o e-mail e a senha e tente de novo."
                 : error
             }
             onDismiss={() => setError(null)}
