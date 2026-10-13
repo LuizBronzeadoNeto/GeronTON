@@ -1,4 +1,11 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useEffect } from "react";
+import {
+  AccessibilityInfo,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS, FONTS } from "../theme";
 
@@ -7,6 +14,8 @@ interface Props {
   message: string;
   critical?: boolean;
   onDismiss: () => void;
+  /** Makes the card's body tappable, e.g. to open the elder it is about. */
+  onPress?: () => void;
   testID?: string;
 }
 
@@ -16,22 +25,24 @@ interface Props {
  * button. Critical notifications use the danger palette with a warning icon;
  * regular ones use the success palette with a checkmark. Like ErrorToast it
  * only renders the card, the caller (NotificationProvider) decides where it
- * floats and controls visibility.
+ * floats and controls visibility. Screen readers announce it on arrival.
  */
 export function NotificationToast({
   title,
   message,
   critical = false,
   onDismiss,
+  onPress,
   testID,
 }: Props) {
   const accent = critical ? COLORS.danger : COLORS.success;
 
-  return (
-    <View
-      testID={testID}
-      style={[styles.card, critical ? styles.cardCritical : styles.cardRegular]}
-    >
+  useEffect(() => {
+    AccessibilityInfo.announceForAccessibility(`${title}. ${message}`);
+  }, [title, message]);
+
+  const body = (
+    <>
       <View
         style={[
           styles.iconBadge,
@@ -48,6 +59,29 @@ export function NotificationToast({
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.message}>{message}</Text>
       </View>
+    </>
+  );
+
+  return (
+    <View
+      testID={testID}
+      accessibilityRole="alert"
+      accessibilityLiveRegion={critical ? "assertive" : "polite"}
+      style={[styles.card, critical ? styles.cardCritical : styles.cardRegular]}
+    >
+      {onPress ? (
+        <Pressable
+          testID={testID ? `${testID}-open` : undefined}
+          accessibilityRole="button"
+          accessibilityHint="Abre o idoso"
+          style={styles.body}
+          onPress={onPress}
+        >
+          {body}
+        </Pressable>
+      ) : (
+        <View style={styles.body}>{body}</View>
+      )}
       <Pressable
         testID={testID ? `${testID}-dismiss` : undefined}
         accessibilityRole="button"
@@ -84,6 +118,12 @@ const styles = StyleSheet.create({
   cardCritical: {
     borderColor: "rgba(224, 45, 60, 0.2)",
     backgroundColor: COLORS.dangerBg,
+  },
+  body: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
   },
   iconBadge: {
     width: 32,

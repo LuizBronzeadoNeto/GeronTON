@@ -7,6 +7,7 @@ import { PrimaryButton } from "../components/PrimaryButton";
 import { brDateToIso, maskBrDate } from "../utils/date";
 import { cpfToDigits, maskCpf } from "../utils/cpf";
 import { COLORS, FONTS } from "../theme";
+import { FormError } from "../components/FormError";
 
 type Props = NativeStackScreenProps<AppStackParamList, "ProfileIdentification">;
 
@@ -106,9 +107,11 @@ export function ProfileIdentificationScreen({ navigation }: Props) {
         </Text>
 
         {error ? (
-          <Text testID="profile-identification-error" style={styles.error}>
-            {error}
-          </Text>
+          <FormError
+            testID="profile-identification-error"
+            style={styles.error}
+            message={error}
+          />
         ) : null}
 
         <PrimaryButton
@@ -167,9 +170,11 @@ export function ProfileIdentificationScreen({ navigation }: Props) {
       />
 
       {error ? (
-        <Text testID="profile-identification-error" style={styles.error}>
-          {error}
-        </Text>
+        <FormError
+          testID="profile-identification-error"
+          style={styles.error}
+          message={error}
+        />
       ) : null}
 
       <PrimaryButton

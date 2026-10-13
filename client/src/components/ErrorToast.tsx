@@ -1,4 +1,11 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useEffect } from "react";
+import {
+  AccessibilityInfo,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS, FONTS } from "../theme";
 
@@ -13,11 +20,21 @@ interface Props {
  * Error toast from the Figma design: a light red card with a circular alert
  * badge, a title/message pair and an X dismiss button. It only renders the
  * card — the caller decides where it floats (e.g. absolutely at the top of the
- * login screen) and controls visibility via conditional rendering.
+ * login screen) and controls visibility via conditional rendering. Screen
+ * readers announce it as soon as it appears.
  */
 export function ErrorToast({ title, message, onDismiss, testID }: Props) {
+  useEffect(() => {
+    AccessibilityInfo.announceForAccessibility(`${title}. ${message}`);
+  }, [title, message]);
+
   return (
-    <View testID={testID} style={styles.card}>
+    <View
+      testID={testID}
+      accessibilityRole="alert"
+      accessibilityLiveRegion="assertive"
+      style={styles.card}
+    >
       <View style={styles.iconBadge}>
         <Ionicons name="alert-circle-outline" size={18} color={COLORS.danger} />
       </View>

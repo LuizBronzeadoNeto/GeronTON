@@ -22,6 +22,7 @@ import { TagListInput } from "../components/TagListInput";
 import { brDateToIso, isoToBrDate, maskBrDate } from "../utils/date";
 import { maskCpf } from "../utils/cpf";
 import { COLORS, FONTS } from "../theme";
+import { FormError } from "../components/FormError";
 
 type Props = NativeStackScreenProps<AppStackParamList, "ProfileForm">;
 
@@ -245,9 +246,11 @@ export function ProfileFormScreen({ navigation, route }: Props) {
       />
 
       {error ? (
-        <Text testID="profile-form-error" style={styles.error}>
-          {error}
-        </Text>
+        <FormError
+          testID="profile-form-error"
+          style={styles.error}
+          message={error}
+        />
       ) : null}
 
       <PrimaryButton

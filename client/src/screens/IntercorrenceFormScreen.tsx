@@ -21,6 +21,7 @@ import { ProfileHeader } from "../components/ProfileHeader";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { SelectField } from "../components/SelectField";
 import { COLORS, FONTS } from "../theme";
+import { FormError } from "../components/FormError";
 
 type Props = NativeStackScreenProps<AppStackParamList, "IntercorrenceForm">;
 
@@ -137,9 +138,11 @@ export function IntercorrenceFormScreen({ navigation, route }: Props) {
       />
 
       {error ? (
-        <Text testID="intercorrence-error" style={styles.error}>
-          {error}
-        </Text>
+        <FormError
+          testID="intercorrence-error"
+          style={styles.error}
+          message={error}
+        />
       ) : null}
 
       <PrimaryButton

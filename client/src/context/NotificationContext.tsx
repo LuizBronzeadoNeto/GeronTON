@@ -16,6 +16,8 @@ export interface AppNotification {
   title: string;
   message: string;
   critical?: boolean;
+  /** Runs when the toast is tapped, e.g. to open the elder it is about. */
+  onPress?: () => void;
 }
 
 interface NotificationContextValue {
@@ -26,12 +28,13 @@ const NotificationContext = createContext<NotificationContextValue | undefined>(
   undefined,
 );
 
-const AUTO_DISMISS_MS = 6000;
+const AUTO_DISMISS_MS = 10000;
 
 /**
  * App-wide in-app notifications: `notify` floats a NotificationToast over
  * whatever screen is visible (below the status bar), replacing any previous
- * one. The toast auto-dismisses after a few seconds or on its X button.
+ * one. A regular toast auto-dismisses after a few seconds or on its X button;
+ * a critical one stays until dismissed, so it cannot be missed.
  * Registered above the navigator so a notification survives the navigation
  * that usually follows the action that raised it.
  */
@@ -62,6 +65,7 @@ export function NotificationProvider({
     (notification: AppNotification) => {
       clearTimer();
       setCurrent(notification);
+      if (notification.critical) return;
       timer.current = setTimeout(() => {
         timer.current = null;
         setCurrent(null);
@@ -89,6 +93,14 @@ export function NotificationProvider({
               message={current.message}
               critical={current.critical}
               onDismiss={dismiss}
+              onPress={
+                current.onPress
+                  ? () => {
+                      current.onPress?.();
+                      dismiss();
+                    }
+                  : undefined
+              }
             />
           </View>
         ) : null}

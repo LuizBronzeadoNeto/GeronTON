@@ -44,6 +44,7 @@ import { useAuth } from "../context/AuthContext";
 import { useNotification } from "../context/NotificationContext";
 import { clearDraft, loadDraft, saveDraft } from "../utils/checkInDraft";
 import { COLORS, FONTS } from "../theme";
+import { FormError } from "../components/FormError";
 
 type Props = NativeStackScreenProps<AppStackParamList, "WeeklyCheckIn">;
 
@@ -527,9 +528,11 @@ export function WeeklyCheckInScreen({ navigation, route }: Props) {
       ) : null}
 
       {error ? (
-        <Text testID="checkin-error" style={styles.error}>
-          {error}
-        </Text>
+        <FormError
+          testID="checkin-error"
+          style={styles.error}
+          message={error}
+        />
       ) : null}
 
       <View style={styles.navRow}>
