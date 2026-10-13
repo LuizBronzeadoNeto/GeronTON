@@ -2,7 +2,6 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -42,6 +41,7 @@ import { RiskStatusBadge } from "../components/RiskStatusBadge";
 import { SeverityPill } from "../components/SeverityPill";
 import { ageInYears, isoToBrDate } from "../utils/date";
 import { COLORS, FONTS } from "../theme";
+import { confirmDestructive } from "../utils/confirm";
 
 type Props = NativeStackScreenProps<AppStackParamList, "ProfileDetail">;
 
@@ -169,50 +169,36 @@ export function ProfileDetailScreen({ navigation, route }: Props) {
   }
 
   function confirmDeleteMissedSignal(id: number) {
-    Alert.alert(
+    confirmDestructive(
       "Remover registro",
       "Tem certeza que deseja remover este sinal não detectado?",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Remover",
-          style: "destructive",
-          onPress: async () => {
-            const previous = missedSignals;
-            setMissedSignals((old) => old.filter((item) => item.id !== id));
-            try {
-              await deleteMissedSignal(profileId, id);
-            } catch {
-              setMissedSignals(previous);
-              setError("Não foi possível remover o registro.");
-            }
-          },
-        },
-      ],
+      async () => {
+        const previous = missedSignals;
+        setMissedSignals((old) => old.filter((item) => item.id !== id));
+        try {
+          await deleteMissedSignal(profileId, id);
+        } catch {
+          setMissedSignals(previous);
+          setError("Não foi possível remover o registro.");
+        }
+      },
     );
   }
 
   function confirmDeleteIntercorrence(id: number) {
-    Alert.alert(
+    confirmDestructive(
       "Remover intercorrência",
       "Tem certeza que deseja remover este registro?",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Remover",
-          style: "destructive",
-          onPress: async () => {
-            const previous = intercorrences;
-            setIntercorrences((old) => old.filter((item) => item.id !== id));
-            try {
-              await deleteIntercorrence(profileId, id);
-            } catch {
-              setIntercorrences(previous);
-              setError("Não foi possível remover a intercorrência.");
-            }
-          },
-        },
-      ],
+      async () => {
+        const previous = intercorrences;
+        setIntercorrences((old) => old.filter((item) => item.id !== id));
+        try {
+          await deleteIntercorrence(profileId, id);
+        } catch {
+          setIntercorrences(previous);
+          setError("Não foi possível remover a intercorrência.");
+        }
+      },
     );
   }
 

@@ -1,7 +1,6 @@
 import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   Pressable,
   StyleSheet,
@@ -19,6 +18,7 @@ import {
 } from "../api/medications";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { COLORS, FONTS } from "../theme";
+import { confirmDestructive } from "../utils/confirm";
 
 type Props = NativeStackScreenProps<AppStackParamList, "MedicationInventory">;
 
@@ -57,28 +57,19 @@ export function MedicationInventoryScreen({ route, navigation }: Props) {
   );
 
   function handleDelete(medicationId: number) {
-    Alert.alert(
+    confirmDestructive(
       "Remover medicamento",
       "Tem certeza que deseja remover este medicamento?",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Remover",
-          style: "destructive",
-          onPress: async () => {
-            const previousMedications = medications;
-            setMedications((old) =>
-              old.filter((item) => item.id !== medicationId),
-            );
-            try {
-              await deleteMedication(profileId, medicationId);
-            } catch {
-              setMedications(previousMedications);
-              setError("Não foi possível remover o medicamento.");
-            }
-          },
-        },
-      ],
+      async () => {
+        const previousMedications = medications;
+        setMedications((old) => old.filter((item) => item.id !== medicationId));
+        try {
+          await deleteMedication(profileId, medicationId);
+        } catch {
+          setMedications(previousMedications);
+          setError("Não foi possível remover o medicamento.");
+        }
+      },
     );
   }
 

@@ -1,11 +1,5 @@
 import { useCallback, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  StyleSheet,
-  Text,
-} from "react-native";
+import { ActivityIndicator, FlatList, StyleSheet, Text } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { AppStackParamList } from "../types/navigation";
@@ -17,6 +11,7 @@ import {
 import { ProfileHeader } from "../components/ProfileHeader";
 import { IntercorrenceRow } from "../components/IntercorrenceRow";
 import { COLORS, FONTS } from "../theme";
+import { confirmDestructive } from "../utils/confirm";
 
 type Props = NativeStackScreenProps<AppStackParamList, "IntercorrenceList">;
 
@@ -54,26 +49,19 @@ export function IntercorrenceListScreen({ route }: Props) {
   );
 
   function confirmDelete(id: number) {
-    Alert.alert(
+    confirmDestructive(
       "Remover intercorrência",
       "Tem certeza que deseja remover este registro?",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Remover",
-          style: "destructive",
-          onPress: async () => {
-            const previous = intercorrences;
-            setIntercorrences((old) => old.filter((item) => item.id !== id));
-            try {
-              await deleteIntercorrence(profileId, id);
-            } catch {
-              setIntercorrences(previous);
-              setError("Não foi possível remover a intercorrência.");
-            }
-          },
-        },
-      ],
+      async () => {
+        const previous = intercorrences;
+        setIntercorrences((old) => old.filter((item) => item.id !== id));
+        try {
+          await deleteIntercorrence(profileId, id);
+        } catch {
+          setIntercorrences(previous);
+          setError("Não foi possível remover a intercorrência.");
+        }
+      },
     );
   }
 
