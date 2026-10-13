@@ -5,6 +5,7 @@ export type RiskLevel = "low" | "moderate" | "high" | "unknown";
 export interface RiskStatus {
   status: RiskLevel;
   score: number;
+  criticalEvents: string[];
 }
 
 /**
@@ -69,15 +70,29 @@ function weeklyEventPoints(event: string): number {
 /**
  * Acute-event types the interface maps as immediate high risk, mirroring the
  * weekly native critical tags (fever, shortness of breath, active bleeding,
- * acute confusion). Registering one of these elevates the elderly person to
- * critical status regardless of the severity the caregiver selected.
+ * acute confusion), plus chest pain and choking, which are emergencies
+ * whatever severity the caregiver picked. Registering one of these elevates
+ * the elderly person to critical status regardless of the severity selected.
  */
 export const CRITICAL_EVENT_TYPES: ReadonlySet<string> = new Set([
   "fever",
   "breathing_difficulties",
   "bleeding",
   "confusion",
+  "chest_pain",
+  "choking",
 ]);
+
+/**
+ * Whether an intercorrence counts as critical: the caregiver's own flag, or an
+ * event type that is critical whatever they selected.
+ */
+export function isCriticalIntercorrence(event: {
+  eventType: string;
+  isCritical: boolean;
+}): boolean {
+  return event.isCritical || CRITICAL_EVENT_TYPES.has(event.eventType);
+}
 
 const MODERATE_THRESHOLD = 6;
 const HIGH_THRESHOLD = 12;
@@ -91,6 +106,20 @@ const DIASTOLIC_HYPOTENSION_LIMIT = 60;
 const GLYCEMIA_DECOMPENSATION_LIMIT = 200;
 
 /**
+ * Below this both blood-pressure numbers are in cmHg, as in the spoken
+ * Brazilian "12 por 8".
+ */
+const CMHG_LIMIT = 30;
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * A weekly check-in older than this no longer describes how the elder is now,
+ * so it stops counting towards the risk status.
+ */
+export const STALE_CHECKIN_DAYS = 14;
+
+/**
  * Extracts the first numeric value from a free-text vital-sign entry ("95%",
  * "30,5 cm"), accepting a decimal comma. Returns null when there is none.
  */
@@ -101,19 +130,22 @@ function parseMeasurement(value: string | null): number | null {
 }
 
 /**
- * Extracts a systolic/diastolic pair from a free-text blood-pressure entry
- * ("140/90", "12x8"). Returns null unless both numbers are present.
+ * Extracts a systolic/diastolic pair in mmHg from a free-text blood-pressure
+ * entry ("140/90", "12x8", "12 por 8"). Readings written in cmHg are scaled to
+ * mmHg. Returns null unless both numbers are present.
  */
 function parsePressure(
   value: string | null,
 ): { systolic: number; diastolic: number } | null {
   if (!value) return null;
-  const match = value.match(/(\d+(?:[.,]\d+)?)\s*[/xX]\s*(\d+(?:[.,]\d+)?)/);
+  const match = value.match(
+    /(\d+(?:[.,]\d+)?)\s*(?:[/x]|por)\s*(\d+(?:[.,]\d+)?)/i,
+  );
   if (!match) return null;
-  return {
-    systolic: Number(match[1].replace(",", ".")),
-    diastolic: Number(match[2].replace(",", ".")),
-  };
+  const systolic = Number(match[1].replace(",", "."));
+  const diastolic = Number(match[2].replace(",", "."));
+  const scale = systolic < CMHG_LIMIT && diastolic < CMHG_LIMIT ? 10 : 1;
+  return { systolic: systolic * scale, diastolic: diastolic * scale };
 }
 
 /**
@@ -159,7 +191,7 @@ function evaluateVitalSigns(checkIn: CheckIn): {
         : `abaixo de ${SYSTOLIC_HYPOTENSION_LIMIT}/${DIASTOLIC_HYPOTENSION_LIMIT}`;
       flags.push({
         type: "clinical_warning",
-        message: `Pressão arterial ${checkIn.pressure}, ${limit}`,
+        message: `Pressão arterial ${pressure.systolic}/${pressure.diastolic}, ${limit}`,
       });
     }
   }
@@ -237,11 +269,7 @@ function levelFromScore(score: number): RiskLevel {
  * override ("low" floor).
  */
 function acuteEventFloor(recentIntercorrences: Intercorrence[]): RiskLevel {
-  if (
-    recentIntercorrences.some(
-      (event) => event.isCritical || CRITICAL_EVENT_TYPES.has(event.eventType),
-    )
-  ) {
+  if (recentIntercorrences.some(isCriticalIntercorrence)) {
     return "high";
   }
   return recentIntercorrences.length > 0 ? "moderate" : "low";
@@ -259,19 +287,28 @@ const LEVEL_ORDER: Record<RiskLevel, number> = {
  * recent intercorrences (the caller decides the window, typically 30 days). The
  * weekly score maps to a state (0–5 low, 6–11 moderate, 12+ high) and acute
  * events act as a floor on top of it: a critical one forces "high", any other
- * forces at least "moderate", and the more severe status always prevails. With
- * no check-in and no intercorrences there is nothing to assess and the status
- * is "unknown".
+ * forces at least "moderate", and the more severe status always prevails. A
+ * check-in older than STALE_CHECKIN_DAYS is ignored, so a family that stopped
+ * reporting does not keep showing an old "stable". With no recent check-in and
+ * no intercorrences there is nothing to assess and the status is "unknown".
  */
 export function computeRiskStatus(
   latestCheckIn: CheckIn | null,
   recentIntercorrences: Intercorrence[],
+  now = new Date(),
 ): RiskStatus {
-  if (!latestCheckIn && recentIntercorrences.length === 0) {
-    return { status: "unknown", score: 0 };
+  const checkIn =
+    latestCheckIn &&
+    now.getTime() - latestCheckIn.date.getTime() <= STALE_CHECKIN_DAYS * DAY_MS
+      ? latestCheckIn
+      : null;
+
+  if (!checkIn && recentIntercorrences.length === 0) {
+    return { status: "unknown", score: 0, criticalEvents: [] };
   }
 
-  const score = latestCheckIn ? evaluateCheckIn(latestCheckIn).score : 0;
+  const evaluation = checkIn ? evaluateCheckIn(checkIn) : null;
+  const score = evaluation?.score ?? 0;
   const weeklyLevel = levelFromScore(score);
   const acuteLevel = acuteEventFloor(recentIntercorrences);
   const status =
@@ -279,5 +316,5 @@ export function computeRiskStatus(
       ? acuteLevel
       : weeklyLevel;
 
-  return { status, score };
+  return { status, score, criticalEvents: evaluation?.criticalEvents ?? [] };
 }

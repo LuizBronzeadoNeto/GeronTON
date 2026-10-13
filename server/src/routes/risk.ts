@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import { loadProfile } from "../middleware/loadProfile.js";
 import { prisma } from "../lib/prisma.js";
-import { computeRiskStatus, evaluateCheckIn } from "../utils/risk.js";
+import { computeRiskStatus } from "../utils/risk.js";
 
 const router = Router({ mergeParams: true });
 
@@ -35,15 +35,10 @@ router.get("/", async (req: Request, res: Response) => {
   ]);
 
   const risk = computeRiskStatus(latestCheckIn, recentIntercorrences);
-  const criticalEvents = latestCheckIn
-    ? evaluateCheckIn(latestCheckIn).criticalEvents
-    : [];
 
   return res.json({
     profileId,
-    status: risk.status,
-    score: risk.score,
-    criticalEvents,
+    ...risk,
     evaluatedAt: new Date().toISOString(),
   });
 });

@@ -14,7 +14,7 @@ const EVENT_TYPE_LABELS: Record<EventType, string> = {
   breathing_difficulties: "Falta de ar",
   bleeding: "Sangramento",
   confusion: "Confusão aguda",
-  chest_pain: "Dor torácica",
+  chest_pain: "Dor no peito",
   other: "Outro",
 };
 
