@@ -176,7 +176,9 @@ describe("evaluateCheckIn — vital-sign outlier filter", () => {
 
 describe("computeRiskStatus — threshold boundaries (check-in only)", () => {
   it("score 5 is low, score 6 is moderate", () => {
-    expect(computeRiskStatus(checkIn({ chokingIncident: true }), [])).toMatchObject({
+    expect(
+      computeRiskStatus(checkIn({ chokingIncident: true }), []),
+    ).toMatchObject({
       status: "low",
       score: 5,
     });
@@ -328,6 +330,7 @@ describe("computeRiskStatus — stale check-ins", () => {
       status: "unknown",
       score: 0,
       criticalEvents: [],
+      reasons: ["Sem check-in nas últimas 2 semanas"],
     });
   });
 
@@ -343,5 +346,35 @@ describe("computeRiskStatus — stale check-ins", () => {
       status: "high",
       score: 12,
     });
+  });
+});
+
+describe("risk reasons", () => {
+  it("lists what added points to the weekly score", () => {
+    const { factors } = evaluateCheckIn(
+      checkIn({ unstableGait: true, appetite: "bad", weeklyEvents: ["fever"] }),
+    );
+    expect(factors).toEqual([
+      { label: "Andando com mais dificuldade", points: 4 },
+      { label: "Febre na semana", points: 5 },
+      { label: "Apetite ruim", points: 3 },
+    ]);
+  });
+
+  it("explains the status with the check-in and the recent events", () => {
+    const { reasons } = computeRiskStatus(checkIn({ unstableGait: true }), [
+      intercorrence(true),
+    ]);
+    expect(reasons).toEqual([
+      "Intercorrência crítica nos últimos 30 dias",
+      "Andando com mais dificuldade (+4)",
+    ]);
+  });
+
+  it("says when there is no recent check-in", () => {
+    expect(computeRiskStatus(null, [intercorrence(false)]).reasons).toEqual([
+      "Intercorrência nos últimos 30 dias",
+      "Sem check-in nas últimas 2 semanas",
+    ]);
   });
 });

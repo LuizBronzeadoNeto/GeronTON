@@ -16,6 +16,7 @@ function riskFor(profileId: number, status: RiskLevel): RiskStatus {
     status,
     score: 0,
     criticalEvents: [],
+    reasons: [],
     evaluatedAt: "2026-07-01T00:00:00Z",
   };
 }

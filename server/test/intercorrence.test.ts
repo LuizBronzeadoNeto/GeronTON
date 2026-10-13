@@ -75,7 +75,7 @@ describe("POST /perfis/:perfilId/intercorrencias", () => {
   });
 
   it("reports the team was notified only for critical events", async () => {
-    await signUpProfessional(PRO_EMAIL, "77003-PB");
+    await signUpProfessional(PRO_EMAIL, "77020-PB");
     await grantProfileAccess(perfilId, PRO_EMAIL);
 
     const critical = await request(app)

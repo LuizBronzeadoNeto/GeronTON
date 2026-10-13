@@ -1,4 +1,5 @@
 import type { CheckIn, Intercorrence } from "@prisma/client";
+import { weeklyEventLabel } from "./labels.js";
 
 export type RiskLevel = "low" | "moderate" | "high" | "unknown";
 
@@ -6,6 +7,19 @@ export interface RiskStatus {
   status: RiskLevel;
   score: number;
   criticalEvents: string[];
+  /**
+   * Why the status is what it is, in plain words: the recent events and the
+   * check-in answers that added points, e.g. "Apetite ruim (+3)".
+   */
+  reasons: string[];
+}
+
+/**
+ * One check-in answer that added to the weekly score, and by how much.
+ */
+export interface RiskFactor {
+  label: string;
+  points: number;
 }
 
 /**
@@ -25,6 +39,7 @@ export interface ClinicalFlag {
 
 export interface CheckInEvaluation {
   score: number;
+  factors: RiskFactor[];
   flags: ClinicalFlag[];
   criticalEvents: string[];
 }
@@ -157,20 +172,26 @@ function parsePressure(
  * warning flags, without scoring.
  */
 function evaluateVitalSigns(checkIn: CheckIn): {
-  points: number;
+  factors: RiskFactor[];
   flags: ClinicalFlag[];
 } {
-  let points = 0;
+  const factors: RiskFactor[] = [];
   const flags: ClinicalFlag[] = [];
 
   const saturation = parseMeasurement(checkIn.saturation);
   if (saturation !== null && saturation < SATURATION_HYPOXIA_LIMIT) {
-    points += 4;
+    factors.push({
+      label: `Saturação abaixo de ${SATURATION_HYPOXIA_LIMIT}%`,
+      points: 4,
+    });
   }
 
   const calf = parseMeasurement(checkIn.calfCircumference);
   if (calf !== null && calf < CALF_SARCOPENIA_LIMIT_CM) {
-    points += 2;
+    factors.push({
+      label: `Panturrilha abaixo de ${CALF_SARCOPENIA_LIMIT_CM} cm`,
+      points: 2,
+    });
     flags.push({
       type: "sarcopenia_risk",
       message: `Panturrilha esquerda com ${checkIn.calfCircumference}, abaixo de ${CALF_SARCOPENIA_LIMIT_CM} cm`,
@@ -204,7 +225,7 @@ function evaluateVitalSigns(checkIn: CheckIn): {
     });
   }
 
-  return { points, flags };
+  return { factors, flags };
 }
 
 /**
@@ -216,34 +237,36 @@ function evaluateVitalSigns(checkIn: CheckIn): {
  * and the native-critical weekly events for the dashboard's visual flag.
  */
 export function evaluateCheckIn(checkIn: CheckIn): CheckInEvaluation {
-  let score = 0;
+  const factors: RiskFactor[] = [];
+  const add = (applies: boolean, points: number, label: string) => {
+    if (applies) factors.push({ label, points });
+  };
 
-  if (checkIn.skinIssues) score += 3;
-  if (!checkIn.bowelRegular) score += 2;
-  if (!checkIn.sleepWell) score += 2;
-  if (checkIn.unstableGait) score += 4;
-
+  add(checkIn.skinIssues, 3, "Mancha ou vermelhidão na pele");
+  add(!checkIn.bowelRegular, 2, "Intestino irregular");
+  add(!checkIn.sleepWell, 2, "Noites mal dormidas");
+  add(checkIn.unstableGait, 4, "Andando com mais dificuldade");
   for (const event of checkIn.weeklyEvents) {
-    score += weeklyEventPoints(event);
+    add(true, weeklyEventPoints(event), `${weeklyEventLabel(event)} na semana`);
   }
 
   const vitals = evaluateVitalSigns(checkIn);
-  score += vitals.points;
+  factors.push(...vitals.factors);
 
-  if (checkIn.appetite === "bad") score += 3;
-  else if (checkIn.appetite === "regular") score += 1;
-  if (checkIn.chokingIncident) score += 5;
-  if (!checkIn.hydrationGoal) score += 2;
-  if (!checkIn.medsOnTime) score += 3;
-
-  if (checkIn.mood === "sad" || checkIn.mood === "very_sad") score += 2;
-  else if (checkIn.mood === "neutral") score += 1;
-  if (!checkIn.sunExposure) score += 1;
-  if (!checkIn.selfExpression) score += 1;
-  if (!checkIn.stimulation) score += 1;
+  add(checkIn.appetite === "bad", 3, "Apetite ruim");
+  add(checkIn.appetite === "regular", 1, "Apetite regular");
+  add(checkIn.chokingIncident, 5, "Engasgo ao comer ou beber");
+  add(!checkIn.hydrationGoal, 2, "Não bebeu água suficiente");
+  add(!checkIn.medsOnTime, 3, "Remédios fora do horário ou recusados");
+  add(checkIn.mood === "sad" || checkIn.mood === "very_sad", 2, "Humor triste");
+  add(checkIn.mood === "neutral", 1, "Humor neutro");
+  add(!checkIn.sunExposure, 1, "Não tomou sol nem saiu do quarto");
+  add(!checkIn.selfExpression, 1, "Dificuldade para se expressar");
+  add(!checkIn.stimulation, 1, "Sem estímulos na semana");
 
   return {
-    score,
+    score: factors.reduce((sum, factor) => sum + factor.points, 0),
+    factors,
     flags: vitals.flags,
     criticalEvents: checkIn.weeklyEvents.filter((event) =>
       CRITICAL_WEEKLY_EVENTS.has(event),
@@ -275,6 +298,20 @@ function acuteEventFloor(recentIntercorrences: Intercorrence[]): RiskLevel {
   return recentIntercorrences.length > 0 ? "moderate" : "low";
 }
 
+/**
+ * The acute-event part of the explanation, matching acuteEventFloor.
+ */
+function acuteReason(recentIntercorrences: Intercorrence[]): string | null {
+  if (recentIntercorrences.some(isCriticalIntercorrence)) {
+    return "Intercorrência crítica nos últimos 30 dias";
+  }
+  return recentIntercorrences.length > 0
+    ? "Intercorrência nos últimos 30 dias"
+    : null;
+}
+
+const NO_RECENT_CHECKIN = "Sem check-in nas últimas 2 semanas";
+
 const LEVEL_ORDER: Record<RiskLevel, number> = {
   unknown: 0,
   low: 1,
@@ -291,6 +328,8 @@ const LEVEL_ORDER: Record<RiskLevel, number> = {
  * check-in older than STALE_CHECKIN_DAYS is ignored, so a family that stopped
  * reporting does not keep showing an old "stable". With no recent check-in and
  * no intercorrences there is nothing to assess and the status is "unknown".
+ * The reasons explain the result: the acute events first (the caller's window
+ * is 30 days), then each check-in answer that added points.
  */
 export function computeRiskStatus(
   latestCheckIn: CheckIn | null,
@@ -304,7 +343,12 @@ export function computeRiskStatus(
       : null;
 
   if (!checkIn && recentIntercorrences.length === 0) {
-    return { status: "unknown", score: 0, criticalEvents: [] };
+    return {
+      status: "unknown",
+      score: 0,
+      criticalEvents: [],
+      reasons: [NO_RECENT_CHECKIN],
+    };
   }
 
   const evaluation = checkIn ? evaluateCheckIn(checkIn) : null;
@@ -316,5 +360,19 @@ export function computeRiskStatus(
       ? acuteLevel
       : weeklyLevel;
 
-  return { status, score, criticalEvents: evaluation?.criticalEvents ?? [] };
+  const reasons = [
+    acuteReason(recentIntercorrences),
+    ...(evaluation
+      ? evaluation.factors.map(
+          (factor) => `${factor.label} (+${factor.points})`,
+        )
+      : [NO_RECENT_CHECKIN]),
+  ].filter((reason): reason is string => reason !== null);
+
+  return {
+    status,
+    score,
+    criticalEvents: evaluation?.criticalEvents ?? [],
+    reasons,
+  };
 }

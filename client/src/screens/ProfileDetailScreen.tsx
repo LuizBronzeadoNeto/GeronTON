@@ -37,6 +37,7 @@ import { isCriticalEvent } from "../constants/intercorrence";
 import { useAuth } from "../context/AuthContext";
 import { AlertCard } from "../components/AlertCard";
 import { IntercorrenceRow } from "../components/IntercorrenceRow";
+import { RiskReasons } from "../components/RiskReasons";
 import { RiskStatusBadge } from "../components/RiskStatusBadge";
 import { SeverityPill } from "../components/SeverityPill";
 import { ageInYears, formatDay, isoToBrDate } from "../utils/date";
@@ -237,6 +238,7 @@ export function ProfileDetailScreen({ navigation, route }: Props) {
           Evento crítico nas últimas 2 semanas
         </Text>
       ) : null}
+      <RiskReasons profileId={profileId} />
 
       <View style={styles.actions}>
         <Pressable

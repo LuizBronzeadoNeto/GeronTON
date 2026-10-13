@@ -7,6 +7,8 @@ export interface RiskStatus {
   status: RiskLevel;
   score: number;
   criticalEvents: string[];
+  /** Why the status is what it is, e.g. "Apetite ruim (+3)". */
+  reasons: string[];
   evaluatedAt: string;
 }
 

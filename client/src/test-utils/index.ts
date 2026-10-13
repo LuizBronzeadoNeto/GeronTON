@@ -61,6 +61,7 @@ export function makeRiskStatus(
     status: "low",
     score: 0,
     criticalEvents: [],
+    reasons: [],
     evaluatedAt: "2026-06-15T00:00:00.000Z",
     ...overrides,
   };

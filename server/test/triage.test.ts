@@ -180,6 +180,11 @@ describe("GET /triagem", () => {
       status: "moderate",
       score: 9,
       criticalEvents: ["fever"],
+      reasons: [
+        "Febre na semana (+5)",
+        "Dor na semana (+2)",
+        "Tosse na semana (+2)",
+      ],
     });
   });
 
