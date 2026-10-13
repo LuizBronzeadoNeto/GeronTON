@@ -72,6 +72,8 @@ appId: com.geronton.client
 - assertVisible:
     text: "Glicemia 300.*"
 - tapOn:
+    id: "header-account"
+- tapOn:
     id: "header-signout"
 # professional side
 - tapOn:

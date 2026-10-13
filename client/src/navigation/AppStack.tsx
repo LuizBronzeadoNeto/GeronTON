@@ -3,12 +3,11 @@ import {
   type NativeStackNavigationProp,
 } from "@react-navigation/native-stack";
 import { useNavigation } from "@react-navigation/native";
-import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import type { AppStackParamList } from "../types/navigation";
 import type { Role } from "../types/auth";
-import { useAuth } from "../context/AuthContext";
 import { COLORS, FONTS } from "../theme";
 import { CaregiverHomeScreen } from "../screens/CaregiverHomeScreen";
 import { ProfessionalHomeScreen } from "../screens/ProfessionalHomeScreen";
@@ -28,58 +27,33 @@ import { RoutineRegistrationScreen } from "../screens/RoutineRegistrationScreen"
 import { MissedSignalFormScreen } from "../screens/MissedSignalFormScreen";
 import { SignalReportScreen } from "../screens/SignalReportScreen";
 import { PrivacyPolicyScreen } from "../screens/PrivacyPolicyScreen";
+import { AccountScreen } from "../screens/AccountScreen";
 
 const Stack = createNativeStackNavigator<AppStackParamList>();
 
 /**
- * "Sair" header action from the Figma design — a logout icon plus label at the
- * right edge of every signed-in screen's header.
+ * The header's single action: an account icon that opens "Conta", where the
+ * privacy policy and signing out live. One icon keeps the header symmetric
+ * with the back arrow on the left.
  *
  * The right padding is web-only: the native headers inset their right action
- * themselves, but react-native-web's fallback header does not, which left the
- * label flush against the screen edge with its last glyph reading as cut off.
+ * themselves, but react-native-web's fallback header does not.
  */
-function SignOutButton() {
-  const { signOut } = useAuth();
-
-  return (
-    <Pressable
-      testID="header-signout"
-      accessibilityRole="button"
-      style={styles.signOut}
-      onPress={signOut}
-    >
-      <Ionicons name="log-out-outline" size={22} color={COLORS.heading} />
-      <Text style={styles.signOutLabel}>Sair</Text>
-    </Pressable>
-  );
-}
-
-/**
- * Header actions on every signed-in screen: a shield that opens the privacy
- * policy (where the account can be deleted) and the "Sair" button.
- */
-function HeaderActions() {
+function AccountButton() {
   const navigation =
     useNavigation<NativeStackNavigationProp<AppStackParamList>>();
 
   return (
-    <View style={styles.headerActions}>
-      <Pressable
-        testID="header-privacy"
-        accessibilityRole="button"
-        accessibilityLabel="Privacidade e dados"
-        hitSlop={8}
-        onPress={() => navigation.navigate("PrivacyPolicy")}
-      >
-        <Ionicons
-          name="shield-checkmark-outline"
-          size={20}
-          color={COLORS.heading}
-        />
-      </Pressable>
-      <SignOutButton />
-    </View>
+    <Pressable
+      testID="header-account"
+      accessibilityRole="button"
+      accessibilityLabel="Conta"
+      hitSlop={12}
+      style={styles.account}
+      onPress={() => navigation.navigate("Account")}
+    >
+      <Ionicons name="person-circle-outline" size={28} color={COLORS.heading} />
+    </Pressable>
   );
 }
 
@@ -87,8 +61,8 @@ function HeaderActions() {
  * Navigation shown once a user is signed in. The Home screen is chosen by role:
  * caregivers (cuidador) and healthcare professionals (profissional) each get a
  * distinct home screen, and both reach the shared elderly-profile screens.
- * Headers follow the Figma design: centered Nunito Sans title, no shadow and a
- * "Sair" action on the right.
+ * Headers follow the Figma design: centered Nunito Sans title and no shadow,
+ * with a single account icon on the right.
  *
  * Only a cuidador starts at Redirect. Their landing screen depends on how many
  * profiles they have, so it can only be decided after a fetch; a profissional
@@ -125,7 +99,7 @@ export function AppStack({ role }: { role: Role }) {
           color: COLORS.heading,
         },
         headerBackButtonDisplayMode: "minimal",
-        headerRight: () => <HeaderActions />,
+        headerRight: () => <AccountButton />,
         contentStyle: {
           backgroundColor: COLORS.white,
           paddingBottom: Platform.OS === "web" ? 0 : insets.bottom,
@@ -221,25 +195,17 @@ export function AppStack({ role }: { role: Role }) {
         component={PrivacyPolicyScreen}
         options={{ title: "Privacidade" }}
       />
+      <Stack.Screen
+        name="Account"
+        component={AccountScreen}
+        options={{ title: "Conta", headerRight: () => null }}
+      />
     </Stack.Navigator>
   );
 }
 
 const styles = StyleSheet.create({
-  headerActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 16,
-  },
-  signOut: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
+  account: {
     ...Platform.select({ web: { paddingRight: 16 }, default: {} }),
-  },
-  signOutLabel: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 14,
-    color: COLORS.heading,
   },
 });

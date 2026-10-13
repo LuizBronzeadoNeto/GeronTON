@@ -133,16 +133,36 @@ describe("AppStack landing screen", () => {
     );
   });
 
-  it("opens the privacy screen from the header", async () => {
+  it("opens the account screen from the header, and privacy from there", async () => {
     renderStack("profissional");
 
     await waitFor(() =>
       expect(screen.getByTestId("professional-home")).toBeTruthy(),
     );
-    fireEvent.press(screen.getByTestId("header-privacy"));
+    fireEvent.press(screen.getByTestId("header-account"));
+
+    await waitFor(() => expect(screen.getByTestId("account")).toBeTruthy());
+    fireEvent.press(screen.getByTestId("account-privacy"));
 
     await waitFor(() =>
       expect(screen.getByTestId("delete-account")).toBeTruthy(),
     );
+  });
+
+  it("signs out from the account screen", async () => {
+    const signOut = jest.fn();
+    jest
+      .mocked(useAuth)
+      .mockReturnValue({ ...jest.mocked(useAuth)(), signOut });
+    renderStack("profissional");
+
+    await waitFor(() =>
+      expect(screen.getByTestId("professional-home")).toBeTruthy(),
+    );
+    fireEvent.press(screen.getByTestId("header-account"));
+    await waitFor(() => expect(screen.getByTestId("account")).toBeTruthy());
+    fireEvent.press(screen.getByTestId("header-signout"));
+
+    expect(signOut).toHaveBeenCalled();
   });
 });

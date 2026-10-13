@@ -29,5 +29,6 @@ export type AppStackParamList = {
   RoutineRegistration: { profileId: number };
   MissedSignalForm: { profileId: number };
   SignalReport: undefined;
+  Account: undefined;
   PrivacyPolicy: undefined;
 };
