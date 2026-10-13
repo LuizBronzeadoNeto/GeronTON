@@ -39,7 +39,7 @@ import { AlertCard } from "../components/AlertCard";
 import { IntercorrenceRow } from "../components/IntercorrenceRow";
 import { RiskStatusBadge } from "../components/RiskStatusBadge";
 import { SeverityPill } from "../components/SeverityPill";
-import { ageInYears, isoToBrDate } from "../utils/date";
+import { ageInYears, formatDay, isoToBrDate } from "../utils/date";
 import { COLORS, FONTS } from "../theme";
 import { confirmDestructive } from "../utils/confirm";
 
@@ -398,7 +398,7 @@ export function ProfileDetailScreen({ navigation, route }: Props) {
             <View style={styles.baselineRow}>
               <Text style={styles.baselineLabel}>Data</Text>
               <Text style={styles.baselineValue}>
-                {isoToBrDate(latestCheckIn.date)}
+                {formatDay(latestCheckIn.date)}
               </Text>
             </View>
             <View style={styles.baselineRow}>

@@ -4,17 +4,46 @@
  */
 
 /**
- * Returns a person's age in years for the "NN anos" subtitles.
+ * Returns a person's age in years for the "NN anos" subtitles. The birth date
+ * is a date-only field stored at UTC midnight, so its calendar parts are read
+ * from the string rather than shifted into the local timezone.
  */
 export function ageInYears(birthDate: string): number {
-  const birth = new Date(birthDate);
+  const [year, month, day] = birthDate.slice(0, 10).split("-").map(Number);
   const now = new Date();
-  let age = now.getFullYear() - birth.getFullYear();
+  let age = now.getFullYear() - year;
   const hadBirthday =
-    now.getMonth() > birth.getMonth() ||
-    (now.getMonth() === birth.getMonth() && now.getDate() >= birth.getDate());
+    now.getMonth() + 1 > month ||
+    (now.getMonth() + 1 === month && now.getDate() >= day);
   if (!hadBirthday) age -= 1;
   return age;
+}
+
+/**
+ * Formats a timestamp (check-in, alert) as the local DD/MM/AAAA day. Unlike
+ * isoToBrDate, which is for date-only fields, it converts from UTC first, so
+ * a check-in sent at 22:00 is not shown on the next day.
+ */
+export function formatDay(iso: string): string {
+  const date = new Date(iso);
+  const pad = (value: number): string => String(value).padStart(2, "0");
+  return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()}`;
+}
+
+/**
+ * Whole calendar days between a timestamp and now (0 for today).
+ */
+export function daysSince(iso: string, now = new Date()): number {
+  const start = new Date(iso);
+  const startDay = new Date(
+    start.getFullYear(),
+    start.getMonth(),
+    start.getDate(),
+  );
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.round(
+    (today.getTime() - startDay.getTime()) / (24 * 60 * 60 * 1000),
+  );
 }
 
 /**

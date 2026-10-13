@@ -178,7 +178,7 @@ describe("WeeklyCheckInScreen", () => {
 
     await waitFor(() => expect(listCheckIns).toHaveBeenCalledWith(9));
     expect(screen.getByTestId("checkin-history-empty")).toBeTruthy();
-    expect(screen.getByText("Domínio saúde")).toBeTruthy();
+    expect(screen.getByText("Saúde")).toBeTruthy();
   });
 
   it("keeps Próximo disabled until the step's questions are answered", async () => {
@@ -202,7 +202,7 @@ describe("WeeklyCheckInScreen", () => {
 
     completeWizardUntilLastStep();
 
-    expect(screen.getByText("Estoque e Logística")).toBeTruthy();
+    expect(screen.getByText("Compras da semana")).toBeTruthy();
     fireEvent.changeText(
       screen.getByTestId("checkin-needsMedications-input"),
       "Losartana",
@@ -294,6 +294,25 @@ describe("WeeklyCheckInScreen", () => {
 
     expect(screen.getByLabelText("Pressão (mmHg)")).toBeTruthy();
     expect(screen.getByLabelText("Panturrilha esquerda (cm)")).toBeTruthy();
+  });
+
+  it("says how many questions are left before Próximo unlocks", async () => {
+    renderScreen();
+    await waitFor(() => expect(listCheckIns).toHaveBeenCalled());
+
+    expect(screen.getByTestId("checkin-missing").props.children).toBe(
+      "Responda as 4 perguntas que faltam para continuar.",
+    );
+
+    fireEvent.press(screen.getByTestId("checkin-skinIssues-no"));
+    fireEvent.press(screen.getByTestId("checkin-bowelRegular-yes"));
+    fireEvent.press(screen.getByTestId("checkin-sleepWell-yes"));
+    expect(screen.getByTestId("checkin-missing").props.children).toBe(
+      "Responda a pergunta que falta para continuar.",
+    );
+
+    fireEvent.press(screen.getByTestId("checkin-unstableGait-no"));
+    expect(screen.queryByTestId("checkin-missing")).toBeNull();
   });
 
   it("announces the new step when moving forward", async () => {

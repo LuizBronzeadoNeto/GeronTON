@@ -32,6 +32,7 @@ import {
   listIntercorrences,
   type Intercorrence,
 } from "../api/intercorrences";
+import { formatDay } from "../utils/date";
 
 jest.mock("../api/profiles");
 jest.mock("../api/intercorrences");
@@ -226,7 +227,9 @@ describe("ProfileDetailScreen", () => {
     await waitFor(() =>
       expect(screen.getByTestId("detail-last-checkin")).toBeTruthy(),
     );
-    expect(screen.getByText("06/07/2026")).toBeTruthy();
+    expect(
+      screen.getByText(formatDay("2026-07-06T00:00:00.000Z")),
+    ).toBeTruthy();
     expect(screen.getByText("Triste")).toBeTruthy();
     expect(screen.getByText("Regular")).toBeTruthy();
     expect(screen.getByText("Febre")).toBeTruthy();

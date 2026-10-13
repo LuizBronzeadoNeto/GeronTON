@@ -8,10 +8,12 @@ import type { Appetite, Mood } from "../api/checkins";
 export const YES_NO_QUESTIONS: Record<string, string> = {
   skinIssues: "Alguma mancha ou vermelhidão na pele?",
   bowelRegular: "Intestino funcionou todos os dias?",
-  sleepWell: "Noites tranquilas de sono",
-  unstableGait: "Marcha mais instável que o habitual?",
+  sleepWell: "Dormiu bem durante as noites?",
+  unstableGait:
+    "Está andando com mais dificuldade ou desequilíbrio que o normal?",
   chokingIncident: "Tossiu ou engasgou ao comer/beber?",
-  breathShortness: "Houve falta de ar / cianose durante o engasgo?",
+  breathShortness:
+    "Ficou com falta de ar ou com os lábios arroxeados durante o engasgo?",
   hydrationGoal: "Bebeu a meta de água diária?",
   medsOnTime: "Tomou todos os remédios no horário sem recusa?",
   sunExposure: "Conseguiu tomar sol ou sair do quarto?",
@@ -31,7 +33,7 @@ export const WEEKLY_EVENTS: {
   { key: "fever", label: "Febre", critical: true },
   {
     key: "breathing_difficulty",
-    label: "Falta de ar (dispneia)",
+    label: "Falta de ar",
     critical: true,
   },
   { key: "fall_with_injury", label: "Queda com lesão", critical: true },
@@ -147,15 +149,12 @@ export const LOGISTICS: { key: string; label: string; placeholder: string }[] =
   ];
 
 export const STEPS: { title: string; subtitle: string }[] = [
-  { title: "Domínio saúde", subtitle: "Saúde e sinais vitais" },
+  { title: "Saúde", subtitle: "Saúde e sinais vitais" },
+  { title: "Alimentação e remédios", subtitle: "Comida, água e medicação" },
+  { title: "Comportamento", subtitle: "Humor e estímulos" },
+  { title: "Higiene", subtitle: "Higiene da semana" },
   {
-    title: "Domínio alimentação e medicamentos",
-    subtitle: "Alimentação e Medicação",
-  },
-  { title: "Domínio comportamental", subtitle: "Comportamento e estímulo" },
-  { title: "Domínio Higiene", subtitle: "Higiene semanal" },
-  {
-    title: "Estoque e Logística",
+    title: "Compras da semana",
     subtitle: "O que precisa comprar essa semana?",
   },
 ];

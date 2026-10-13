@@ -20,6 +20,7 @@ import {
   moodLabel,
 } from "../constants/checkin";
 import { PrimaryButton } from "../components/PrimaryButton";
+import { formatDay } from "../utils/date";
 import { COLORS, FONTS } from "../theme";
 
 type Props = NativeStackScreenProps<AppStackParamList, "CheckInDetail">;
@@ -119,7 +120,7 @@ export function CheckInDetailScreen({ navigation, route }: Props) {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text testID="checkin-detail-title" style={styles.title}>
-        Check-in de {checkIn.date.slice(0, 10)}
+        Check-in de {formatDay(checkIn.date)}
       </Text>
 
       <View style={styles.card}>

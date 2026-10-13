@@ -43,7 +43,7 @@ const PRESET_CONDITIONS = [
   "Diabetes",
   "Demência",
   "AVC prévio",
-  "Parkison",
+  "Parkinson",
   "DPOC",
   "Insuficiência Cardíaca",
   "Osteoporose",
@@ -186,11 +186,13 @@ export function ProfileFormScreen({ navigation, route }: Props) {
       <TextInput
         testID="profile-fullName"
         style={styles.input}
-        placeholder="Digite seu nome completo"
+        placeholder="Nome completo do idoso"
+        accessibilityLabel="Nome completo do idoso"
         placeholderTextColor={COLORS.grey400}
         value={fullName}
         onChangeText={setFullName}
       />
+      <Text style={styles.helper}>Nome e sobrenome, como no documento.</Text>
 
       <View style={styles.dateRow}>
         <View style={styles.dateField}>
@@ -209,7 +211,7 @@ export function ProfileFormScreen({ navigation, route }: Props) {
           <SelectField
             testID="profile-sex"
             label="Sexo"
-            placeholder="Masculino"
+            placeholder="Selecione"
             value={sex}
             options={SEX_OPTIONS}
             onSelect={setSex}
@@ -260,6 +262,11 @@ export function ProfileFormScreen({ navigation, route }: Props) {
         onPress={handleSubmit}
         disabled={!canSubmit}
       />
+      {!canSubmit && !loading && !saving ? (
+        <Text style={styles.hint}>
+          Preencha o nome completo, a data de nascimento e a escolaridade.
+        </Text>
+      ) : null}
     </ScrollView>
   );
 }
@@ -290,6 +297,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 22,
     color: COLORS.heading,
+  },
+  hint: {
+    fontFamily: FONTS.regular,
+    fontSize: 13,
+    color: COLORS.grey500,
+    textAlign: "center",
+    marginTop: 8,
+  },
+  helper: {
+    fontFamily: FONTS.regular,
+    fontSize: 12,
+    color: COLORS.grey500,
+    marginTop: -8,
   },
   input: {
     height: 50,

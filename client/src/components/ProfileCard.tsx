@@ -6,7 +6,7 @@ import type { WeeklyAdherence } from "../api/triage";
 import { listCheckIns } from "../api/checkins";
 import { WEEKLY_EVENTS } from "../constants/checkin";
 import { RiskStatusBadge } from "./RiskStatusBadge";
-import { ageInYears } from "../utils/date";
+import { ageInYears, formatDay } from "../utils/date";
 import { COLORS, FONTS } from "../theme";
 
 interface Props {
@@ -56,7 +56,7 @@ function LastCheckInLine({ profileId }: { profileId: number }) {
 
   return (
     <Text style={styles.cardLine}>
-      Último check-in: {date ? date.slice(0, 10) : "-----"}
+      Último check-in: {date ? formatDay(date) : "-----"}
     </Text>
   );
 }

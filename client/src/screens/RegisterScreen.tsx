@@ -134,6 +134,9 @@ export function RegisterScreen({ navigation }: Props) {
           value={password}
           onChangeText={setPassword}
         />
+        <Text style={styles.helper}>
+          Use pelo menos {MIN_PASSWORD_LENGTH} caracteres.
+        </Text>
 
         {isProfessional ? (
           <View>
@@ -175,6 +178,11 @@ export function RegisterScreen({ navigation }: Props) {
           loading={submitting || isSigningIn}
           style={styles.action}
         />
+        {!canSubmit ? (
+          <Text style={styles.blockedHint}>
+            Preencha todos os campos e aceite os termos para criar a conta.
+          </Text>
+        ) : null}
 
         <Pressable
           testID="register-back"
@@ -224,6 +232,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 22,
     color: COLORS.heading,
+  },
+  helper: {
+    fontFamily: FONTS.regular,
+    fontSize: 12,
+    color: COLORS.grey500,
+    marginTop: 4,
+  },
+  blockedHint: {
+    fontFamily: FONTS.regular,
+    fontSize: 13,
+    color: COLORS.grey500,
+    textAlign: "center",
+    marginTop: 8,
   },
   input: {
     height: 50,

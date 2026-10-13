@@ -2,6 +2,8 @@ import { useState } from "react";
 import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { AppStackParamList } from "../types/navigation";
+import { isAxiosError } from "axios";
+import { connectionErrorMessage } from "../api/errors";
 import { linkProfile, verifyProfileCpf } from "../api/profiles";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { brDateToIso, maskBrDate } from "../utils/date";
@@ -57,8 +59,13 @@ export function ProfileIdentificationScreen({ navigation }: Props) {
       }
 
       setError("Não foi possível confirmar os dados do idoso.");
-    } catch {
-      setError("Não foi possível verificar o CPF.");
+    } catch (err) {
+      setError(
+        isAxiosError(err) && err.response?.status === 400
+          ? "CPF inválido. Confira os números digitados."
+          : (connectionErrorMessage(err) ??
+              "Não foi possível verificar o CPF."),
+      );
     } finally {
       setChecking(false);
     }

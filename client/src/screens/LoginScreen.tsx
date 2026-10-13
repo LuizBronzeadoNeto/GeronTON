@@ -24,7 +24,8 @@ type Props = NativeStackScreenProps<AuthStackParamList, "Login">;
  * a sign-up footer. On success the AuthProvider stores the user, which flips
  * RootNavigator to the app stack; on failure a dismissible error toast floats
  * over the top of the form. "Cadastre-se agora!" opens the sign-up screen;
- * "Esqueceu a senha?" is still visual-only, as no reset flow exists.
+ * There is no password reset flow yet, so no "Esqueceu a senha?" link is
+ * shown rather than one that does nothing.
  */
 export function LoginScreen({ navigation }: Props) {
   const { signIn, isSigningIn, sessionExpired } = useAuth();
@@ -123,8 +124,6 @@ export function LoginScreen({ navigation }: Props) {
             />
           </Pressable>
         </View>
-
-        <Text style={styles.forgotLink}>Esqueceu a senha?</Text>
 
         <Pressable
           testID="login-submit"
@@ -247,14 +246,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 16,
     top: 13,
-  },
-  forgotLink: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 14,
-    color: COLORS.primary,
-    textDecorationLine: "underline",
-    marginTop: -8,
-    marginBottom: 24,
   },
   toastWrapper: {
     position: "absolute",

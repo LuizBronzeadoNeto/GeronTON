@@ -56,6 +56,7 @@ describe("LoginScreen", () => {
     expect(screen.getByTestId("login-password")).toBeTruthy();
     expect(screen.getByTestId("login-submit")).toBeTruthy();
     expect(screen.getByText("Entrar")).toBeTruthy();
+    expect(screen.queryByText("Esqueceu a senha?")).toBeNull();
   });
 
   it("explains that the session expired after the API rejects the token", async () => {

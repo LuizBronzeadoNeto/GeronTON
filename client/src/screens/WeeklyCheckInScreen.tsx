@@ -44,6 +44,7 @@ import { StressLevelSlider } from "../components/checkin/StressLevelSlider";
 import { useAuth } from "../context/AuthContext";
 import { useNotification } from "../context/NotificationContext";
 import { clearDraft, loadDraft, saveDraft } from "../utils/checkInDraft";
+import { formatDay } from "../utils/date";
 import { COLORS, FONTS } from "../theme";
 import { FormError } from "../components/FormError";
 
@@ -237,13 +238,14 @@ export function WeeklyCheckInScreen({ navigation, route }: Props) {
     if (!enabled) setText("chokingFrequency", "");
   }
 
-  function answered(fields: string[]): boolean {
-    return fields.every((field) => yesNo[field] !== null);
+  function pending(fields: string[]): number {
+    return fields.filter((field) => yesNo[field] === null).length;
   }
 
-  function canProceed(): boolean {
+  /** Questions of the current step still unanswered; Próximo waits for none. */
+  function missingCount(): number {
     if (step === 1) {
-      return answered([
+      return pending([
         "skinIssues",
         "bowelRegular",
         "sleepWell",
@@ -251,19 +253,23 @@ export function WeeklyCheckInScreen({ navigation, route }: Props) {
       ]);
     }
     if (step === 2) {
-      return appetite !== null && answered(["hydrationGoal", "medsOnTime"]);
+      return (
+        (appetite === null ? 1 : 0) + pending(["hydrationGoal", "medsOnTime"])
+      );
     }
     if (step === 3) {
       return (
-        mood !== null &&
-        answered(["sunExposure", "selfExpression", "stimulation"])
+        (mood === null ? 1 : 0) +
+        pending(["sunExposure", "selfExpression", "stimulation"])
       );
     }
     if (step === 4) {
-      return answered(["dailyBath", "oralHygiene", "groomedNails"]);
+      return pending(["dailyBath", "oralHygiene", "groomedNails"]);
     }
-    return true;
+    return 0;
   }
+
+  const missing = missingCount();
 
   /**
    * Moves to another step, back at the top of the form, and tells screen
@@ -583,7 +589,7 @@ export function WeeklyCheckInScreen({ navigation, route }: Props) {
             testID="checkin-next"
             title="Próximo"
             style={styles.navButton}
-            disabled={!canProceed()}
+            disabled={missing > 0}
             onPress={() => goToStep(step + 1)}
           />
         ) : (
@@ -596,6 +602,14 @@ export function WeeklyCheckInScreen({ navigation, route }: Props) {
           />
         )}
       </View>
+
+      {step < steps.length && missing > 0 ? (
+        <Text testID="checkin-missing" style={styles.hint}>
+          {missing === 1
+            ? "Responda a pergunta que falta para continuar."
+            : `Responda as ${missing} perguntas que faltam para continuar.`}
+        </Text>
+      ) : null}
 
       {step === 1 ? (
         <View style={styles.historySection}>
@@ -627,7 +641,7 @@ export function WeeklyCheckInScreen({ navigation, route }: Props) {
                   })
                 }
               >
-                <Text style={styles.historyDate}>{item.date.slice(0, 10)}</Text>
+                <Text style={styles.historyDate}>{formatDay(item.date)}</Text>
                 <Text style={styles.historySummary}>
                   Humor: {moodLabel(item.mood)} · Estresse: {item.stressLevel}
                 </Text>
@@ -665,6 +679,13 @@ const styles = StyleSheet.create({
   },
   stepContent: {
     gap: 8,
+  },
+  hint: {
+    fontFamily: FONTS.regular,
+    fontSize: 13,
+    color: COLORS.grey500,
+    textAlign: "center",
+    marginTop: 8,
   },
   draftNotice: {
     fontFamily: FONTS.semiBold,
