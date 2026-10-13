@@ -82,15 +82,15 @@ appId: com.geronton.client
 - assertVisible:
     id: "checkin-history"
 - assertVisible:
-    text: "\\d{4}-\\d{2}-\\d{2}"
+    text: "\\d{2}/\\d{2}/\\d{4}"
 - assertVisible:
     text: "Humor: Feliz · Estresse: 2"
 # open the detail and delete it
 - tapOn:
-    text: "\\d{4}-\\d{2}-\\d{2}"
+    text: "\\d{2}/\\d{2}/\\d{4}"
 - assertVisible:
     text: "Febre.*"
 - tapOn:
     id: "checkin-delete"
 - assertNotVisible:
-    text: "\\d{4}-\\d{2}-\\d{2}"
+    text: "\\d{2}/\\d{2}/\\d{4}"
