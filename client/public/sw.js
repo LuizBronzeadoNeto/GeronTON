@@ -2,10 +2,11 @@
  * GeronTON service worker.
  *
  * Its only job is push: there is no fetch handler and nothing is cached, so a
- * stale worker can never serve a stale app. It is deliberately small, because
- * nothing here is reachable from the test suite — jsdom cannot simulate push
- * delivery — and manual verification only stays credible while the file is
- * simple enough to read in one sitting.
+ * stale worker can never serve a stale app. It is deliberately small: push
+ * delivery cannot be simulated, so beyond the push handler's choice between
+ * toast and OS notification (src/push/serviceWorker.test.ts) it is verified by
+ * hand, which only stays credible while the file is simple enough to read in
+ * one sitting.
  *
  * It ships in client/public/, which expo export copies verbatim to the bundle
  * root, so it is served from /sw.js and therefore controls the whole origin.
@@ -42,9 +43,13 @@ function readPayload(event) {
 }
 
 /**
- * Shows an OS notification, unless a GeronTON window is already open and
- * visible — in that case the app renders its own in-app toast instead, so the
- * same event is not announced twice.
+ * Shows an OS notification, unless a GeronTON window has focus — in that case
+ * the app renders its own in-app toast instead, so the same event is not
+ * announced twice.
+ *
+ * Focus, not visibility, is the test. On a tiling desktop or a second monitor
+ * the window stays visible while the user works in another app, and a toast
+ * there goes unseen, which for a critical event is the one outcome to avoid.
  */
 async function deliver(payload) {
   const title = payload.title || "GeronTON";
@@ -60,12 +65,10 @@ async function deliver(payload) {
     type: "window",
     includeUncontrolled: true,
   });
-  const visible = clientList.find(
-    (client) => client.visibilityState === "visible",
-  );
+  const focused = clientList.find((client) => client.focused);
 
-  if (visible) {
-    visible.postMessage({ type: FOREGROUND_MESSAGE, push });
+  if (focused) {
+    focused.postMessage({ type: FOREGROUND_MESSAGE, push });
     return;
   }
 
