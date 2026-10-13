@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { COLORS, FONTS } from "../theme";
+import { COLORS, CONTROL_HEIGHT, RADIUS, SPACING, TYPE } from "../theme";
 
 interface Props {
   value: string[];
@@ -125,15 +125,15 @@ const styles = StyleSheet.create({
   chipGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10,
-    marginTop: 4,
+    gap: SPACING.sm,
   },
   chip: {
+    minHeight: 40,
+    justifyContent: "center",
     borderWidth: 1,
-    borderColor: COLORS.heading,
-    borderRadius: 19,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    borderColor: COLORS.grey300,
+    borderRadius: RADIUS.control,
+    paddingHorizontal: SPACING.md,
     backgroundColor: COLORS.white,
   },
   chipSelected: {
@@ -141,9 +141,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.chipBg,
   },
   chipLabel: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 13,
-    color: COLORS.heading,
+    ...TYPE.label,
   },
   chipLabelSelected: {
     color: COLORS.primary,
@@ -154,28 +152,25 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: "row",
-    gap: 12,
-    marginTop: 4,
+    gap: SPACING.sm,
   },
   input: {
-    height: 50,
+    minHeight: CONTROL_HEIGHT,
     borderWidth: 1,
     borderColor: COLORS.grey300,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    fontFamily: FONTS.semiBold,
-    fontSize: 14,
-    color: COLORS.heading,
+    borderRadius: RADIUS.control,
+    paddingHorizontal: SPACING.lg,
+    ...TYPE.body,
   },
   rowInput: {
     flex: 1,
   },
   addButton: {
-    width: 60,
-    height: 50,
+    width: CONTROL_HEIGHT,
+    height: CONTROL_HEIGHT,
     borderWidth: 1,
     borderColor: COLORS.primary,
-    borderRadius: 8,
+    borderRadius: RADIUS.control,
     alignItems: "center",
     justifyContent: "center",
   },

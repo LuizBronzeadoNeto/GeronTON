@@ -22,7 +22,10 @@ import { SelectField } from "../components/SelectField";
 import { TagListInput } from "../components/TagListInput";
 import { brDateToIso, isoToBrDate, maskBrDate } from "../utils/date";
 import { maskCpf } from "../utils/cpf";
-import { COLORS, FONTS } from "../theme";
+import { maskPhone } from "../utils/phone";
+import { ActionBar } from "../components/ActionBar";
+import { formStyles } from "../components/formStyles";
+import { COLORS, CONTROL_HEIGHT, SPACING, TYPE } from "../theme";
 import { FormError } from "../components/FormError";
 
 type Props = NativeStackScreenProps<AppStackParamList, "ProfileForm">;
@@ -100,7 +103,7 @@ export function ProfileFormScreen({ navigation, route }: Props) {
         setScholarship(profile.scholarship);
         setConditions(profile.medicalConditions);
         setNotes(profile.notes ?? "");
-        setContactPhone(profile.contactPhone ?? "");
+        setContactPhone(maskPhone(profile.contactPhone ?? ""));
       })
       .catch(() => {
         if (active) setError("Não foi possível carregar o perfil.");
@@ -175,131 +178,156 @@ export function ProfileFormScreen({ navigation, route }: Props) {
   }
 
   return (
-    <ScrollView
-      contentContainerStyle={styles.container}
-      keyboardShouldPersistTaps="handled"
-    >
-      <View style={styles.titleRow}>
-        <Text testID="profile-form-title" style={styles.title}>
-          {isEditing ? "Editar idoso" : "Cadastrar idoso"}
-        </Text>
-        {isEditing ? <RiskStatusBadge profileId={profileId} /> : null}
-      </View>
+    <View style={formStyles.screen}>
+      <ScrollView
+        contentContainerStyle={formStyles.container}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.titleRow}>
+          <Text
+            testID="profile-form-title"
+            style={[formStyles.title, styles.title]}
+            accessibilityRole="header"
+          >
+            {isEditing ? "Editar idoso" : "Cadastrar idoso"}
+          </Text>
+          {isEditing ? <RiskStatusBadge profileId={profileId} /> : null}
+        </View>
 
-      <Text style={styles.label}>CPF</Text>
-      <Text testID="profile-cpf" style={[styles.input, styles.readOnlyInput]}>
-        {cpf ? maskCpf(cpf) : "—"}
-      </Text>
+        <View style={formStyles.field}>
+          <Text style={formStyles.label}>CPF</Text>
+          <Text
+            testID="profile-cpf"
+            style={[formStyles.input, styles.readOnlyInput]}
+          >
+            {cpf ? maskCpf(cpf) : "—"}
+          </Text>
+        </View>
 
-      <Text style={styles.label}>Nome completo</Text>
-      <TextInput
-        testID="profile-fullName"
-        style={styles.input}
-        placeholder="Nome completo do idoso"
-        accessibilityLabel="Nome completo do idoso"
-        placeholderTextColor={COLORS.grey400}
-        value={fullName}
-        onChangeText={setFullName}
-      />
-      <Text style={styles.helper}>Nome e sobrenome, como no documento.</Text>
-
-      <View style={styles.dateRow}>
-        <View style={styles.dateField}>
-          <Text style={styles.label}>Data de Nascimento</Text>
+        <View style={formStyles.field}>
+          <Text style={formStyles.label}>Nome completo</Text>
           <TextInput
-            testID="profile-birthDate"
-            style={styles.input}
-            placeholder="DD/MM/AAAA"
+            testID="profile-fullName"
+            style={formStyles.input}
+            placeholder="Nome completo do idoso"
+            accessibilityLabel="Nome completo do idoso"
             placeholderTextColor={COLORS.grey400}
-            keyboardType="numeric"
-            value={birthDate}
-            onChangeText={(text) => setBirthDate(maskBrDate(text))}
+            value={fullName}
+            onChangeText={setFullName}
           />
+          <Text style={formStyles.helper}>
+            Nome e sobrenome, como no documento.
+          </Text>
         </View>
-        <View style={styles.sexField}>
-          <SelectField
-            testID="profile-sex"
-            label="Sexo"
-            placeholder="Selecione"
-            value={sex}
-            options={SEX_OPTIONS}
-            onSelect={setSex}
-          />
+
+        <View style={styles.pairRow}>
+          <View style={[formStyles.field, styles.pairField]}>
+            <Text style={formStyles.label}>Data de nascimento</Text>
+            <TextInput
+              testID="profile-birthDate"
+              style={formStyles.input}
+              placeholder="DD/MM/AAAA"
+              placeholderTextColor={COLORS.grey400}
+              accessibilityLabel="Data de nascimento"
+              keyboardType="numeric"
+              value={birthDate}
+              onChangeText={(text) => setBirthDate(maskBrDate(text))}
+            />
+          </View>
+          <View style={styles.pairField}>
+            <SelectField
+              testID="profile-sex"
+              label="Sexo"
+              placeholder="Selecione"
+              value={sex}
+              options={SEX_OPTIONS}
+              onSelect={setSex}
+            />
+          </View>
         </View>
-      </View>
 
-      <Text style={styles.label}>Telefone da família (com DDD)</Text>
-      <TextInput
-        testID="profile-phone"
-        style={styles.input}
-        placeholder="(83) 99999-1234"
-        placeholderTextColor={COLORS.grey400}
-        accessibilityLabel="Telefone da família, com DDD"
-        keyboardType="phone-pad"
-        autoComplete="tel"
-        textContentType="telephoneNumber"
-        value={contactPhone}
-        onChangeText={setContactPhone}
-      />
-
-      <SelectField
-        testID="profile-scholarship"
-        label="Escolaridade"
-        value={scholarship}
-        options={SCHOLARSHIP_OPTIONS}
-        onSelect={setScholarship}
-      />
-
-      <Text style={styles.label}>Condições pré-existentes</Text>
-      <TagListInput
-        testIDPrefix="profile-condition"
-        value={conditions}
-        onChange={setConditions}
-        suggestions={PRESET_CONDITIONS}
-        placeholder="Outra condição"
-        addAccessibilityLabel="Adicionar condição"
-      />
-
-      <Text style={styles.label}>Observação (opcional)</Text>
-      <TextInput
-        testID="profile-notes"
-        style={[styles.input, styles.textArea]}
-        placeholderTextColor={COLORS.grey400}
-        value={notes}
-        onChangeText={setNotes}
-        multiline
-      />
-
-      {error ? (
-        <FormError
-          testID="profile-form-error"
-          style={styles.error}
-          message={error}
+        <SelectField
+          testID="profile-scholarship"
+          label="Escolaridade"
+          value={scholarship}
+          options={SCHOLARSHIP_OPTIONS}
+          onSelect={setScholarship}
         />
-      ) : null}
 
-      <PrimaryButton
-        testID="profile-submit"
-        title="Salvar"
-        style={styles.submit}
-        onPress={handleSubmit}
-        disabled={!canSubmit}
-      />
-      {!canSubmit && !loading && !saving ? (
-        <Text style={styles.hint}>
-          Preencha o nome completo, a data de nascimento e a escolaridade.
-        </Text>
-      ) : null}
-    </ScrollView>
+        <View style={formStyles.field}>
+          <Text style={formStyles.label}>Telefone da família (com DDD)</Text>
+          <TextInput
+            testID="profile-phone"
+            style={formStyles.input}
+            placeholder="(83) 99999-1234"
+            placeholderTextColor={COLORS.grey400}
+            accessibilityLabel="Telefone da família, com DDD"
+            keyboardType="phone-pad"
+            autoComplete="tel"
+            textContentType="telephoneNumber"
+            value={contactPhone}
+            onChangeText={(text) => setContactPhone(maskPhone(text))}
+          />
+        </View>
+
+        <View style={formStyles.field}>
+          <Text style={formStyles.label}>Condições pré-existentes</Text>
+          <TagListInput
+            testIDPrefix="profile-condition"
+            value={conditions}
+            onChange={setConditions}
+            suggestions={PRESET_CONDITIONS}
+            placeholder="Outra condição"
+            addAccessibilityLabel="Adicionar condição"
+          />
+        </View>
+
+        <View style={formStyles.field}>
+          <Text style={formStyles.label}>Observações (opcional)</Text>
+          <TextInput
+            testID="profile-notes"
+            style={[formStyles.input, formStyles.textArea]}
+            placeholder="Algo que a equipe deve saber sobre o idoso"
+            placeholderTextColor={COLORS.grey400}
+            accessibilityLabel="Observações"
+            value={notes}
+            onChangeText={setNotes}
+            multiline
+          />
+        </View>
+
+        {error ? (
+          <FormError
+            testID="profile-form-error"
+            style={formStyles.error}
+            message={error}
+          />
+        ) : null}
+      </ScrollView>
+
+      <ActionBar
+        testID="profile-form-actions"
+        note={
+          !canSubmit && !saving ? (
+            <Text style={styles.hint}>
+              Preencha o nome completo, a data de nascimento e a escolaridade.
+            </Text>
+          ) : null
+        }
+      >
+        <PrimaryButton
+          testID="profile-submit"
+          title="Salvar"
+          loading={saving}
+          onPress={handleSubmit}
+          disabled={!canSubmit}
+        />
+      </ActionBar>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 20,
-    gap: 8,
-    backgroundColor: COLORS.white,
-  },
   loading: {
     flex: 1,
   },
@@ -307,71 +335,25 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 12,
+    gap: SPACING.md,
   },
   title: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 20,
-    lineHeight: 28,
-    color: COLORS.heading,
-  },
-  label: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 14,
-    lineHeight: 22,
-    color: COLORS.heading,
-  },
-  hint: {
-    fontFamily: FONTS.regular,
-    fontSize: 13,
-    color: COLORS.grey500,
-    textAlign: "center",
-    marginTop: 8,
-  },
-  helper: {
-    fontFamily: FONTS.regular,
-    fontSize: 12,
-    color: COLORS.grey500,
-    marginTop: -8,
-  },
-  input: {
-    height: 50,
-    borderWidth: 1,
-    borderColor: COLORS.grey300,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    fontFamily: FONTS.semiBold,
-    fontSize: 14,
-    color: COLORS.heading,
+    flexShrink: 1,
   },
   readOnlyInput: {
-    backgroundColor: COLORS.chipBg,
+    backgroundColor: COLORS.surface,
     color: COLORS.grey500,
-    lineHeight: 50,
+    lineHeight: CONTROL_HEIGHT,
   },
-  dateRow: {
+  pairRow: {
     flexDirection: "row",
-    gap: 12,
+    gap: SPACING.md,
   },
-  dateField: {
-    flex: 1,
-    gap: 6,
-  },
-  sexField: {
+  pairField: {
     flex: 1,
   },
-  textArea: {
-    height: undefined,
-    minHeight: 120,
-    paddingVertical: 12,
-    textAlignVertical: "top",
-  },
-  error: {
-    fontFamily: FONTS.semiBold,
-    color: COLORS.danger,
+  hint: {
+    ...TYPE.caption,
     textAlign: "center",
-  },
-  submit: {
-    marginTop: 12,
   },
 });

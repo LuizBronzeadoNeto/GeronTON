@@ -19,7 +19,9 @@ import {
 } from "../api/routines";
 import { ProfileHeader } from "../components/ProfileHeader";
 import { PrimaryButton } from "../components/PrimaryButton";
-import { COLORS, FONTS } from "../theme";
+import { ActionBar } from "../components/ActionBar";
+import { formStyles } from "../components/formStyles";
+import { COLORS, TYPE } from "../theme";
 
 type Props = NativeStackScreenProps<AppStackParamList, "RoutineRegistration">;
 
@@ -157,99 +159,69 @@ export function RoutineRegistrationScreen({ route }: Props) {
   }
 
   return (
-    <ScrollView
-      testID="routine-registration"
-      contentContainerStyle={styles.container}
-    >
-      <ProfileHeader profileId={profileId} />
+    <View style={formStyles.screen}>
+      <ScrollView
+        testID="routine-registration"
+        contentContainerStyle={formStyles.container}
+        keyboardShouldPersistTaps="handled"
+      >
+        <ProfileHeader profileId={profileId} />
 
-      <Text style={styles.title} accessibilityRole="header">
-        Rotina e aspectos relevantes
-      </Text>
-
-      {ROUTINE_SECTIONS.map((section) => (
-        <View key={section.title} style={styles.section}>
-          <Text style={styles.label}>{section.title}</Text>
-          <TextInput
-            testID={`routine-section-${section.title}`}
-            style={styles.textArea}
-            placeholder={section.placeholder}
-            placeholderTextColor={COLORS.grey400}
-            value={values[section.title] ?? ""}
-            onChangeText={(text) => setValue(section.title, text)}
-            multiline
-          />
-        </View>
-      ))}
-
-      {error ? (
-        <Text testID="routine-error" style={styles.error}>
-          {error}
+        <Text style={formStyles.title} accessibilityRole="header">
+          Rotina e aspectos relevantes
         </Text>
-      ) : null}
-      {saved ? (
-        <Text testID="routine-saved" style={styles.saved}>
-          Rotina salva.
-        </Text>
-      ) : null}
 
-      <PrimaryButton
-        testID="routine-save"
-        title="Salvar rotina"
-        style={styles.save}
-        onPress={handleSave}
-        loading={saving}
-      />
-    </ScrollView>
+        {ROUTINE_SECTIONS.map((section) => (
+          <View key={section.title} style={formStyles.field}>
+            <Text style={formStyles.label}>{section.title}</Text>
+            <TextInput
+              testID={`routine-section-${section.title}`}
+              style={[formStyles.input, formStyles.textArea]}
+              placeholder={section.placeholder}
+              placeholderTextColor={COLORS.grey400}
+              accessibilityLabel={section.title}
+              value={values[section.title] ?? ""}
+              onChangeText={(text) => setValue(section.title, text)}
+              multiline
+            />
+          </View>
+        ))}
+
+        {error ? (
+          <Text testID="routine-error" style={formStyles.error}>
+            {error}
+          </Text>
+        ) : null}
+      </ScrollView>
+
+      <ActionBar
+        testID="routine-actions"
+        note={
+          saved ? (
+            <Text testID="routine-saved" style={styles.saved}>
+              Rotina salva.
+            </Text>
+          ) : null
+        }
+      >
+        <PrimaryButton
+          testID="routine-save"
+          title="Salvar rotina"
+          onPress={handleSave}
+          loading={saving}
+        />
+      </ActionBar>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 20,
-    gap: 12,
-    backgroundColor: COLORS.white,
-  },
   loading: {
     flex: 1,
   },
-  title: {
-    fontFamily: FONTS.extraBold,
-    fontSize: 22,
-    color: COLORS.heading,
-  },
-  section: {
-    gap: 6,
-  },
-  label: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 14,
-    lineHeight: 22,
-    color: COLORS.heading,
-  },
-  textArea: {
-    minHeight: 120,
-    borderWidth: 1,
-    borderColor: COLORS.grey300,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontFamily: FONTS.semiBold,
-    fontSize: 14,
-    color: COLORS.heading,
-    textAlignVertical: "top",
-  },
-  error: {
-    fontFamily: FONTS.semiBold,
-    color: COLORS.danger,
-    textAlign: "center",
-  },
   saved: {
-    fontFamily: FONTS.semiBold,
+    ...TYPE.label,
     color: COLORS.success,
     textAlign: "center",
-  },
-  save: {
-    marginTop: 8,
   },
 });

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { COLORS, FONTS } from "../theme";
+import { COLORS, CONTROL_HEIGHT, RADIUS, SPACING, TYPE } from "../theme";
 
 interface Props {
   label: string;
@@ -85,20 +85,17 @@ export function SelectField({
 
 const styles = StyleSheet.create({
   container: {
-    gap: 6,
+    gap: SPACING.sm,
   },
   label: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 14,
-    lineHeight: 22,
-    color: COLORS.heading,
+    ...TYPE.label,
   },
   trigger: {
-    height: 50,
+    minHeight: CONTROL_HEIGHT,
     borderWidth: 1,
     borderColor: COLORS.grey300,
-    borderRadius: 8,
-    paddingHorizontal: 16,
+    borderRadius: RADIUS.control,
+    paddingHorizontal: SPACING.lg,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -106,11 +103,9 @@ const styles = StyleSheet.create({
   },
   triggerOpen: {
     borderColor: COLORS.primary,
-    backgroundColor: COLORS.chipBg,
   },
   value: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 14,
+    ...TYPE.body,
     color: COLORS.heading,
   },
   valueOpen: {
@@ -121,21 +116,24 @@ const styles = StyleSheet.create({
   },
   dropdown: {
     borderWidth: 1,
-    borderColor: COLORS.grey300,
-    borderRadius: 8,
+    borderColor: COLORS.cardBorder,
+    borderRadius: RADIUS.control,
     backgroundColor: COLORS.white,
     overflow: "hidden",
   },
   option: {
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    minHeight: 48,
+    justifyContent: "center",
+    paddingHorizontal: SPACING.lg,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.divider,
   },
   optionLabel: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 14,
+    ...TYPE.body,
     color: COLORS.heading,
   },
   optionLabelSelected: {
+    fontFamily: TYPE.bodyStrong.fontFamily,
     color: COLORS.primary,
   },
 });

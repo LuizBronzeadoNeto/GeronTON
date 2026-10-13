@@ -138,7 +138,9 @@ export function AppStack({ role }: { role: Role }) {
       <Stack.Screen
         name="ProfileForm"
         component={ProfileFormScreen}
-        options={{ title: "Cadastrar idoso" }}
+        options={({ route }) => ({
+          title: route.params?.profileId ? "Editar idoso" : "Cadastrar idoso",
+        })}
       />
       <Stack.Screen
         name="IntercorrenceForm"

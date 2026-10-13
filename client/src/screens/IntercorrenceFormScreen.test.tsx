@@ -5,6 +5,7 @@ import {
   screen,
   fireEvent,
   waitFor,
+  within,
 } from "@testing-library/react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -77,6 +78,18 @@ describe("IntercorrenceFormScreen", () => {
       screen.getByTestId("intercorrence-submit").props.accessibilityState
         .disabled,
     ).toBe(false);
+  });
+
+  it("keeps Registrar in the action bar and severity as large answers", () => {
+    renderScreen();
+
+    const bar = screen.getByTestId("intercorrence-actions");
+    expect(within(bar).getByTestId("intercorrence-submit")).toBeTruthy();
+    fireEvent.press(screen.getByTestId("intercorrence-severity-Crítico"));
+    expect(
+      screen.getByTestId("intercorrence-severity-Crítico").props
+        .accessibilityState.checked,
+    ).toBe(true);
   });
 
   it("registers the intercorrence and opens the confirmation", async () => {

@@ -18,7 +18,9 @@ import {
   type MedicationInput,
 } from "../api/medications";
 import { PrimaryButton } from "../components/PrimaryButton";
-import { COLORS, FONTS } from "../theme";
+import { ActionBar } from "../components/ActionBar";
+import { formStyles } from "../components/formStyles";
+import { COLORS } from "../theme";
 
 type Props = NativeStackScreenProps<AppStackParamList, "MedicationForm">;
 
@@ -115,85 +117,96 @@ export function MedicationFormScreen({ route, navigation }: Props) {
 
   return (
     <KeyboardAvoidingView
-      style={styles.keyboardView}
+      style={formStyles.screen}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
     >
       <ScrollView
         testID="medication-form"
-        style={styles.container}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={formStyles.container}
+        keyboardShouldPersistTaps="handled"
         bounces={false}
       >
-        <Text style={styles.title} accessibilityRole="header">
+        <Text style={formStyles.title} accessibilityRole="header">
           {isEditing ? "Editar medicamento" : "Novo medicamento"}
         </Text>
 
+        <View style={formStyles.field}>
+          <Text style={formStyles.label}>Nome do medicamento</Text>
+          <TextInput
+            testID="medication-form-name"
+            style={formStyles.input}
+            placeholder="Ex: Losartana"
+            placeholderTextColor={COLORS.grey400}
+            accessibilityLabel="Nome do medicamento"
+            value={form.name}
+            onChangeText={(text) => setForm({ ...form, name: text })}
+          />
+        </View>
+
+        <View style={formStyles.field}>
+          <Text style={formStyles.label}>Dosagem</Text>
+          <TextInput
+            testID="medication-form-dosage"
+            style={formStyles.input}
+            placeholder="Ex: 50mg"
+            placeholderTextColor={COLORS.grey400}
+            accessibilityLabel="Dosagem"
+            value={form.dosage}
+            onChangeText={(text) => setForm({ ...form, dosage: text })}
+          />
+        </View>
+
+        <View style={formStyles.field}>
+          <Text style={formStyles.label}>Frequência</Text>
+          <TextInput
+            testID="medication-form-frequency"
+            style={formStyles.input}
+            placeholder="Ex: 1x ao dia"
+            placeholderTextColor={COLORS.grey400}
+            accessibilityLabel="Frequência"
+            value={form.frequency}
+            onChangeText={(text) => setForm({ ...form, frequency: text })}
+          />
+        </View>
+
+        <View style={formStyles.field}>
+          <Text style={formStyles.label}>Observações (opcional)</Text>
+          <TextInput
+            testID="medication-form-notes"
+            style={[formStyles.input, formStyles.textArea]}
+            placeholder="Ex: tomar pela manhã"
+            placeholderTextColor={COLORS.grey400}
+            accessibilityLabel="Observações"
+            value={form.notes ?? ""}
+            onChangeText={(text) => setForm({ ...form, notes: text })}
+            multiline
+            numberOfLines={3}
+          />
+        </View>
+
         {error ? (
-          <Text testID="medication-form-error" style={styles.error}>
+          <Text testID="medication-form-error" style={formStyles.error}>
             {error}
           </Text>
         ) : null}
-
-        <Text style={styles.label}>Nome do medicamento</Text>
-        <TextInput
-          testID="medication-form-name"
-          style={styles.input}
-          placeholder="Ex: Losartana"
-          placeholderTextColor={COLORS.grey400}
-          value={form.name}
-          onChangeText={(text) => setForm({ ...form, name: text })}
-        />
-
-        <Text style={styles.label}>Dosagem</Text>
-        <TextInput
-          testID="medication-form-dosage"
-          style={styles.input}
-          placeholder="Ex: 50mg"
-          placeholderTextColor={COLORS.grey400}
-          value={form.dosage}
-          onChangeText={(text) => setForm({ ...form, dosage: text })}
-        />
-
-        <Text style={styles.label}>Frequência</Text>
-        <TextInput
-          testID="medication-form-frequency"
-          style={styles.input}
-          placeholder="Ex: 1x ao dia"
-          placeholderTextColor={COLORS.grey400}
-          value={form.frequency}
-          onChangeText={(text) => setForm({ ...form, frequency: text })}
-        />
-
-        <Text style={styles.label}>Observações (opcional)</Text>
-        <TextInput
-          testID="medication-form-notes"
-          style={[styles.input, styles.textArea]}
-          placeholder="Ex: tomar pela manhã"
-          placeholderTextColor={COLORS.grey400}
-          value={form.notes ?? ""}
-          onChangeText={(text) => setForm({ ...form, notes: text })}
-          multiline
-          numberOfLines={3}
-        />
-
-        <View style={styles.buttons}>
-          <PrimaryButton
-            testID="medication-form-cancel"
-            title="Cancelar"
-            variant="outline"
-            style={styles.button}
-            onPress={() => navigation.goBack()}
-          />
-          <PrimaryButton
-            testID="medication-form-save"
-            title="Salvar"
-            style={styles.button}
-            onPress={handleSave}
-            disabled={saving}
-          />
-        </View>
       </ScrollView>
+
+      <ActionBar testID="medication-form-actions">
+        <PrimaryButton
+          testID="medication-form-cancel"
+          title="Cancelar"
+          variant="outline"
+          onPress={() => navigation.goBack()}
+        />
+        <PrimaryButton
+          testID="medication-form-save"
+          title="Salvar"
+          onPress={handleSave}
+          disabled={saving}
+          loading={saving}
+        />
+      </ActionBar>
     </KeyboardAvoidingView>
   );
 }
@@ -203,61 +216,5 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  container: {
-    flex: 1,
-  },
-  content: {
-    padding: 20,
-    gap: 4,
-    backgroundColor: COLORS.white,
-  },
-  title: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 20,
-    lineHeight: 28,
-    color: COLORS.heading,
-    marginBottom: 16,
-  },
-  error: {
-    fontFamily: FONTS.semiBold,
-    color: COLORS.danger,
-    textAlign: "center",
-    marginBottom: 8,
-  },
-  label: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 14,
-    lineHeight: 22,
-    color: COLORS.heading,
-    marginTop: 12,
-  },
-  input: {
-    height: 50,
-    borderWidth: 1,
-    borderColor: COLORS.grey300,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    fontFamily: FONTS.semiBold,
-    fontSize: 14,
-    color: COLORS.heading,
-    marginTop: 4,
-  },
-  textArea: {
-    height: undefined,
-    minHeight: 100,
-    paddingVertical: 12,
-    textAlignVertical: "top",
-  },
-  buttons: {
-    flexDirection: "row",
-    gap: 12,
-    marginTop: 24,
-  },
-  button: {
-    flex: 1,
   },
 });
