@@ -120,6 +120,9 @@ export function WeeklyCheckInScreen({ navigation, route }: Props) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [draftLoaded, setDraftLoaded] = useState(false);
+  // The render that applies the loaded draft is not an edit: saving it would
+  // write an empty draft on every visit and reset a stored draft's age.
+  const skipNextSave = useRef(true);
   const scrollRef = useRef<ScrollView>(null);
   const [draftRestored, setDraftRestored] = useState(false);
 
@@ -146,10 +149,14 @@ export function WeeklyCheckInScreen({ navigation, route }: Props) {
     };
   }, [userId, profileId]);
 
-  // Saved on every change once the stored draft has been read, so the empty
-  // initial state never overwrites it.
+  // Saved on every edit once the stored draft has been read, so neither the
+  // empty initial state nor a reopened draft is written back untouched.
   useEffect(() => {
     if (!draftLoaded) return;
+    if (skipNextSave.current) {
+      skipNextSave.current = false;
+      return;
+    }
     void saveDraft(userId, profileId, {
       step,
       shortForm,

@@ -1,5 +1,6 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import { AccessibilityInfo } from "react-native";
+import * as SecureStore from "expo-secure-store";
 import { makeProfile, mockNavigationModule, mockRiskApi } from "../test-utils";
 import {
   render,
@@ -325,6 +326,30 @@ describe("WeeklyCheckInScreen", () => {
 
     expect(announce).toHaveBeenCalledWith(
       expect.stringMatching(/^Etapa 2 de 5/),
+    );
+  });
+
+  it("does not save a draft when the screen is only opened", async () => {
+    renderScreen();
+    await waitFor(() => expect(listCheckIns).toHaveBeenCalled());
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(await loadDraft(1, 5)).toBeNull();
+  });
+
+  it("does not show an untouched restored draft as new progress", async () => {
+    await saveDraft(1, 5, { ...EMPTY_DRAFT, events: ["fever"] });
+    const savedBefore = await SecureStore.getItemAsync(
+      "geronton.checkin-draft.1.5",
+    );
+    renderScreen();
+    await screen.findByTestId("checkin-draft-restored");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    // Reopening must not rewrite the draft, or its age would reset and a
+    // weeks-old answer could be sent as this week's.
+    expect(await SecureStore.getItemAsync("geronton.checkin-draft.1.5")).toBe(
+      savedBefore,
     );
   });
 

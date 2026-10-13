@@ -44,7 +44,11 @@ export async function loadDraft(
       savedAt: number;
       draft: CheckInDraft;
     };
-    return Date.now() - savedAt > MAX_AGE_MS ? null : draft;
+    if (Date.now() - savedAt > MAX_AGE_MS) {
+      await clearDraft(userId, profileId);
+      return null;
+    }
+    return draft;
   } catch {
     return null;
   }
