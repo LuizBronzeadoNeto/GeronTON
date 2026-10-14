@@ -17,10 +17,10 @@ import {
 const INTERCORRENCE_WINDOW_DAYS = 30;
 
 /**
- * Clinical display priority of each risk level on the triage panel: critical
- * profiles first, then attention, then the ones without recent data (an elder
- * nobody has reported on needs a call more than a stable one) and finally the
- * stable ones.
+ * Follow-up display priority: critical profiles first, then attention, then
+ * the ones without recent data (an elder nobody has reported on needs a call
+ * more than a stable one) and finally the stable ones. Supports care
+ * organization, not diagnosis.
  */
 const LEVEL_PRIORITY: Record<RiskLevel, number> = {
   high: 0,
@@ -119,10 +119,11 @@ async function evaluateLinkedProfiles(userId: number): Promise<TriageEntry[]> {
 /**
  * GET /triagem — the professional triage dashboard: the elderly profiles the
  * requesting professional is linked to, each with its computed risk status,
- * ordered by clinical priority (high, moderate, unknown, low), by functional
+ * ordered by follow-up priority (high, moderate, unknown, low), by weekly
  * score within the same level and by id as the final tiebreaker. Each entry
  * also carries its weekly check-in adherence over the last 8 weeks and the
- * date of its latest check-in.
+ * date of its latest check-in. The care-support heuristic is documented in
+ * docs/heuristica.md; it does not diagnose.
  *
  * The panel spans several caregivers' profiles, but only those the professional
  * has been granted access to — it is no longer a view of the whole system.

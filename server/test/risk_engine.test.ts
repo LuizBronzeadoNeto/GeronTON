@@ -41,10 +41,11 @@ function intercorrence(isCritical: boolean, eventType = "fall"): Intercorrence {
 }
 
 /**
- * Risk engine regression test suite, ran before each commit: provides a base
- * check-in with every answer in its "safe" state, so each test only overrides
- * the fields relevant to what it's checking. Mirrors the heuristic.md weights
- * (IVCF-20 + SUS care pathways) without any DB dependency.
+ * Care-support heuristic regression tests without a database dependency.
+ * Each test overrides only the relevant fields of a zero-point check-in.
+ * Rules and their relationship to IVCF-20 are documented in docs/heuristica.md:
+ * some aspects and the calf condition overlap, but the total score and cut-offs
+ * are GeronTON's own, not an IVCF-20 result or a diagnostic tool.
  */
 describe("computeRiskStatus — no data", () => {
   it("is unknown with no check-in and no intercorrences", () => {

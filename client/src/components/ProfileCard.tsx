@@ -50,8 +50,8 @@ function lastCheckInText(iso: string | null): string {
  * age, optionally the last check-in and adherence, and a chevron. When the
  * status is known, a thin rule in the risk colour runs down the left edge, so
  * the urgency of the whole list can be scanned down one side. Critical weekly
- * events get a red line of their own, per the screening algorithm's
- * visual-flag requirement.
+ * events get a red line of their own, which helps prioritize follow-up, per
+ * the care-support heuristic (docs/heuristica.md), not diagnosis.
  */
 export function ProfileCard({
   profile,

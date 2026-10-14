@@ -10,13 +10,11 @@ router.use(loadProfile);
 const INTERCORRENCE_WINDOW_DAYS = 30;
 
 /**
- * GET /perfis/:perfilId/risco — on-demand risk evaluation: the profile's
- * current status derived from the latest weekly check-in and the
- * intercorrences of the last 30 days (see utils/risk.ts for the screening
- * algorithm). Responds with the level, the underlying functional score, the
- * native-critical weekly events flagged on the latest check-in (the
- * dashboard's visual flag) and the evaluation timestamp so clients can decide
- * how long to cache it.
+ * GET /perfis/:perfilId/risco — follow-up status from the latest check-in and
+ * intercorrences of the last 30 days. Supports care organization, not diagnosis
+ * (utils/risk.ts and docs/heuristica.md). Returns the level, weekly score,
+ * critical weekly events for the dashboard, the reasons behind the level and
+ * evaluation timestamp.
  */
 router.get("/", async (req: Request, res: Response) => {
   const profileId = req.profile!.id;
